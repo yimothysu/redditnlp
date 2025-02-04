@@ -2,7 +2,7 @@ from http.client import BAD_REQUEST
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
-from reddit import reddit
+from reddit import get_comments, reddit
 
 
 app = FastAPI(title="RedditNLP API")
@@ -14,6 +14,7 @@ class RedditPost(BaseModel):
     url: str
     created_utc: float
     num_comments: int
+    comments: list[str]
 
 
 @app.get("/sample/{subreddit}", response_model=list)
@@ -51,6 +52,7 @@ async def sample_subreddit(
             url=post.url,
             created_utc=post.created_utc,
             num_comments=post.num_comments,
+            comments=get_comments(post),
         )
         for post in posts
     ]
