@@ -2,9 +2,10 @@ from http.client import BAD_REQUEST
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import datetime
+import matplotlib.pyplot as plt
 
 from reddit import get_comments, reddit
-
+from plot_post_distribution import plot_post_distribution
 
 app = FastAPI(title="RedditNLP API")
 post_limit = 10000
@@ -18,9 +19,12 @@ class RedditPost(BaseModel):
     # comments: list[str]
 
 
+# if time_filter = year, default view is to slice by month 
+# if time_filter = month, default view is to slice by week 
+# if time_filter = week, default view is to slice by day 
 @app.get("/sample/{subreddit}", response_model=list)
 async def sample_subreddit(
-    subreddit: str, time_filter: str = "all", limit: int = post_limit, sort_by: str = "top"
+    subreddit: str, time_filter: str = "year", limit: int = post_limit, sort_by: str = "top"
 ):
     SORT_METHODS = ["top", "controversial"]
     TIME_FILTERS = ["hour", "day", "week", "month", "year", "all"]
@@ -58,19 +62,8 @@ async def sample_subreddit(
         for post in posts
     ]
 
-    post_dates = [datetime.datetime.fromtimestamp(reddit_post.created_utc).strftime("%Y") for reddit_post in posts_list]
-    print(post_dates)
-    print(len(post_dates))
-
-    year_to_num_posts = dict()
-    for post_date in post_dates:
-        if post_date not in year_to_num_posts: year_to_num_posts[post_date] = 1
-        else: year_to_num_posts[post_date] += 1
-    
-    print(year_to_num_posts)
-
-    return post_dates 
-    #return posts_list
+    plot_post_distribution(subreddit, time_filter, posts_list)
+    return posts_list
 
 
 if __name__ == "__main__":
