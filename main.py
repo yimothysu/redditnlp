@@ -1,30 +1,31 @@
 from http.client import BAD_REQUEST
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+import datetime
 
 from reddit import get_comments, reddit
 
 
 app = FastAPI(title="RedditNLP API")
-
+post_limit = 10000
 
 class RedditPost(BaseModel):
     title: str
     score: int
     url: str
     created_utc: float
-    num_comments: int
-    comments: list[str]
+    # num_comments: int
+    # comments: list[str]
 
 
 @app.get("/sample/{subreddit}", response_model=list)
 async def sample_subreddit(
-    subreddit: str, time_filter: str = "week", limit: int = 10, sort_by: str = "top"
+    subreddit: str, time_filter: str = "all", limit: int = post_limit, sort_by: str = "top"
 ):
     SORT_METHODS = ["top", "controversial"]
     TIME_FILTERS = ["hour", "day", "week", "month", "year", "all"]
-    if limit > 100:
-        raise HTTPException(status_code=BAD_REQUEST, detail="Limit cannot exceed 100")
+    # if limit > 100:
+    #     raise HTTPException(status_code=BAD_REQUEST, detail="Limit cannot exceed 100")
 
     if time_filter not in TIME_FILTERS:
         raise HTTPException(
@@ -50,14 +51,26 @@ async def sample_subreddit(
             title=post.title,
             score=post.score,
             url=post.url,
-            created_utc=post.created_utc,
-            num_comments=post.num_comments,
-            comments=get_comments(post),
+            created_utc=post.created_utc
+            #num_comments=post.num_comments,
+            #comments=get_comments(post),
         )
         for post in posts
     ]
 
-    return posts_list
+    post_dates = [datetime.datetime.fromtimestamp(reddit_post.created_utc).strftime("%Y") for reddit_post in posts_list]
+    print(post_dates)
+    print(len(post_dates))
+
+    year_to_num_posts = dict()
+    for post_date in post_dates:
+        if post_date not in year_to_num_posts: year_to_num_posts[post_date] = 1
+        else: year_to_num_posts[post_date] += 1
+    
+    print(year_to_num_posts)
+
+    return post_dates 
+    #return posts_list
 
 
 if __name__ == "__main__":
