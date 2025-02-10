@@ -1,0 +1,9 @@
+
+# this is without implementing concurrency 
+to sample 100 posts, it takes less than a minute (~45 seconds)
+to sample 200 posts, it takes less than 2 minutes (~1 minute 45 seconds)
+200 posts = ~ 75,000 words (that's a lot of text to work with!)
+
+# after implementing concurrency with asyncio:
+can sample 400 posts with their comments in ~ 40 seconds 
+400 posts with their comments is ~ 140,000 words  

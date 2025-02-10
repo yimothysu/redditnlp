@@ -1,15 +1,22 @@
 from http.client import BAD_REQUEST
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-import datetime
-import time 
-import matplotlib.pyplot as plt
 
-from reddit import get_comments, reddit
+import datetime
+import asyncpraw 
+import os 
+import matplotlib.pyplot as plt
+from dotenv import load_dotenv
+
+from praw.models import MoreComments
+import asyncio
+
+#from reddit import get_comments, reddit
 from plot_post_distribution import plot_post_distribution
 
+load_dotenv()
 app = FastAPI(title="RedditNLP API")
-post_limit = 200
+time_filter_to_post_limit = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
 
 class RedditPost(BaseModel):
     title: str
@@ -19,14 +26,36 @@ class RedditPost(BaseModel):
     num_comments: int
     comments: list[str]
 
+async def fetch_post_data(post):
+    # get the post's comments 
+    comments = await post.comments()
+    post_comments = []  
+    for comment in comments:
+        if isinstance(comment, MoreComments): continue
+        if hasattr(comment, "body"):
+            post_comments.append(comment.body)
+    
+    return RedditPost(
+        title=post.title,
+        score=post.score,
+        url=post.url,
+        created_utc=post.created_utc,
+        num_comments=post.num_comments,
+        comments=post_comments
+    )
+
 @app.get("/sample/{subreddit}", response_model=dict)
 async def sample_subreddit(
-    subreddit: str, time_filter: str = "year", limit: int = post_limit, sort_by: str = "top"
+    subreddit: str, time_filter: str = "year", sort_by: str = "top"
 ):
+    reddit = asyncpraw.Reddit(
+    client_id=os.environ["REDDIT_CLIENT_ID"],
+    client_secret=os.environ["REDDIT_CLIENT_SECRET"],
+    user_agent="reddit sampler",
+    )   
+    post_limit = time_filter_to_post_limit[time_filter]
     SORT_METHODS = ["top", "controversial"]
     TIME_FILTERS = ["hour", "day", "week", "month", "year", "all"]
-    # if limit > 100:
-    #     raise HTTPException(status_code=BAD_REQUEST, detail="Limit cannot exceed 100")
 
     if time_filter not in TIME_FILTERS:
         raise HTTPException(
@@ -40,43 +69,28 @@ async def sample_subreddit(
             detail=f"Invalid sort method. Must be one of {SORT_METHODS}.",
         )
 
-    subreddit_instance = reddit.subreddit(subreddit)
-
-    if sort_by == "top":
-        posts = subreddit_instance.top(limit=limit, time_filter=time_filter)
-    elif sort_by == "controversial":
-        posts = subreddit_instance.controversial(limit=limit, time_filter=time_filter)
-
-    posts_list = [
-            RedditPost(
-                title=post.title,
-                score=post.score,
-                url=post.url,
-                created_utc=post.created_utc,
-                num_comments=post.num_comments,
-                comments= get_comments(post)
-            )
-            for post in posts
-        ]
+    subreddit_instance = await reddit.subreddit(subreddit)
+    posts = [post async for post in subreddit_instance.top(limit=post_limit)]
+    # Fetch post data concurrently
+    posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
+    
     sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
     #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
     return sorted_slice_to_posts
 
+
 # posts_list is a list of RedditPost objects
-# function returns a map where:
+# function returns a sorted map by date where:
 #   key = date of slice (Ex: 07/24)
 #   value = vector of RedditPost objects for slice 
-#
-# if time_filter = year, slice by month 
-# if time_filter = month, slice by week 
-# if time_filter = week, slice by day 
 
 def slice_posts_list(posts_list, time_filter):
     slice_to_posts = dict()
     for post in posts_list:
         # convert post date from utc to readable format 
         date_format = ''
-        if time_filter == 'year': date_format = '%m-%y' # slicing a year by months 
+        if time_filter == 'all': date_format = '%y' # slicing all time by years 
+        elif time_filter == 'year': date_format = '%m-%y' # slicing a year by months 
         else: date_format = '%d-%m' # slicing a month and week by days 
         post_date = datetime.datetime.fromtimestamp(post.created_utc).strftime(date_format)
 
