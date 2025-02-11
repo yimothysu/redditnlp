@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 from praw.models import MoreComments
 import asyncio
 
+#from reddit import get_comments, reddit
 from plot_post_distribution import plot_post_distribution
-from subreddit_nlp_analysis import get_subreddit_analysis, Subreddit_NLP_Analysis
 
 load_dotenv()
 app = FastAPI(title="RedditNLP API")
@@ -75,11 +75,8 @@ async def sample_subreddit(
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     
     sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
-    print('finished getting sorted_slice_to_posts')
     #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
-
-    analysis = get_subreddit_analysis(sorted_slice_to_posts)
-    return analysis
+    return sorted_slice_to_posts
 
 
 # posts_list is a list of RedditPost objects
