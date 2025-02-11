@@ -70,7 +70,7 @@ async def sample_subreddit(
         )
 
     subreddit_instance = await reddit.subreddit(subreddit)
-    posts = [post async for post in subreddit_instance.top(limit=post_limit)]
+    posts = [post async for post in subreddit_instance.top(limit=post_limit, time_filter=time_filter)]
     # Fetch post data concurrently
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     
