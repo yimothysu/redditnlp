@@ -2,6 +2,14 @@ import { useState } from "react";
 import "./App.css";
 //import axios from 'axios';
 
+import Home from '../pages/Home.tsx'
+import RedditPage from '../pages/RedditPage.tsx'
+import CompareRedditPage from '../pages/CompareRedditPage.tsx'
+
+
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+
+
 function App() {
   const [subreddit_input_box, set_subreddit_input_box] = useState("");
 
@@ -25,28 +33,38 @@ function App() {
 
   // <input type='text' value={subreddit_input_box} onChange={handleSubredditInputBoxChange} className="subreddit-input-box"/>
   return (
-    <div className="header-container bg-gray-100">
-      <div className="rounded-full bg-lime-400 text-white font-bold text-xl p-8 mt-8">
-        NLP
+  <BrowserRouter>
+    <Routes>
+      <Route path="/" element={<Home/>}></Route>
+      <Route path="/reddit-page" element={<RedditPage/>}></Route>
+      <Route path="/compare-reddit-page" element={<CompareRedditPage/>}></Route>
+    </Routes>
+  </BrowserRouter>
+  )
+  /*return (
+    <>
+      <div>
+        <a href="https://vite.dev" target="_blank">
+          <img src={viteLogo} className="logo" alt="Vite logo" />
+        </a>
+        <a href="https://react.dev" target="_blank">
+          <img src={reactLogo} className="logo react" alt="React logo" />
+        </a>
       </div>
-      <h1 className="pt-2 pb-4">
-        <b>Reddit</b>NLP
-      </h1>
-      <input
-        type="text"
-        placeholder="enter a community (ex: r/cats)"
-        value={subreddit_input_box}
-        onChange={handleSubredditInputBoxChange}
-        className="subreddit-input-box bg-white rounded-full p-2 w-96"
-      />
-      <button
-        className="rounded-full bg-emerald-400 py-3 px-8 mt-4 text-white font-bold"
-        onClick={generateSubredditAnalysis}
-      >
-        Explore NLP
-      </button>
-    </div>
-  );
+      <h1>Vite + React</h1>
+      <div className="card">
+        <button onClick={() => setCount((count) => count + 1)}>
+          count is {count}
+        </button>
+        <p>
+          Edit <code>src/App.tsx</code> and save to test HMR
+        </p>
+      </div>
+      <p className="read-the-docs">
+        Click on the Vite and React logos to learn more
+      </p>
+    </>
+  )
 }
 
 export default App;
