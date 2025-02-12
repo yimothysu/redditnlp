@@ -1,6 +1,7 @@
 from http.client import BAD_REQUEST
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from typing import Dict, List, Tuple
 
 import datetime
 import asyncpraw 
@@ -13,6 +14,7 @@ import asyncio
 
 #from reddit import get_comments, reddit
 from plot_post_distribution import plot_post_distribution
+from subreddit_nlp_analysis import get_subreddit_analysis
 
 load_dotenv()
 app = FastAPI(title="RedditNLP API")
@@ -25,6 +27,12 @@ class RedditPost(BaseModel):
     created_utc: float
     num_comments: int
     comments: list[str]
+
+class SubredditNLPAnalysis(BaseModel):
+    #  key = date, value = list of top n grams for slice using sklearn's CountVectorizer
+    top_n_grams: Dict[str, List[Tuple[str, int]]]
+    # key = date, value = list of top named entities for slice using spaCy 
+    top_named_entities: Dict[str, List[Tuple[str, int]]]
 
 async def fetch_post_data(post):
     # get the post's comments 
@@ -44,7 +52,7 @@ async def fetch_post_data(post):
         comments=post_comments
     )
 
-@app.get("/sample/{subreddit}", response_model=dict)
+@app.get("/sample/{subreddit}", response_model=SubredditNLPAnalysis)
 async def sample_subreddit(
     subreddit: str, time_filter: str = "year", sort_by: str = "top"
 ):
@@ -75,8 +83,16 @@ async def sample_subreddit(
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     
     sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
+    print('finished getting sorted_slice_to_posts')
     #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
-    return sorted_slice_to_posts
+    top_n_grams, top_named_entities = get_subreddit_analysis(sorted_slice_to_posts)
+    analysis = SubredditNLPAnalysis(
+        top_n_grams = top_n_grams,
+        top_named_entities = top_named_entities
+    )
+    print(analysis)
+    return analysis
+
 
 
 # posts_list is a list of RedditPost objects
