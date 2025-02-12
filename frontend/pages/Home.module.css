@@ -1,0 +1,25 @@
+.subreddit-input-box {
+    font-size: 18px;
+    font-size: 25px;
+    text-align: center;
+  }
+  
+  .header-container {
+    display: flex;
+    align-items: center;
+    flex-flow: column;
+    height: 100vh; /* Make the div take full viewport height */
+    width: 100vw;
+  }
+  
+  .analyze-button {
+    padding: 15px;
+    font-size: 25px;
+    background-color: blueviolet;
+    margin: 20px;
+  }
+  
+  .input_and_button {
+    align-items: center;
+  }
+  
