@@ -120,6 +120,34 @@ def slice_posts_list(posts_list, time_filter):
     sorted_slice_to_posts = {i: slice_to_posts[i] for i in sorted_months}
     return sorted_slice_to_posts
 
+class SubredditInfo(BaseModel):
+    name: str
+    description: str
+
+class PopularSubreddits(BaseModel):
+    reddits: List[SubredditInfo]
+
+@app.get("/popular_subreddits", response_model=PopularSubreddits)
+async def get_popular_subreddits():
+    
+    reddit = asyncpraw.Reddit(
+        client_id=os.environ["REDDIT_CLIENT_ID"],
+        client_secret=os.environ["REDDIT_CLIENT_SECRET"],
+        user_agent="reddit_api"
+    )
+
+    most_popular_reddits = reddit.subreddits.popular(limit=10)
+    reddits = []
+    async for subreddit in most_popular_reddits:
+        reddits.append(
+            SubredditInfo(
+                name=subreddit.display_name,
+                description=subreddit.public_description,
+                )
+            )
+    await reddit.close()
+    return PopularSubreddits(reddits=reddits)
+
 if __name__ == "__main__":
     import uvicorn
 
