@@ -13,6 +13,23 @@ import spacy
 nltk.download('stopwords')
 nltk.download('punkt')
 
+# Perhaps naive filtering of named entities
+# Returns true iff name is a valid named entity name
+def filter_named_entity(name: str) -> bool:
+    # Get parts and check if there is at least one part
+    parts = name.split()
+    if len(parts) == 0:
+        return False
+
+    # Check if each word is indeed a word, allowing for hyphenations and apostrophes
+    # NOTE: May want to check for numbers as well
+    # TODO: Allow ampersands in between "words"
+    word_pattern = re.compile(r"^[a-zA-Z]+([-'’][a-zA-Z]+)*$")
+    for part in parts:
+        if not word_pattern.match(part):
+            return False
+    return True
+
 # This function is called in the FastAPI and is what gets returned from FastAPI 
 def get_subreddit_analysis(sorted_slice_to_posts):
     # Perform n-gram analysis 
@@ -36,11 +53,12 @@ def get_subreddit_analysis(sorted_slice_to_posts):
 
 def postprocess_named_entities(doc):
     named_entities = Counter([ent.text for ent in doc.ents])
-    banned_entities = ['one', 'two', 'first', 'second', 'yesterday', 'today', 'tomorrow', 
-                        'approx', 'half', 'idk']
+    # banned_entities = ['one', 'two', 'first', 'second', 'yesterday', 'today', 'tomorrow', 
+    #                    'approx', 'half', 'idk']
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
-        if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
+        if not (isinstance(name, str) and filter_named_entity(name)): continue
+        # if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
         filtered_named_entities[name] = count
     
     filtered_top_named_entities = filtered_named_entities.most_common(10)
