@@ -11,6 +11,9 @@ from dotenv import load_dotenv
 
 from praw.models import MoreComments
 import asyncio
+# TODO: Remove aiofiles if not needed
+import aiofiles
+import json
 
 #from reddit import get_comments, reddit
 from plot_post_distribution import plot_post_distribution
@@ -27,6 +30,10 @@ class RedditPost(BaseModel):
     created_utc: float
     num_comments: int
     comments: list[str]
+    
+    # Turns RedditPost object into a dictionary
+    def to_dict(self):
+        return self.model_dump()
 
 class SubredditNLPAnalysis(BaseModel):
     #  key = date, value = list of top n grams for slice using sklearn's CountVectorizer
@@ -81,6 +88,16 @@ async def sample_subreddit(
     posts = [post async for post in subreddit_instance.top(limit=post_limit, time_filter=time_filter)]
     # Fetch post data concurrently
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
+    
+    # Save post to file
+    # TODO: Save to database (maybe)
+    try:
+        json_data = json.dumps([post.to_dict() for post in posts_list], indent=4)
+        async with aiofiles.open("posts.txt", "w") as f:
+            await f.write(json_data)
+        print("Posts saved to file")
+    except Exception as e:
+        print(f"Error saving posts to file: {e}")
     
     sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
     print('finished getting sorted_slice_to_posts')
