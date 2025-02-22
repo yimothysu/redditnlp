@@ -59,6 +59,17 @@ async def fetch_post_data(post):
         comments=post_comments
     )
 
+async def print_to_json(data, filename):
+    # Save post to file
+    # TODO: Save to database (maybe)
+    try:
+        json_data = json.dumps([post.to_dict() for post in posts_list], indent=4)
+        async with aiofiles.open("posts.txt", "w") as f:
+            await f.write(json_data)
+        print("Posts saved to file")
+    except Exception as e:
+        print(f"Error saving posts to file: {e}")
+
 @app.get("/sample/{subreddit}", response_model=SubredditNLPAnalysis)
 async def sample_subreddit(
     subreddit: str, time_filter: str = "year", sort_by: str = "top"
@@ -89,15 +100,8 @@ async def sample_subreddit(
     # Fetch post data concurrently
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     
-    # Save post to file
-    # TODO: Save to database (maybe)
-    try:
-        json_data = json.dumps([post.to_dict() for post in posts_list], indent=4)
-        async with aiofiles.open("posts.txt", "w") as f:
-            await f.write(json_data)
-        print("Posts saved to file")
-    except Exception as e:
-        print(f"Error saving posts to file: {e}")
+    # Save post to file (uncomment to use)
+    # print_to_json(posts_list, "posts.txt")
     
     sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
     print('finished getting sorted_slice_to_posts')
