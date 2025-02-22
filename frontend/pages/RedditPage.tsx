@@ -1,10 +1,14 @@
-import Template from './Template.tsx';
+import { useParams } from "react-router-dom";
+import Template from "./Template.tsx";
 
 export default function RedditPage() {
-	
-    return (
-        <Template>
-            <h1>RedditPage</h1>
-        </Template>
-    );
+  const { name } = useParams();
+
+  return (
+    <Template>
+      <div className="text-center">
+        <div className="p-4 font-bold">r/{name}</div>is coming soon!
+      </div>
+    </Template>
+  );
 }
