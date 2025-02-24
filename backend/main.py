@@ -150,7 +150,7 @@ def slice_posts_list(posts_list, time_filter):
         date_format = ''
         if time_filter == 'all': date_format = '%y' # slicing all time by years 
         elif time_filter == 'year': date_format = '%m-%y' # slicing a year by months 
-        else: date_format = '%d-%m' # slicing a month and week by days 
+        else: date_format = '%m-%d' # slicing a month and week by days 
         post_date = datetime.datetime.fromtimestamp(post.created_utc).strftime(date_format)
 
         if post_date not in slice_to_posts:

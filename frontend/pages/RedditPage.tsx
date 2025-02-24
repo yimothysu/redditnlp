@@ -1,35 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import Template from "./Template.tsx";
 import { fetchSubredditAnalysis, SubredditNLPAnalysis } from "../src/lib/api";
+import { SubredditAvatar } from "../src/components/SubredditAvatar.tsx";
 
 export default function RedditPage() {
   const { name } = useParams();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<SubredditNLPAnalysis | null>(null);
-  const [timeFilter, setTimeFilter] = useState("year");
+  const [timeFilter, setTimeFilter] = useState("week");
   const [sortBy, setSortBy] = useState("top");
-
-  useEffect(() => {
-    async function fetchData() {
-      if (!name) return;
-
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const data = await fetchSubredditAnalysis(name, timeFilter, sortBy);
-        setAnalysis(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchData();
-  }, [name, timeFilter, sortBy]);
 
   const renderNGrams = () => {
     if (!analysis) return null;
@@ -77,9 +58,10 @@ export default function RedditPage() {
 
   return (
     <Template>
-      <div className="p-4">
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold">r/{name}</h1>
+      <div className="m-4 p-4 bg-white rounded-md">
+        <div className="flex flex-col items-center mb-6">
+          <SubredditAvatar subredditName={name ?? ""} />
+          <h1 className="text-lg font-bold">r/{name}</h1>
         </div>
 
         <div className="mb-4">
@@ -89,7 +71,7 @@ export default function RedditPage() {
               <select
                 value={timeFilter}
                 onChange={(e) => setTimeFilter(e.target.value)}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                className="mt-1 block w-full px-1 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               >
                 <option value="all">All Time</option>
                 <option value="year">Year</option>
@@ -103,15 +85,14 @@ export default function RedditPage() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                className="mt-1 block w-full px-1 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
               >
                 <option value="top">Top</option>
                 <option value="controversial">Controversial</option>
               </select>
             </div>
-          </div>
 
-          <button
+            <button
             onClick={() => {
               setIsLoading(true);
               fetchSubredditAnalysis(name || "", timeFilter, sortBy)
@@ -124,10 +105,11 @@ export default function RedditPage() {
                   setIsLoading(false);
                 });
             }}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+            className="block self-end px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
           >
             Analyze
           </button>
+          </div>
         </div>
 
         {isLoading && (
