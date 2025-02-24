@@ -1,5 +1,6 @@
 from http.client import BAD_REQUEST
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Tuple
 
@@ -11,7 +12,9 @@ from dotenv import load_dotenv
 
 from praw.models import MoreComments
 import asyncio
-import time 
+# TODO: Remove aiofiles if not needed
+import aiofiles
+import json
 
 #from reddit import get_comments, reddit
 from plot_post_distribution import plot_post_distribution
@@ -19,6 +22,17 @@ from subreddit_nlp_analysis import get_subreddit_analysis
 
 load_dotenv()
 app = FastAPI(title="RedditNLP API")
+
+origins = ['*']  # TODO: update
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 time_filter_to_post_limit = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
 
 class RedditPost(BaseModel):
@@ -28,6 +42,10 @@ class RedditPost(BaseModel):
     created_utc: float
     num_comments: int
     comments: list[str]
+    
+    # Turns RedditPost object into a dictionary
+    def to_dict(self):
+        return self.model_dump()
 
 class SubredditNLPAnalysis(BaseModel):
     #  key = date, value = list of top n grams for slice using sklearn's CountVectorizer
@@ -46,21 +64,29 @@ async def fetch_post_data(post):
             if hasattr(comment, "body"):
                 post_comments.append(comment.body)
     
-        return RedditPost(
-            title=post.title,
-            score=post.score,
-            url=post.url,
-            created_utc=post.created_utc,
-            num_comments=post.num_comments,
-            comments=post_comments
-        )
+    return RedditPost(
+        title=post.title,
+        score=post.score,
+        url=post.url,
+        created_utc=post.created_utc,
+        num_comments=post.num_comments,
+        comments=post_comments
+    )
+
+async def print_to_json(data, filename):
+    # Save post to file
+    # TODO: Save to database (maybe)
+    try:
+        json_data = json.dumps([post.to_dict() for post in posts_list], indent=4)
+        async with aiofiles.open("posts.txt", "w") as f:
+            await f.write(json_data)
+        print("Posts saved to file")
     except Exception as e:
-        print("could not get post's comments because: ", e)
-    
+        print(f"Error saving posts to file: {e}")
 
 @app.get("/sample/{subreddit}", response_model=SubredditNLPAnalysis)
 async def sample_subreddit(
-    subreddit: str, time_filter: str = "year", sort_by: str = "top"
+    subreddit: str, time_filter: str = "week", sort_by: str = "top"
 ):
     reddit = asyncpraw.Reddit(
     client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -89,34 +115,20 @@ async def sample_subreddit(
             detail=f"Invalid sort method. Must be one of {SORT_METHODS}.",
         )
 
-    try:
-        t1 = time.time()
-        subreddit_instance = await reddit.subreddit(subreddit)
-        print('able to create subreddit_instance')
-        posts = [post async for post in subreddit_instance.top(limit=post_limit, time_filter=time_filter)]
-        t2 = time.time()
-        print("fetched all reddit posts in: ", t2-t1)
-    except Exception as e:
-        print('could not get top subreddit posts because: ', e)
+    subreddit_instance = await reddit.subreddit(subreddit)
+    posts = [post async for post in subreddit_instance.top(limit=post_limit, time_filter=time_filter)]
+    # Fetch post data concurrently
+    posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     
-    try:
-        # Fetch post data concurrently
-        posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
-        #await reddit.close()
-        t3 = time.time()
-        print("fetched ", len(posts_list), " posts' comments in: ", t3-t2)
-    except Exception as e:
-        print('could not get post comments because: ', e)
-
-    # remove all posts which are type None 
-    posts_list = [post for post in posts_list if post is not None]
-    print("# of non None posts: ", len(posts_list))
-
+    # Save post to file (uncomment to use)
+    # print_to_json(posts_list, "posts.txt")
+    
     sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
     t4 = time.time()
     print('finished getting sorted_slice_to_posts in: ', t4-t3)
     #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
     top_n_grams, top_named_entities = get_subreddit_analysis(sorted_slice_to_posts)
+    print(top_named_entities)
     analysis = SubredditNLPAnalysis(
         top_n_grams = top_n_grams,
         top_named_entities = top_named_entities

@@ -12,13 +12,14 @@ from sklearn.feature_extraction.text import CountVectorizer
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import spacy 
 
 start = time.time()
 nltk.download('stopwords')
 nltk.download('punkt')
-end = time.time()
-print('finished downloading nltk stopwords and punkt in: ', end-start)
+nltk.download('punkt_tab')
 
 # Perhaps naive filtering of named entities
 # Returns true iff name is a valid named entity name
@@ -100,3 +101,24 @@ def get_top_ngrams_sklearn(texts, n=3, top_k=10):
     vocab = vectorizer.get_feature_names_out()
     counts = [(vocab[i], freqs[0, i]) for i in range(len(vocab))]
     return sorted(counts, key=lambda x: x[1], reverse=True)[:top_k]  # Sort and return top-k
+
+def preprocess_text_for_sentiment(text):
+    tokens = word_tokenize(text.lower())
+    filtered_tokens = [token for token in tokens if token not in stopwords.words("english")]
+    lemmatizer = WordNetLemmatizer()
+    lemmatized_tokens = [lemmatizer.lemmatize(token) for token in filtered_tokens]
+    processed_text = ' '.join(lemmatized_tokens)
+    return processed_text
+
+# preprocess text first before calling get_sentiment
+def get_sentiment(text):
+    analyzer = SentimentIntensityAnalyzer()
+
+    scores = analyzer.polarity_scores(text)
+    
+    if scores["compound"] >= 0.05:
+        return 1
+    elif scores["compound"] <= -0.05:
+        return -1
+    else:
+        return 0
