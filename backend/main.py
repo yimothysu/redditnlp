@@ -1,5 +1,6 @@
 from http.client import BAD_REQUEST
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Dict, List, Tuple
 
@@ -21,6 +22,17 @@ from subreddit_nlp_analysis import get_subreddit_analysis
 
 load_dotenv()
 app = FastAPI(title="RedditNLP API")
+
+origins = ['*']  # TODO: update
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 time_filter_to_post_limit = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
 
 class RedditPost(BaseModel):
@@ -72,7 +84,7 @@ async def print_to_json(data, filename):
 
 @app.get("/sample/{subreddit}", response_model=SubredditNLPAnalysis)
 async def sample_subreddit(
-    subreddit: str, time_filter: str = "year", sort_by: str = "top"
+    subreddit: str, time_filter: str = "week", sort_by: str = "top"
 ):
     reddit = asyncpraw.Reddit(
     client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -107,6 +119,7 @@ async def sample_subreddit(
     print('finished getting sorted_slice_to_posts')
     #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
     top_n_grams, top_named_entities = get_subreddit_analysis(sorted_slice_to_posts)
+    print(top_named_entities)
     analysis = SubredditNLPAnalysis(
         top_n_grams = top_n_grams,
         top_named_entities = top_named_entities
