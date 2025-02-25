@@ -15,18 +15,26 @@ export default function RedditPage() {
   const [sortBy, setSortBy] = useState("top");
 
   const renderWordEmbeddings = () => {
-    return (<div>
-      <h1>Word Embeddings Visualization</h1>
-      <p>Word embeddings are vector-representations of words in high dimensional space that can provide insight into the meaning
-        and context of a word. The following shows a 2D representation of the most popular words in the subreddit (condensed via PCA).</p>
-      <WordEmbeddingsGraph embeddings={
-        [{ word: 'hello', x: 1.2, y: 3.4 },
-        { word: 'how', x: 2.5, y: 1.8 },
-        { word: 'are', x: -1.1, y: -2.4 },
-        { word: 'you', x: 0.7, y: -1.2 }]
-        } />
-    </div>);
-  }
+    return (
+    <div className="mt-10 p-6 bg-white shadow rounded max-w-3xl mx-auto">
+      <h1 className="font-semibold text-l p-1">
+        Word Embeddings
+      </h1>
+      <p className="text-gray-500 p-3">
+        Word embeddings are vector representations of words in high-dimensional space, offering insights into meaning and context.
+        Below is a 2D projection of the most popular words in the subreddit (reduced via PCA).</p>
+        <div className="bg-gray-100 rounded">
+          <WordEmbeddingsGraph embeddings={[
+            { word: 'hello', x: 1.2, y: 3.4 },
+            { word: 'how', x: 2.5, y: 1.8 },
+            {word: 'are', x: -1.1, y: -2.4 },
+            { word: 'you', x: 0.7, y: -1.2 }
+          ]}
+          />
+           </div>
+          </div>
+    );
+  };
 
   const renderNGrams = () => {
     if (!analysis) return null;
@@ -74,17 +82,6 @@ export default function RedditPage() {
 
   return (
     <Template>
-      <div>
-      <h1>Word Embeddings Visualization</h1>
-      <p>Word embeddings are vector-representations of words in high dimensional space that can provide insight into the meaning
-        and context of a word. The following shows a 2D representation of the most popular words in the subreddit (condensed via PCA).</p>
-      <WordEmbeddingsGraph embeddings={
-        [{ word: 'hello', x: 1.2, y: 3.4 },
-        { word: 'how', x: 2.5, y: 1.8 },
-        { word: 'are', x: -1.1, y: -2.4 },
-        { word: 'you', x: 0.7, y: -1.2 }]
-        } />
-    </div>
       <div className="m-4 p-4 bg-white rounded-md">
         <div className="flex flex-col items-center mb-6">
           <SubredditAvatar subredditName={name ?? ""} />
@@ -139,6 +136,8 @@ export default function RedditPage() {
           </div>
         </div>
 
+        {renderWordEmbeddings()}
+
         {isLoading && (
           <div className="text-center py-8">
             <p>Loading analysis...</p>
@@ -161,7 +160,6 @@ export default function RedditPage() {
           <div className="mt-4">
             {renderNGrams()}
             {renderNamedEntities()}
-            {renderWordEmbeddings()}
           </div>
         )}
       </div>
