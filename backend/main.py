@@ -37,15 +37,21 @@ time_filter_to_post_limit = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
 
 class RedditPost(BaseModel):
     title: str
+    description: str 
     score: int
     url: str
     created_utc: float
     num_comments: int
     comments: list[str]
+    comment_scores: list[int]
     
     # Turns RedditPost object into a dictionary
     def to_dict(self):
         return self.model_dump()
+
+class Comment(BaseModel):
+    text: str
+    score: int
 
 class SubredditNLPAnalysis(BaseModel):
     #  key = date, value = list of top n grams for slice using sklearn's CountVectorizer
@@ -59,21 +65,27 @@ async def fetch_post_data(post):
     try:
         comments = await post.comments()
         post_comments = []  
+        comment_scores = []
         for comment in comments:
             if isinstance(comment, MoreComments): continue
             if hasattr(comment, "body"):
                 post_comments.append(comment.body)
-    
-    return RedditPost(
-        title=post.title,
-        score=post.score,
-        url=post.url,
-        created_utc=post.created_utc,
-        num_comments=post.num_comments,
-        comments=post_comments
-    )
+            if hasattr(comment, "score"):
+                comment_scores.append(comment.score)
+        return RedditPost(
+            title=post.title,
+            description=post.selftext,
+            score=post.score,
+            url=post.url,
+            created_utc=post.created_utc,
+            num_comments=post.num_comments,
+            comments=post_comments,
+            comment_scores=comment_scores
+        )
+    except:
+        print('could not get post comments')
 
-async def print_to_json(data, filename):
+async def print_to_json(posts_list, filename):
     # Save post to file
     # TODO: Save to database (maybe)
     try:
@@ -121,11 +133,10 @@ async def sample_subreddit(
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     
     # Save post to file (uncomment to use)
-    # print_to_json(posts_list, "posts.txt")
+    await print_to_json(posts_list, "posts.txt")
     
     sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
-    t4 = time.time()
-    print('finished getting sorted_slice_to_posts in: ', t4-t3)
+    print('finished getting sorted_slice_to_posts')
     #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
     top_n_grams, top_named_entities = get_subreddit_analysis(sorted_slice_to_posts)
     print(top_named_entities)
