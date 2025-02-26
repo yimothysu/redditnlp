@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import Template from "./Template.tsx";
 import { fetchSubredditAnalysis, SubredditNLPAnalysis } from "../src/lib/api";
 import { SubredditAvatar } from "../src/components/SubredditAvatar.tsx";
+
+import Template from "./Template.tsx";
+import WordEmbeddingsGraph from "../Components/WordEmbeddingsGraph.tsx";
 
 export default function RedditPage() {
   const { name } = useParams();
@@ -11,6 +13,28 @@ export default function RedditPage() {
   const [analysis, setAnalysis] = useState<SubredditNLPAnalysis | null>(null);
   const [timeFilter, setTimeFilter] = useState("week");
   const [sortBy, setSortBy] = useState("top");
+
+  const renderWordEmbeddings = () => {
+    return (
+    <div className="mt-10 p-6 bg-white shadow rounded max-w-3xl mx-auto">
+      <h1 className="font-semibold text-l p-1">
+        Word Embeddings
+      </h1>
+      <p className="text-gray-500 p-3">
+        Word embeddings are vector representations of words in high-dimensional space, offering insights into meaning and context.
+        Below is a 2D projection of the most popular words in the subreddit (reduced via PCA).</p>
+        <div className="bg-gray-100 rounded">
+          <WordEmbeddingsGraph embeddings={[
+            { word: 'hello', x: 1.2, y: 3.4 },
+            { word: 'how', x: 2.5, y: 1.8 },
+            {word: 'are', x: -1.1, y: -2.4 },
+            { word: 'you', x: 0.7, y: -1.2 }
+          ]}
+          />
+           </div>
+          </div>
+    );
+  };
 
   const renderNGrams = () => {
     if (!analysis) return null;
@@ -111,6 +135,8 @@ export default function RedditPage() {
           </button>
           </div>
         </div>
+
+        {renderWordEmbeddings()}
 
         {isLoading && (
           <div className="text-center py-8">
