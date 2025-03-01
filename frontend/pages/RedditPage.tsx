@@ -42,8 +42,9 @@ export default function RedditPage() {
     return (
       <div className="mt-4">
         <h2 className="text-xl font-bold mb-2">Top N-Grams</h2>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
         {Object.entries(analysis.top_n_grams).map(([date, ngrams]) => (
-          <div key={date} className="mb-4">
+          <div key={date} className="mb-3 border bg-white border-gray-200 p-4 rounded-l shadow-md">
             <h3 className="text-lg font-semibold">{date}</h3>
             <ul className="list-disc pl-5">
               {ngrams.map((ngram, index) => (
@@ -54,6 +55,7 @@ export default function RedditPage() {
             </ul>
           </div>
         ))}
+        </div>
       </div>
     );
   };
@@ -64,8 +66,9 @@ export default function RedditPage() {
     return (
       <div className="mt-4">
         <h2 className="text-xl font-bold mb-2">Top Named Entities</h2>
+        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
         {Object.entries(analysis.top_named_entities).map(([date, entities]) => (
-          <div key={date} className="mb-4">
+          <div key={date} className="mb-3 border bg-white border-gray-200 p-4 rounded-l shadow-md">
             <h3 className="text-lg font-semibold">{date}</h3>
             <ul className="list-disc pl-5">
               {entities.map((entity, index) => (
@@ -76,6 +79,7 @@ export default function RedditPage() {
             </ul>
           </div>
         ))}
+      </div>
       </div>
     );
   };
