@@ -15,11 +15,19 @@ from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import spacy 
+from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 
-start = time.time()
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('punkt_tab')
+nltk.download('wordnet')
+nltk.download('vader_lexicon')
+
+# Load the ABSA (Aspect Based Sentiment Analysis) model and tokenizer
+model_name = "yangheng/deberta-v3-base-absa-v1.1"
+tokenizer = AutoTokenizer.from_pretrained(model_name)
+model = AutoModelForSequenceClassification.from_pretrained(model_name)
+classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
 
 # Perhaps naive filtering of named entities
 # Returns true iff name is a valid named entity name
@@ -45,8 +53,8 @@ def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's FastAPI
         post_content = ' '.join([post.title + ' '.join(post.comments) for post in posts])
         texts.append(post_content)
         dates.append(date)
+    
     # Perform n-gram analysis - just only take ~ 1-2 seconds 
-    # ProcessPoolExecutor and ThreadPoolExecuter do NOT help speed up n-gram analysis 
     t1 = time.time()
     top_n_grams = dict() 
     for i in range(0, len(dates)):
@@ -55,8 +63,9 @@ def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's FastAPI
     t2 = time.time()
     print('finished n-gram analysis in: ', t2-t1)
 
-    # Perform NER analysis - takes ~ 20 seconds 
+    # Perform NER analysis + sentiment analysis to EACH named entity - takes ~ 30-40 seconds 
     nlp = spacy.load("en_core_web_sm", disable=["parser", "tagger"])
+    nlp.add_pipe('sentencizer')
     top_named_entities = dict() 
     for doc, date in zip(nlp.pipe(texts, batch_size=50), dates): # Processing all texts in batches
         top_named_entities[date] = postprocess_named_entities(doc)
@@ -67,18 +76,52 @@ def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's FastAPI
 
 def postprocess_named_entities(doc):
     named_entities = Counter([ent.text for ent in doc.ents])
-    # banned_entities = ['one', 'two', 'first', 'second', 'yesterday', 'today', 'tomorrow', 
-    #                    'approx', 'half', 'idk']
+    banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomorrow', 
+                       'approx', 'half', 'idk'}
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
         if not (isinstance(name, str) and filter_named_entity(name)): continue
-        # if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
+        if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
         filtered_named_entities[name] = count
     
-    filtered_top_named_entities = filtered_named_entities.most_common(10)
-    # filtered_top_named_entities type = list of tuples with format (entity, # occurences)
-    return filtered_top_named_entities 
-    
+    top_ten_entities = filtered_named_entities.most_common(10)
+    top_ten_entity_names = set([entity[0] for entity in top_ten_entities])
+    entity_to_sentiment = get_entity_to_sentiment(top_ten_entity_names, doc)
+
+    for i in range(len(top_ten_entities)):
+        entity_name = top_ten_entities[i][0]
+        entity_count = top_ten_entities[i][1]
+        entity_sentiment = round(entity_to_sentiment[entity_name], 2)
+        top_ten_entities[i] = (entity_name, entity_count, entity_sentiment) 
+
+    return top_ten_entities
+
+
+def get_entity_to_sentiment(top_ten_entity_names, doc):
+    entity_to_sentiment  = dict()
+    entity_to_sentences = dict()
+ 
+    for ent in doc.ents:
+        if ent.text in top_ten_entity_names:
+            if ent.text not in entity_to_sentences: entity_to_sentences[ent.text] = []
+            entity_to_sentences[ent.text].append(ent.sent.text)
+
+    for entity, sentences in entity_to_sentences.items():
+        flattened_sentences = "\n".join(sentences)
+        sentiment = classifier(flattened_sentences, text_pair=entity)
+        # sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
+        # label = 'Positive', 'Neutral', or 'Negative' 
+        # score = value in range [0, 1]
+        if(sentiment[0]['label'] == 'Positive'):
+            entity_to_sentiment[entity] = sentiment[0]['score']
+        elif(sentiment[0]['label'] == 'Negative'):
+            entity_to_sentiment[entity] = (-1) * sentiment[0]['score']
+        elif(sentiment[0]['label'] == 'Neutral'):
+            entity_to_sentiment[entity] = 0
+        
+    return entity_to_sentiment
+
+
 def preprocess_text_for_n_grams(post_content):
     partial_stop_words = {'wiki', 'co', 'www.', 'reddit', '.com', 'autotldr', 'http'}
     full_stop_words = {'or', 'and', 'you', 'that', 'the', 'co', 'en', 'np', 'removed', 'next'}

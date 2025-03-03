@@ -53,11 +53,18 @@ class Comment(BaseModel):
     text: str
     score: int
 
+# class NamedEntity(BaseModel):
+#     name: str 
+#     count: int 
+#     sentiment_score: float 
+
 class SubredditNLPAnalysis(BaseModel):
-    #  key = date, value = list of top n grams for slice using sklearn's CountVectorizer
+    #  key = date, value = list of top n grams for slice 
+    # Tuple[str, int] = (n-gram, n-gram # occurrences)
     top_n_grams: Dict[str, List[Tuple[str, int]]]
-    # key = date, value = list of top named entities for slice using spaCy 
-    top_named_entities: Dict[str, List[Tuple[str, int]]]
+    # key = date, value = list of top 10 named entities for slice 
+    # Tuple[str, int, float] = (named entity, named entity # occurrences, named entity sentiment score)
+    top_named_entities: Dict[str, List[Tuple[str, int, float]]]
 
 async def fetch_post_data(post):
     # get the post's comments 
