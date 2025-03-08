@@ -6,6 +6,7 @@ from typing import Dict, List, Tuple
 import concurrent.futures
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import time
+import asyncio
 
 # NLP related imports 
 from sklearn.feature_extraction.text import CountVectorizer
@@ -46,11 +47,11 @@ def filter_named_entity(name: str) -> bool:
             return False
     return True
 
-def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's FastAPI
+async def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's FastAPI
     texts = []
     dates = []
     for date, posts in sorted_slice_to_posts.items():
-        post_content = ' '.join([post.title + ' '.join(post.comments) for post in posts])
+        post_content = ' '.join([post.title + ' ' + post.description + ' '.join(post.comments) for post in posts])
         texts.append(post_content)
         dates.append(date)
     
@@ -63,30 +64,40 @@ def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's FastAPI
     t2 = time.time()
     print('finished n-gram analysis in: ', t2-t1)
 
-    # Perform NER analysis + sentiment analysis to EACH named entity - takes ~ 30-40 seconds 
+    # Perform NER analysis + sentiment analysis to EACH named entity 
     nlp = spacy.load("en_core_web_sm", disable=["parser", "tagger"])
     nlp.add_pipe('sentencizer')
-    top_named_entities = dict() 
-    for doc, date in zip(nlp.pipe(texts, batch_size=50), dates): # Processing all texts in batches
-        top_named_entities[date] = postprocess_named_entities(doc)
+    top_named_entities = dict()
+    for date, doc in zip(dates, nlp.pipe(texts, batch_size=50)):
+        top_named_entities[date] = doc
+
+    tasks = [asyncio.create_task(postprocess_named_entities(date, doc)) for date, doc in top_named_entities.items()]
+    results = await asyncio.gather(*tasks)
+
+    for date, entities in results:
+        top_named_entities[date] = entities
+
     t3 = time.time()
     print('finished NER analysis in: ', t3-t2)
     
     return top_n_grams, top_named_entities
 
-def postprocess_named_entities(doc):
+async def postprocess_named_entities(date, doc):
     named_entities = Counter([ent.text for ent in doc.ents])
     banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomorrow', 
-                       'approx', 'half', 'idk'}
+                       'approx', 'half', 'idk', 'Congrats', 'three', 'creepy', 'night',
+                       'day', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
+                       'Saturday', 'Sunday'}
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
+        if count < 3: continue # not enough sentences to sample 
         if not (isinstance(name, str) and filter_named_entity(name)): continue
         if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
         filtered_named_entities[name] = count
     
     top_ten_entities = filtered_named_entities.most_common(10)
     top_ten_entity_names = set([entity[0] for entity in top_ten_entities])
-    entity_to_sentiment = get_entity_to_sentiment(top_ten_entity_names, doc)
+    entity_to_sentiment = await get_sentiments_of_entities(top_ten_entity_names, doc)
 
     for i in range(len(top_ten_entities)):
         entity_name = top_ten_entities[i][0]
@@ -94,10 +105,9 @@ def postprocess_named_entities(doc):
         entity_sentiment = round(entity_to_sentiment[entity_name], 2)
         top_ten_entities[i] = (entity_name, entity_count, entity_sentiment) 
 
-    return top_ten_entities
+    return (date, top_ten_entities)
 
-
-def get_entity_to_sentiment(top_ten_entity_names, doc):
+async def get_sentiments_of_entities(top_ten_entity_names, doc):
     entity_to_sentiment  = dict()
     entity_to_sentences = dict()
  
@@ -105,21 +115,25 @@ def get_entity_to_sentiment(top_ten_entity_names, doc):
         if ent.text in top_ten_entity_names:
             if ent.text not in entity_to_sentences: entity_to_sentences[ent.text] = []
             entity_to_sentences[ent.text].append(ent.sent.text)
-
-    for entity, sentences in entity_to_sentences.items():
-        flattened_sentences = "\n".join(sentences)
-        sentiment = classifier(flattened_sentences, text_pair=entity)
-        # sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
-        # label = 'Positive', 'Neutral', or 'Negative' 
-        # score = value in range [0, 1]
-        if(sentiment[0]['label'] == 'Positive'):
-            entity_to_sentiment[entity] = sentiment[0]['score']
-        elif(sentiment[0]['label'] == 'Negative'):
-            entity_to_sentiment[entity] = (-1) * sentiment[0]['score']
-        elif(sentiment[0]['label'] == 'Neutral'):
-            entity_to_sentiment[entity] = 0
-        
+    
+    tasks = [asyncio.to_thread(get_sentiment_of_entity, entity, sentences) for entity, sentences in entity_to_sentences.items()]
+    results = await asyncio.gather(*tasks)
+    for entity, sentiment_score in results:
+        entity_to_sentiment[entity] = sentiment_score
     return entity_to_sentiment
+
+def get_sentiment_of_entity(entity, sentences):
+    flattened_sentences = "\n".join(sentences)
+    sentiment = classifier(flattened_sentences, text_pair=entity)
+    # sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
+    # label = 'Positive', 'Neutral', or 'Negative' 
+    # score = value in range [0, 1]
+    sentiment_score = 0
+    if(sentiment[0]['label'] == 'Positive'):
+        sentiment_score = sentiment[0]['score']
+    elif(sentiment[0]['label'] == 'Negative'):
+        sentiment_score = (-1) * sentiment[0]['score']
+    return (entity, sentiment_score)
 
 
 def preprocess_text_for_n_grams(post_content):

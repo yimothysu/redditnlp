@@ -140,12 +140,12 @@ async def sample_subreddit(
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     
     # Save post to file (uncomment to use)
-    await print_to_json(posts_list, "posts.txt")
+    # await print_to_json(posts_list, "posts.txt")
     
     sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
     print('finished getting sorted_slice_to_posts')
     #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
-    top_n_grams, top_named_entities = get_subreddit_analysis(sorted_slice_to_posts)
+    top_n_grams, top_named_entities = await get_subreddit_analysis(sorted_slice_to_posts)
     print(top_named_entities)
     analysis = SubredditNLPAnalysis(
         top_n_grams = top_n_grams,
