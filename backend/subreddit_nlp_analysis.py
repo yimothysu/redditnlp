@@ -18,6 +18,9 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import spacy 
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 
+# Topic extraction with BERTopic
+from bertopic import BERTopic
+
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('punkt_tab')
@@ -179,3 +182,113 @@ def get_sentiment(text):
         return -1
     else:
         return 0
+
+# Topic extraction with BERTopic
+def extract_topics(texts, num_topics=10):
+    """
+    Extract topics from a list of texts using BERTopic.
+    
+    Args:
+        texts (list): List of text documents for topic modeling
+        num_topics (int, optional): Number of topics to extract. Defaults to 10.
+        
+    Returns:
+        dict: A dictionary containing:
+            - topics: List of topic numbers assigned to each document
+            - topic_info: DataFrame with information about each topic
+            - topic_representations: Dict with topic representations (words and their weights)
+    """
+    try:
+        # Preprocess texts to remove stopwords
+        preprocessed_texts = []
+        for text in texts:
+            preprocessed_text = preprocess_text_for_n_grams(text)
+            if preprocessed_text.strip():  # Only add non-empty texts
+                preprocessed_texts.append(preprocessed_text)
+        
+        # Skip if there are not enough texts after preprocessing
+        if len(preprocessed_texts) < 5:
+            return {
+                "error": "Not enough text documents after preprocessing",
+                "topics": [],
+                "topic_info": [],
+                "topic_representations": {}
+            }
+        
+        # Initialize BERTopic model with improved configuration
+        topic_model = BERTopic()
+        
+        # Fit the model and transform texts to get topics
+        topics, probs = topic_model.fit_transform(preprocessed_texts)
+        
+        # Get topic info and representation
+        topic_info = topic_model.get_topic_info()
+        
+        # Get the topic representations (words and their weights)
+        topic_representations = {}
+        for topic_id in set(topics):
+            if topic_id != -1:  # Skip outlier topic
+                topic_words = topic_model.get_topic(topic_id)
+                topic_representations[str(topic_id)] = topic_words
+        
+        # Return results
+        result = {
+            "topics": topics,
+            "topic_info": topic_info.to_dict('records'),
+            "topic_representations": topic_representations
+        }
+        
+        return result
+    except Exception as e:
+        print(f"Error in topic extraction: {str(e)}")
+        return {
+            "error": str(e),
+            "topics": [],
+            "topic_info": [],
+            "topic_representations": {}
+        }
+
+def get_subreddit_topics(sorted_slice_to_posts, num_topics=10):
+    """
+    Extract topics from subreddit posts and comments for each time slice.
+    
+    Args:
+        sorted_slice_to_posts (dict): Dictionary mapping time slices to posts
+        num_topics (int, optional): Number of topics to extract per slice. Defaults to 10.
+        
+    Returns:
+        dict: Dictionary mapping time slices to topic extraction results
+    """
+    t1 = time.time()
+    subreddit_topics = {}
+    
+    for date, posts in sorted_slice_to_posts.items():
+        # Combine post titles and comments for topic modeling
+        texts = []
+        for post in posts:
+            # Add post title (titles are often more informative than comments)
+            if post.title and len(post.title.strip()) > 10:  # Only add substantial titles
+                texts.append(post.title)
+            
+            # Process and add comments
+            filtered_comments = []
+            for comment in post.comments:
+                # Skip very short comments or empty comments
+                if comment and len(comment.strip()) > 15:
+                    filtered_comments.append(comment)
+            
+            # Add filtered comments
+            texts.extend(filtered_comments)
+        
+        # Skip if there are not enough texts for meaningful topic modeling
+        if len(texts) < 5:
+            continue
+            
+        # Extract topics from the texts
+        topics_result = extract_topics(texts, num_topics)
+        subreddit_topics[date] = topics_result
+    
+    t2 = time.time()
+    print('finished topic extraction in: ', t2-t1)
+    
+    return subreddit_topics
