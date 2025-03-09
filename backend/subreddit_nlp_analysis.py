@@ -9,7 +9,9 @@ import time
 import asyncio
 
 # NLP related imports 
+import numpy as np
 from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.cluster import AgglomerativeClustering
 import nltk
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
@@ -49,6 +51,42 @@ def filter_named_entity(name: str) -> bool:
         if not word_pattern.match(part):
             return False
     return True
+
+# Get embedding for named entity by averaging embeddings over all words
+def get_entity_embedding(entity):
+    words = entity.split()
+    vectors = [model[word] for word in words if word in model]
+    if vectors:
+        return np.mean(vectors, axis=0)
+    return None
+
+def cluster_similar_entities(named_entities):
+    entity_embeddings = []
+    entity_names = []
+    for entity in named_entities:
+        embedding = get_entity_embedding(entity)
+        # Question: Do we only want to consider entities that have an embedding?
+        if embedding is not None:
+            entity_embeddings.append(embedding)
+            entity_names.append(entity)
+
+    # If we only have one entity embedding then it's not enough to cluster
+    if len(entity_embeddings) < 2:
+        return named_entities
+
+    entity_embeddings = np.array(entity_embeddings)
+    clustering = AgglomerativeClustering(n_clusters=None, distance_threshold=0.4, metric='cosine', linkage='average')
+    labels = clustering.fit_predict(entity_embeddings)
+    clustered_entities = {}
+    for i, label in enumerate(labels):
+        clustered_entities.setdefault(label, []).append(entity_names[i])
+
+    # We choose the most frequnent entity as the representative for the cluster
+    entity_to_cluster = {}
+    for entities in clustered_entities.values():
+        most_common_entity = max(entities, key=lambda e: named_entities[e])
+        entity_to_cluster[most_common_entity] = named_entities[most_common_entity]
+    return entity_to_cluster
 
 async def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's FastAPI
     texts = []
@@ -91,6 +129,9 @@ async def postprocess_named_entities(date, doc):
                        'approx', 'half', 'idk', 'Congrats', 'three', 'creepy', 'night',
                        'day', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
                        'Saturday', 'Sunday'}
+
+    # clustered_named_entites = cluster_similar_entities(named_entities)
+    
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
         if count < 3: continue # not enough sentences to sample 
