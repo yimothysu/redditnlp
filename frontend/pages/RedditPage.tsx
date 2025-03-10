@@ -24,8 +24,8 @@ export default function RedditPage() {
 
   const renderGenerationTimeEstimatesTable = () => {
     return (
-      <div className="overflow-x-auto mb-7">
-        <table className="table-auto border-collapse text-sm font-medium m-2.5">
+      <div className="overflow-x-auto mt-7 mb-7 flex items-center justify-center">
+        <table className="table-auto border-collapse text-sm m-2.5">
           <thead>
             <tr>
               <th className="px-6 py-2 text-center text-left text-indigo-600">Time Filter</th>
@@ -154,8 +154,8 @@ export default function RedditPage() {
           <SubredditAvatar subredditName={name ?? ""} />
           <h1 className="text-lg font-bold">r/{name}</h1>
         </div>
-        {renderGenerationTimeEstimatesTable()}
-        <div className="mb-4">
+        <div className="flex gap-25 justify-center">
+        <div className="mb-4 flex items-center justify-center">
           <div className="flex gap-4 mb-2">
             <div>
               <label className="block text-sm font-medium text-gray-700">Time Filter</label>
@@ -170,7 +170,6 @@ export default function RedditPage() {
                 <option value="week">Week</option>
               </select>
             </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-700">Sort By</label>
               <select
@@ -182,7 +181,6 @@ export default function RedditPage() {
                 <option value="controversial">Controversial</option>
               </select>
             </div>
-
             <button
             onClick={() => {
               setIsLoading(true);
@@ -201,6 +199,8 @@ export default function RedditPage() {
             Analyze
           </button>
           </div>
+        </div>
+        {renderGenerationTimeEstimatesTable()}
         </div>
 
         {isLoading && (
