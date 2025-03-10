@@ -13,6 +13,47 @@ export default function RedditPage() {
   const [analysis, setAnalysis] = useState<SubredditNLPAnalysis | null>(null);
   const [timeFilter, setTimeFilter] = useState("week");
   const [sortBy, setSortBy] = useState("top");
+  const spinnerStyle = {
+    border: '4px solid #f3f3f3',
+    borderTop: '4px solid #3498db',
+    borderRadius: '50%',
+    width: '20px',
+    height: '20px',
+    animation: 'spin 1s linear infinite',
+  };
+
+  const renderGenerationTimeEstimatesTable = () => {
+    return (
+      <div className="overflow-x-auto mb-7">
+        <table className="table-auto border-collapse text-sm font-medium m-2.5">
+          <thead>
+            <tr>
+              <th className="px-6 py-2 text-center text-left text-indigo-600">Time Filter</th>
+              <th className="px-8 py-2 text-center text-left text-indigo-600">Approx Generation Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td className="px-4 py-1.5 text-center bg-gray-200">Week</td>
+              <td className="px-4 py-1.5 text-center bg-gray-200">3-5 min</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-1.5 text-center">Month</td>
+              <td className="px-4 py-1.5 text-center">5-7 min</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-1.5 text-center bg-gray-200">Year</td>
+              <td className="px-4 py-1.5 text-center bg-gray-200">10 min</td>
+            </tr>
+            <tr>
+              <td className="px-4 py-1.5 text-center">All Time</td>
+              <td className="px-4 py-1.5 text-center">15 min</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    );
+  }
 
   const renderWordEmbeddings = () => {
     return (
@@ -113,7 +154,7 @@ export default function RedditPage() {
           <SubredditAvatar subredditName={name ?? ""} />
           <h1 className="text-lg font-bold">r/{name}</h1>
         </div>
-
+        {renderGenerationTimeEstimatesTable()}
         <div className="mb-4">
           <div className="flex gap-4 mb-2">
             <div>
@@ -162,11 +203,12 @@ export default function RedditPage() {
           </div>
         </div>
 
-        {renderWordEmbeddings()}
-
         {isLoading && (
           <div className="text-center py-8">
-            <p>Loading analysis...</p>
+            <div className="flex items-center justify-center space-x-2">
+              <h2>Loading analysis</h2>
+              <div className="spinner" style={spinnerStyle}></div> 
+            </div>
           </div>
         )}
 
@@ -188,6 +230,7 @@ export default function RedditPage() {
             {renderNGrams()}
           </div>
         )}
+        {renderWordEmbeddings()}
       </div>
     </Template>
   );
