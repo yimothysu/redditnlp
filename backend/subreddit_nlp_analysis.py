@@ -130,7 +130,7 @@ async def postprocess_named_entities(date, doc):
                        'approx', 'half', 'idk', 'congrats', 'three', 'creepy', 'night',
                        'day', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
                        'saturday', 'sunday', 'month', 'months', 'day', 'days', 'week',
-                       'weeks'}
+                       'weeks', 'this year', 'next year', 'last year', 'year'}
     # clustered_named_entites = cluster_similar_entities(named_entities)
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
@@ -143,7 +143,7 @@ async def postprocess_named_entities(date, doc):
     top_ten_entity_names = set([entity[0] for entity in top_ten_entities])
     # Write entity_to_sentences to a text file - I want to inspect the sentences individually
     #f = open("entity_to_sentences.txt", "w", encoding="utf-8")
-    entity_to_sentiment, entity_to_sentences = await get_sentiments_of_entities(top_ten_entity_names, doc, f)
+    entity_to_sentiment, entity_to_sentences = await get_sentiments_of_entities(top_ten_entity_names, doc)
     #f.close()
 
     for i in range(len(top_ten_entities)):
@@ -155,7 +155,7 @@ async def postprocess_named_entities(date, doc):
 
     return (date, top_ten_entities)
 
-async def get_sentiments_of_entities(top_ten_entity_names, doc, f):
+async def get_sentiments_of_entities(top_ten_entity_names, doc, f=None):
     entity_to_sentiment  = dict()
     entity_to_sentences = dict()
     entity_to_flattened_sentences = dict()
