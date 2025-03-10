@@ -31,7 +31,6 @@ nltk.download('vader_lexicon')
 
 # Load the ABSA (Aspect Based Sentiment Analysis) model and tokenizer
 model_name = "yangheng/deberta-v3-base-absa-v1.1"
-tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
 classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
 summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
@@ -205,19 +204,24 @@ def split_text(text, chunk_size=3000):
 
 def summarize_comments(entity, flattened_comments):
     #print('# characters in text: ', len(text))
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     if len(flattened_comments) > 3000:
         # will probably exceed the token limit of 1024, so analyze each 3000 character chunk seperately
         chunks = split_text(flattened_comments)
         complete_summary = ""
         for chunk in chunks:
-            summary = summarizer(chunk, max_length=100, min_length=20, do_sample=False)
+            tokenized = tokenizer.encode(chunk, truncation=True, max_length=1024)
+            truncated_chunk = tokenizer.decode(tokenized)
+            summary = summarizer(truncated_chunk, max_length=100, min_length=20, do_sample=False)
             summary_text = summary[0]['summary_text']
             complete_summary += summary_text + "\n --- \n"
         return (entity, complete_summary)
     else:
-        num_tokens = len(tokenizer.encode(flattened_comments))
+        tokenized = tokenizer.encode(flattened_comments, truncation=True, max_length=1024)
+        truncated_flattened_comments = tokenizer.decode(tokenized) 
+        num_tokens = len(tokenized)
         max_length = min(100, num_tokens)
-        summary = summarizer(flattened_comments, max_length=max_length, min_length=5, do_sample=False)
+        summary = summarizer(truncated_flattened_comments, max_length=max_length, min_length=5, do_sample=False)
         summary_text = summary[0]['summary_text']
         #print(summary_text)
         return (entity, summary_text)
