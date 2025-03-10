@@ -24,7 +24,7 @@ export default function RedditPage() {
 
   const renderGenerationTimeEstimatesTable = () => {
     return (
-      <div className="overflow-x-auto mt-7 mb-7 flex items-center justify-center">
+      <div className="overflow-x-auto mt-7 mb-0 flex items-center justify-center">
         <table className="table-auto border-collapse text-sm m-2.5">
           <thead>
             <tr>
@@ -105,13 +105,13 @@ export default function RedditPage() {
     if (!analysis) return null;
     return (
       <div className="mt-4">
-        <h2 className="text-xl font-bold mb-2" style={{textAlign: 'center', fontSize: '23px'}}>Most Mentioned Named Entities</h2>
-        <div style={{margin: '20px', display: 'flex', alignItems: 'center'}}>
-          <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #d9ead3', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Very Positive</div>
-          <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #d0e0e3', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Positive</div>
-          <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #fff2cc', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Neutral</div>
-          <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #f4cccc', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Negative</div>
-         <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #ea9999', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Very Negative</div>
+        <h2 className="text-xl font-medium mb-2" style={{textAlign: 'center', fontSize: '20px'}}>Most Mentioned Named Entities</h2>
+        <div style={{margin: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center'}}>
+          <div className="w-[150px] h-[35px] font-medium" style={{fontSize: '15px', backgroundColor: ' #d9ead3', textAlign: 'center', padding: '5px', borderTopLeftRadius: '5px', borderBottomLeftRadius: '5px' }}>Very Positive</div>
+          <div className="w-[150px] h-[35px] font-medium" style={{fontSize: '15px', backgroundColor: ' #d0e0e3', textAlign: 'center', padding: '5px'}}>Positive</div>
+          <div className="w-[150px] h-[35px] font-medium" style={{fontSize: '15px', backgroundColor: ' #fff2cc', textAlign: 'center', padding: '5px'}}>Neutral</div>
+          <div className="w-[150px] h-[35px] font-medium" style={{fontSize: '15px', backgroundColor: ' #f4cccc', textAlign: 'center', padding: '5px'}}>Negative</div>
+         <div className="w-[150px] h-[35px] font-medium" style={{fontSize: '15px', backgroundColor: ' #ea9999', textAlign: 'center', padding: '5px', borderTopRightRadius: '5px', borderBottomRightRadius: '5px' }}>Very Negative</div>
         </div>
         <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5 gap-1">
         {Object.entries(analysis.top_named_entities).map(([date, entities]) => (
@@ -127,14 +127,14 @@ export default function RedditPage() {
                 return (
                 <li key={index} style={{margin:'20px'}}>
                   <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
-                    backgroundColor: backgroundColor, paddingLeft: '10px', paddingRight: '10px', paddingTop: '4px', paddingBottom: '4px'}}>
-                    <span style={{ fontWeight: 'bold', fontSize: '15px'}}>{entity[0]}</span>
+                    backgroundColor: backgroundColor, paddingLeft: '10px', paddingRight: '10px', paddingTop: '4px', paddingBottom: '4px', borderRadius: '5px'}}>
+                    <span style={{ fontWeight: 600, fontSize: '15px'}}>{entity[0]}</span>
                     <span style={{ margin: "0 8px" }}>|</span>
-                    <span style={{fontSize: '15px'}}><strong>Sentiment Score: </strong>{entity[2]}</span>
+                    <span style={{fontWeight: 600, fontSize: '15px'}}>Sentiment Score: {entity[2]}</span>
                     <span style={{ margin: "0 8px"}}>|</span>
-                    <span style={{fontSize: '15px'}}><strong># of Mentions: </strong>{entity[1]}</span>
+                    <span style={{fontWeight: 600, fontSize: '15px'}}># of Mentions: {entity[1]}</span>
                   </div>
-                  <div style = {{fontWeight: 'bold', fontSize: '13.5px', marginTop: '10px', marginBottom: '5px'}}>Summarized Sentiment: </div>
+                  <div style = {{fontWeight: 600, fontSize: '13.5px', marginTop: '10px', marginBottom: '5px'}}>Summarized Sentiment: </div>
                   <div style = {{fontSize: '13.5px', color: '#333'}}>{entity[3]}</div>
                 </li>
               );
@@ -226,6 +226,7 @@ export default function RedditPage() {
 
         {!isLoading && !error && analysis && (
           <div className="mt-4">
+            <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
             {renderNamedEntities()}
             {renderNGrams()}
           </div>
