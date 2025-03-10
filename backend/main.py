@@ -63,8 +63,12 @@ class SubredditNLPAnalysis(BaseModel):
     # Tuple[str, int] = (n-gram, n-gram # occurrences)
     top_n_grams: Dict[str, List[Tuple[str, int]]]
     # key = date, value = list of top 10 named entities for slice 
-    # Tuple[str, int, float] = (named entity, named entity # occurrences, named entity sentiment score)
-    top_named_entities: Dict[str, List[Tuple[str, int, float]]]
+    # Tuple[str, int, float, List[str]] = 
+    #   1. named entity
+    #   2. named entity # occurrences
+    #   3. named entity sentiment score
+    #   4. summary of comments regarding named entity 
+    top_named_entities: Dict[str, List[Tuple[str, int, float, str]]]
 
 async def fetch_post_data(post):
     # get the post's comments 
