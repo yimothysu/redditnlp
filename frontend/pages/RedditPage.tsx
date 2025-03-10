@@ -64,7 +64,7 @@ export default function RedditPage() {
     if (!analysis) return null;
     return (
       <div className="mt-4">
-        <h2 className="text-xl font-bold mb-2" style={{textAlign: 'center', fontSize: '23px'}}>Top Named Entities</h2>
+        <h2 className="text-xl font-bold mb-2" style={{textAlign: 'center', fontSize: '23px'}}>Most Mentioned Named Entities</h2>
         <div style={{margin: '20px', display: 'flex', alignItems: 'center'}}>
           <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #d9ead3', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Very Positive</div>
           <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #d0e0e3', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Positive</div>
@@ -72,10 +72,10 @@ export default function RedditPage() {
           <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #f4cccc', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Negative</div>
          <div className="w-[210px] h-[40px]" style={{backgroundColor: ' #ea9999', fontWeight: 'bold', textAlign: 'center', padding: '7px'}}>Very Negative</div>
         </div>
-        <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5 gap-3">
+        <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5 gap-1">
         {Object.entries(analysis.top_named_entities).map(([date, entities]) => (
-          <div key={date} className="mb-3 border bg-white border-gray-200 p-4 rounded-l shadow-md">
-            <h3 className="text-lg font-semibold" style={{textAlign: 'center'}}>{date}</h3>
+          <div key={date} className="mb-6 mr-4 ml-4 border bg-white border-gray-300 rounded-l shadow-xl">
+            <h3 className="text-lg font-semibold" style={{fontSize: '20px', textAlign: 'center', backgroundColor: '#efefef', padding: '4px'}}>{date}</h3>
             <ul className="list-decimal pl-5" >
               {entities.map((entity, index) => {
                 const backgroundColor = entity[2] >= 0.5 && entity[2] <= 1 ? '#d9ead3':
@@ -87,9 +87,11 @@ export default function RedditPage() {
                 <li key={index} style={{margin:'20px'}}>
                   <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
                     backgroundColor: backgroundColor, paddingLeft: '10px', paddingRight: '10px', paddingTop: '4px', paddingBottom: '4px'}}>
-                    <span style={{ fontWeight: 'bold', fontSize: '18px'}}>{entity[0]}</span>
+                    <span style={{ fontWeight: 'bold', fontSize: '15px'}}>{entity[0]}</span>
+                    <span style={{ margin: "0 8px" }}>|</span>
                     <span style={{fontSize: '15px'}}><strong>Sentiment Score: </strong>{entity[2]}</span>
-                    <span style={{fontSize: '15px'}}><strong>Count: </strong>{entity[1]}</span>
+                    <span style={{ margin: "0 8px"}}>|</span>
+                    <span style={{fontSize: '15px'}}><strong># of Mentions: </strong>{entity[1]}</span>
                   </div>
                   <div style = {{fontWeight: 'bold', fontSize: '13.5px', marginTop: '10px', marginBottom: '5px'}}>Summarized Sentiment: </div>
                   <div style = {{fontSize: '13.5px', color: '#333'}}>{entity[3]}</div>
