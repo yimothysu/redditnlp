@@ -142,7 +142,7 @@ async def sample_subreddit(
     posts = [post async for post in subreddit_instance.top(limit=post_limit, time_filter=time_filter)]
     # Fetch post data concurrently
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
-    
+    posts_list = [post for post in posts_list if post is not None]
     # Save post to file (uncomment to use)
     # await print_to_json(posts_list, "posts.txt")
     
