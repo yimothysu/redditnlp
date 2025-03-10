@@ -32,6 +32,7 @@ nltk.download('vader_lexicon')
 # Load the ABSA (Aspect Based Sentiment Analysis) model and tokenizer
 model_name = "yangheng/deberta-v3-base-absa-v1.1"
 model = AutoModelForSequenceClassification.from_pretrained(model_name)
+tokenizer = AutoTokenizer.from_pretrained(model_name)
 classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
 summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
 
