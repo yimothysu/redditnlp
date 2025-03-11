@@ -9,6 +9,8 @@ export interface NGram {
 export interface NamedEntity {
   0: string; // entity text
   1: number; // count
+  2: number; // sentiment score from [-1, 1]
+  3: string; // summarized sentiment
 }
 
 export interface SubredditNLPAnalysis {
