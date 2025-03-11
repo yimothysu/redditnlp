@@ -1,5 +1,3 @@
-import React from "react";
-
 export default function Template(props: any) {
   return (
     <div className="bg-gray-100 min-h-screen">
