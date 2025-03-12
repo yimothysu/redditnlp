@@ -89,7 +89,7 @@ def cluster_similar_entities(named_entities):
         entity_to_cluster[most_common_entity] = named_entities[most_common_entity]
     return entity_to_cluster
 
-async def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's FastAPI
+async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called in main.py's FastAPI
     texts = []
     dates = []
     for date, posts in sorted_slice_to_posts.items():
@@ -109,11 +109,22 @@ async def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's F
     # Perform NER analysis + sentiment analysis to EACH named entity 
     nlp = spacy.load("en_core_web_sm", disable=["parser", "tagger"])
     nlp.add_pipe('sentencizer')
+
     top_named_entities = dict()
     for date, doc in zip(dates, nlp.pipe(texts, batch_size=50)):
         top_named_entities[date] = doc
 
-    tasks = [asyncio.create_task(postprocess_named_entities(date, doc)) for date, doc in top_named_entities.items()]
+    progress_list = [0] * len(top_named_entities.items())
+    def set_item_progress(idx, progress):
+        nonlocal progress_list
+        progress_list[idx] = progress
+        set_progress(sum(progress_list) / len(top_named_entities.items()))
+    
+    tasks = [
+        asyncio.create_task(postprocess_named_entities(date, doc, lambda progress: set_item_progress(idx, progress)))
+        for idx, (date, doc) in enumerate(top_named_entities.items())
+    ]
+
     results = await asyncio.gather(*tasks)
 
     for date, entities in results:
@@ -124,7 +135,8 @@ async def get_subreddit_analysis(sorted_slice_to_posts): # called in main.py's F
     
     return top_n_grams, top_named_entities
 
-async def postprocess_named_entities(date, doc):
+# async def postprocess_named_entities(date, doc, idx, set_progress):
+async def postprocess_named_entities(date, doc, set_progress):
     named_entities = Counter([ent.text for ent in doc.ents])
     banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomorrow', 
                        'approx', 'half', 'idk', 'congrats', 'three', 'creepy', 'night',
@@ -151,11 +163,13 @@ async def postprocess_named_entities(date, doc):
         entity_count = top_ten_entities[i][1]
         entity_sentiment = round(entity_to_sentiment[entity_name], 2)
         entity_sentences = entity_to_sentences[entity_name]
-        top_ten_entities[i] = (entity_name, entity_count, entity_sentiment, entity_sentences) 
+        top_ten_entities[i] = (entity_name, entity_count, entity_sentiment, entity_sentences)
+
+    set_progress(1.0)
 
     return (date, top_ten_entities)
 
-async def get_sentiments_of_entities(top_ten_entity_names, doc, f=None):
+async def get_sentiments_of_entities(top_ten_entity_names, doc):
     entity_to_sentiment  = dict()
     entity_to_sentences = dict()
     entity_to_flattened_sentences = dict()
@@ -173,7 +187,7 @@ async def get_sentiments_of_entities(top_ten_entity_names, doc, f=None):
             count += 1
         #f.write(flattened_sentences + "\n")
         entity_to_flattened_sentences[entity] = flattened_sentences
-
+    
     tasks = [asyncio.to_thread(get_sentiment_of_entity, entity, entity_to_flattened_sentences[entity]) for entity in entity_to_sentences]
     sentiment_results = await asyncio.gather(*tasks)
     for entity, sentiment_score in sentiment_results:

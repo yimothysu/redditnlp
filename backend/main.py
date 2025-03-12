@@ -1,11 +1,11 @@
 from http.client import BAD_REQUEST
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import Dict, List, Tuple
+from typing import List
 
-import datetime
-import asyncpraw 
+from datetime import datetime, timezone
+import asyncpraw
 import os 
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
@@ -20,6 +20,25 @@ import json
 from plot_post_distribution import plot_post_distribution
 from subreddit_nlp_analysis import get_subreddit_analysis
 
+from analysis_cache import (
+    SubredditQuery,
+    SubredditAnalysis,
+    SubredditAnalysisResponse,
+    SubredditAnalysisCacheEntry,
+    get_cache_entry
+)
+
+
+# Constants
+
+SORT_METHODS = ["top", "controversial"]
+TIME_FILTERS = ["hour", "day", "week", "month", "year", "all"]
+
+TIME_FILTER_TO_POST_LIMIT = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
+
+
+# Initialization
+
 load_dotenv()
 app = FastAPI(title="RedditNLP API")
 
@@ -33,7 +52,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-time_filter_to_post_limit = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
+
+# Classes
 
 class RedditPost(BaseModel):
     title: str
@@ -56,19 +76,10 @@ class Comment(BaseModel):
 # class NamedEntity(BaseModel):
 #     name: str 
 #     count: int 
-#     sentiment_score: float 
+#     sentiment_score: float
 
-class SubredditNLPAnalysis(BaseModel):
-    #  key = date, value = list of top n grams for slice 
-    # Tuple[str, int] = (n-gram, n-gram # occurrences)
-    top_n_grams: Dict[str, List[Tuple[str, int]]]
-    # key = date, value = list of top 10 named entities for slice 
-    # Tuple[str, int, float, List[str]] = 
-    #   1. named entity
-    #   2. named entity # occurrences
-    #   3. named entity sentiment score
-    #   4. summary of comments regarding named entity 
-    top_named_entities: Dict[str, List[Tuple[str, int, float, str]]]
+
+# Methods
 
 async def fetch_post_data(post):
     # get the post's comments 
@@ -107,57 +118,108 @@ async def print_to_json(posts_list, filename):
     except Exception as e:
         print(f"Error saving posts to file: {e}")
 
-@app.get("/sample/{subreddit}", response_model=SubredditNLPAnalysis)
-async def sample_subreddit(
-    subreddit: str, time_filter: str = "week", sort_by: str = "top"
-):
-    reddit = asyncpraw.Reddit(
-    client_id=os.environ["REDDIT_CLIENT_ID"],
-    client_secret=os.environ["REDDIT_CLIENT_SECRET"],
-    user_agent="reddit sampler",
-    )   
+async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
+    def set_progress(progress: float):
+        cache_entry.analysis_progress = progress
 
     # !!! WARNING !!!
     # sometimes PRAW will be down, or the # of posts you're trying to get at once 
     # is too much. PRAW will often return a 500 HTTP response in this case.
-    # Try to: reduce post_limit, or wait a couple minutes 
+    # Try to: reduce post_limit, or wait a couple minutes
 
-    post_limit = time_filter_to_post_limit[time_filter]
-    SORT_METHODS = ["top", "controversial"]
-    TIME_FILTERS = ["hour", "day", "week", "month", "year", "all"]
+    subreddit_query = cache_entry.query
+    
+    reddit = asyncpraw.Reddit(
+        client_id=os.environ["REDDIT_CLIENT_ID"],
+        client_secret=os.environ["REDDIT_CLIENT_SECRET"],
+        user_agent="reddit sampler",
+    )
 
-    if time_filter not in TIME_FILTERS:
+    post_limit = TIME_FILTER_TO_POST_LIMIT[subreddit_query.time_filter]
+
+    cache_entry.analysis_status = "Fetching Post Data"
+
+    subreddit_instance = await reddit.subreddit(subreddit_query.name)
+    posts = [post async for post in subreddit_instance.top(
+        limit=post_limit,
+        time_filter=subreddit_query.time_filter
+    )]
+
+    # Fetch post data concurrently
+    posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
+    posts_list = [post for post in posts_list if post is not None]
+
+    # Save post to file (uncomment to use)
+    # await print_to_json(posts_list, "posts.txt")
+
+    sorted_slice_to_posts = slice_posts_list(posts_list, subreddit_query.time_filter)
+
+    print('Finished getting sorted_slice_to_posts')
+
+    cache_entry.analysis_status = "Analyzing Post Data"
+
+    #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
+    top_n_grams, top_named_entities = await get_subreddit_analysis(sorted_slice_to_posts, set_progress)
+    print(top_named_entities)
+
+    analysis = SubredditAnalysis(
+        top_n_grams = top_n_grams,
+        top_named_entities = top_named_entities
+    )
+    print(analysis)
+
+    cache_entry.analysis = analysis
+    cache_entry.updating = False
+
+
+# API
+
+# TODO: Verify that this works asynchronously
+@app.post("/analysis/", response_model=SubredditAnalysisResponse)
+async def analyze_subreddit(
+    subreddit_query: SubredditQuery,
+    background_tasks: BackgroundTasks
+):
+    # Input validation
+    if subreddit_query.time_filter not in TIME_FILTERS:
         raise HTTPException(
             status_code=BAD_REQUEST,
             detail=f"Invalid time filter. Must be one of {TIME_FILTERS}.",
         )
-
-    if sort_by not in SORT_METHODS:
+    if subreddit_query.sort_by not in SORT_METHODS:
         raise HTTPException(
             status_code=BAD_REQUEST,
             detail=f"Invalid sort method. Must be one of {SORT_METHODS}.",
         )
 
-    subreddit_instance = await reddit.subreddit(subreddit)
-    posts = [post async for post in subreddit_instance.top(limit=post_limit, time_filter=time_filter)]
-    # Fetch post data concurrently
-    posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
-    posts_list = [post for post in posts_list if post is not None]
-    # Save post to file (uncomment to use)
-    # await print_to_json(posts_list, "posts.txt")
+    # Check cache
+    cache_entry = get_cache_entry(subreddit_query)
+    if cache_entry.updating:
+        return SubredditAnalysisResponse(
+            analysis_status=cache_entry.analysis_status,
+            analysis_progress=cache_entry.analysis_progress,
+            analysis=None
+        )
+    if cache_entry.analysis is not None and not cache_entry.is_expired():
+        return SubredditAnalysisResponse(
+            analysis_status=None,
+            analysis_progress=None,
+            analysis=cache_entry.analysis
+        )
     
-    sorted_slice_to_posts = slice_posts_list(posts_list, time_filter)
-    print('finished getting sorted_slice_to_posts')
-    #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
-    top_n_grams, top_named_entities = await get_subreddit_analysis(sorted_slice_to_posts)
-    print(top_named_entities)
-    analysis = SubredditNLPAnalysis(
-        top_n_grams = top_n_grams,
-        top_named_entities = top_named_entities
-    )
-    print(analysis)
-    return analysis
+    # Commence analysis
+    cache_entry.updating = True
+    cache_entry.last_update_timestamp = datetime.now(timezone.utc)
+    cache_entry.analysis_status = "Commencing Analysis"
+    cache_entry.analysis_progress = None
 
+    background_tasks.add_task(perform_subreddit_analysis, cache_entry)
+
+    return SubredditAnalysisResponse(
+        analysis_status=cache_entry.analysis_status,
+        analysis_progress=cache_entry.analysis_progress,
+        analysis=None
+    )
 
 
 # posts_list is a list of RedditPost objects
@@ -173,7 +235,7 @@ def slice_posts_list(posts_list, time_filter):
         if time_filter == 'all': date_format = '%y' # slicing all time by years 
         elif time_filter == 'year': date_format = '%m-%y' # slicing a year by months 
         else: date_format = '%m-%d' # slicing a month and week by days 
-        post_date = datetime.datetime.fromtimestamp(post.created_utc).strftime(date_format)
+        post_date = datetime.fromtimestamp(post.created_utc).strftime(date_format)
 
         if post_date not in slice_to_posts:
             slice_to_posts[post_date] = []
@@ -181,7 +243,7 @@ def slice_posts_list(posts_list, time_filter):
 
     # sort slice_to_posts by date
     dates = list(slice_to_posts.keys())
-    sorted_months = sorted(dates, key=lambda x: datetime.datetime.strptime(x, date_format))
+    sorted_months = sorted(dates, key=lambda x: datetime.strptime(x, date_format))
     sorted_slice_to_posts = {i: slice_to_posts[i] for i in sorted_months}
     return sorted_slice_to_posts
 
