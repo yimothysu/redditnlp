@@ -25,7 +25,8 @@ from analysis_cache import (
     SubredditAnalysis,
     SubredditAnalysisResponse,
     SubredditAnalysisCacheEntry,
-    get_cache_entry
+    get_cache_entry,
+    get_cache_lock
 )
 
 
@@ -174,7 +175,6 @@ async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
 
 # API
 
-# TODO: Verify that this works asynchronously
 @app.post("/analysis/", response_model=SubredditAnalysisResponse)
 async def analyze_subreddit(
     subreddit_query: SubredditQuery,
@@ -193,25 +193,27 @@ async def analyze_subreddit(
         )
 
     # Check cache
-    cache_entry = get_cache_entry(subreddit_query)
-    if cache_entry.updating:
-        return SubredditAnalysisResponse(
-            analysis_status=cache_entry.analysis_status,
-            analysis_progress=cache_entry.analysis_progress,
-            analysis=None
-        )
-    if cache_entry.analysis is not None and not cache_entry.is_expired():
-        return SubredditAnalysisResponse(
-            analysis_status=None,
-            analysis_progress=None,
-            analysis=cache_entry.analysis
-        )
-    
-    # Commence analysis
-    cache_entry.updating = True
-    cache_entry.last_update_timestamp = datetime.now(timezone.utc)
-    cache_entry.analysis_status = "Commencing Analysis"
-    cache_entry.analysis_progress = None
+    lock = await get_cache_lock(subreddit_query)
+    async with lock:
+        cache_entry = get_cache_entry(subreddit_query)
+        if cache_entry.updating:
+            return SubredditAnalysisResponse(
+                analysis_status=cache_entry.analysis_status,
+                analysis_progress=cache_entry.analysis_progress,
+                analysis=None
+            )
+        if cache_entry.analysis is not None and not cache_entry.is_expired():
+            return SubredditAnalysisResponse(
+                analysis_status=None,
+                analysis_progress=None,
+                analysis=cache_entry.analysis
+            )
+        
+        # Commence analysis
+        cache_entry.updating = True
+        cache_entry.last_update_timestamp = datetime.now(timezone.utc)
+        cache_entry.analysis_status = "Commencing Analysis"
+        cache_entry.analysis_progress = None
 
     background_tasks.add_task(perform_subreddit_analysis, cache_entry)
 

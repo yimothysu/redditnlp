@@ -1,6 +1,7 @@
 from typing import Optional, Dict, List, Tuple
 from pydantic import BaseModel
 from datetime import datetime, timezone, timedelta
+from asyncio import Lock
 
 
 # Constants
@@ -11,6 +12,8 @@ ONE_WEEK = timedelta(days=7)
 ONE_MONTH = timedelta(days=30)
 
 
+# Classes
+
 class SubredditQuery(BaseModel):
     name: str
     time_filter: str
@@ -18,7 +21,6 @@ class SubredditQuery(BaseModel):
 
     def to_composite_key(self) -> str:
         return f"{self.name}#{self.time_filter}#{self.sort_by}"
-
 
 class SubredditAnalysis(BaseModel):
     #  key = date, value = list of top n grams for slice 
@@ -65,20 +67,30 @@ class SubredditAnalysisCacheEntry():
             return delta >= ONE_DAY
         return delta >= ONE_HOUR
 
+
+# Cache setup
+
 """
 Cache for analyses with composite key of the following form.
 
 Composite Key: "[subreddit_name]#[sort_method]#[time_filter]"
     Example: "ufl#top#week"
 """
-subreddit_analysis_cache: Dict[str, SubredditAnalysisCacheEntry] = {}
+cache: Dict[str, SubredditAnalysisCacheEntry] = {}
+cache_locks: Dict[str, Lock] = {}
 
-def get_cache_entry(subreddit_query: SubredditQuery) -> SubredditAnalysisCacheEntry:
-    composite_key = subreddit_query.to_composite_key()
-    cache_entry = subreddit_analysis_cache.get(composite_key)
+async def get_cache_lock(query: SubredditQuery) -> Lock:
+    key = query.to_composite_key()
+    if key not in cache_locks:
+        cache_locks[key] = Lock()
+    return cache_locks[key]
+
+def get_cache_entry(query: SubredditQuery) -> SubredditAnalysisCacheEntry:
+    key = query.to_composite_key()
+    cache_entry = cache.get(key)
     if cache_entry:
         return cache_entry
-    cache_entry = SubredditAnalysisCacheEntry(subreddit_query)
-    subreddit_analysis_cache[composite_key] = cache_entry
+    cache_entry = SubredditAnalysisCacheEntry(query)
+    cache[key] = cache_entry
     return cache_entry
 
