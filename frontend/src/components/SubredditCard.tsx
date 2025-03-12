@@ -1,4 +1,3 @@
-import { hashColor } from "../lib/hashColor";
 import { SubredditAvatar } from "./SubredditAvatar";
 
 interface SubredditCardProps {
@@ -6,8 +5,6 @@ interface SubredditCardProps {
 }
 
 export function SubredditCard({ subredditName }: SubredditCardProps) {
-  const color = hashColor(subredditName);
-
   return (
     <a
       href={`/subreddit/${subredditName}`}
