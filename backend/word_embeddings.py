@@ -30,5 +30,3 @@ def get_2d_embeddings(word_list):
             word_to_coordinates[word] = (embedding[0], embedding[1])
         return word_to_coordinates
     return None
-
-print(get_2d_embeddings(["hello", "how", "are", "you"]))
