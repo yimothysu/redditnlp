@@ -17,10 +17,7 @@ def generate_word_cloud(named_entities):
             elif entity[0] in fullDict:
                 fullDict[entity[0]] += entity[1]
                     
-    wc.generate_from_frequencies(fullDict)
-    print("Word cloud generated")
-    
-    return wc.to_array()
+    return fullDict
 
 # Takes in dictionary of named entities
 def generate_by_date(named_entities):

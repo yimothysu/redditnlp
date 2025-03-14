@@ -21,6 +21,7 @@ from plot_post_distribution import plot_post_distribution
 from subreddit_nlp_analysis import get_subreddit_analysis
 
 from word_embeddings import get_2d_embeddings
+from word_cloud import generate_word_cloud
 
 from analysis_cache import (
     SubredditQuery,
@@ -168,7 +169,8 @@ async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
     analysis = SubredditAnalysis(
         top_n_grams = top_n_grams,
         top_named_entities = top_named_entities,
-        top_named_entities_embeddings = get_2d_embeddings(top_named_entities[:5])
+        top_named_entities_embeddings = get_2d_embeddings(top_named_entities[:5]),
+        top_named_entities_word_cloud = generate_word_cloud(top_named_entities)
     )
     print(analysis)
 
