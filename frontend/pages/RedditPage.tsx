@@ -134,6 +134,14 @@ export default function RedditPage() {
     };
 
     const renderWordEmbeddings = () => {
+        console.log(analysis?.top_named_entities_embeddings);
+    
+        let embeddingsDisplay = undefined;
+        if (analysis){
+            let embeddings = analysis.top_named_entities_embeddings;
+            embeddingsDisplay = embeddings && Object.entries(embeddings).map(([word, [x, y]]) => ({ word, x, y,}));
+        }
+    
         return (
             <div className="mt-10 p-6 bg-white shadow rounded max-w-3xl mx-auto">
                 <h1 className="font-semibold text-l p-1">Word Embeddings</h1>
@@ -144,14 +152,11 @@ export default function RedditPage() {
                     in the subreddit (reduced via PCA).
                 </p>
                 <div className="bg-gray-100 rounded">
-                    <WordEmbeddingsGraph
-                        embeddings={[
-                            { word: "hello", x: 1.2, y: 3.4 },
-                            { word: "how", x: 2.5, y: 1.8 },
-                            { word: "are", x: -1.1, y: -2.4 },
-                            { word: "you", x: 0.7, y: -1.2 },
-                        ]}
-                    />
+                    {embeddingsDisplay && embeddingsDisplay.length > 0 ? (
+                        <WordEmbeddingsGraph embeddings={embeddingsDisplay} />
+                    ) : (
+                        <p className="text-gray-400 p-4">No Embeddings</p>
+                    )}
                 </div>
             </div>
         );

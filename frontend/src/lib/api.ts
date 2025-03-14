@@ -22,6 +22,7 @@ export interface SubredditQuery {
 export interface SubredditAnalysis {
     top_n_grams: Record<string, NGram[]>;
     top_named_entities: Record<string, NamedEntity[]>;
+    top_named_entities_embeddings: Record<string, [number, number]>; 
 }
 
 export interface SubredditAnalysisResponse {
