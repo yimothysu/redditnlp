@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
     fetchSubredditAnalysis,
     SubredditAnalysis,
@@ -35,6 +36,12 @@ export default function RedditPage() {
     const [analysis, setAnalysis] = useState<SubredditAnalysis | null>(null);
     const [timeFilter, setTimeFilter] = useState("week");
     const [sortBy, setSortBy] = useState("top");
+    const [namedEntitiesExpandAllIsChecked, setNamedEntitiesExpandAllIsChecked] = useState(false)
+    const [currNamedEntityCarouselIndex, setCurrNamedEntityCarouselIndex] = useState(0);
+    const handleNamedEntitiesToggleChange = () => {
+        setNamedEntitiesExpandAllIsChecked(!namedEntitiesExpandAllIsChecked)
+    }
+
     const isMounted = useRef(true);
 
     useEffect(() => {
@@ -191,206 +198,125 @@ export default function RedditPage() {
         );
     };
 
+    const renderNamedEntitiesExpandAllToggle = () => {
+        return (
+            <label className='autoSaverSwitch relative inline-flex cursor-pointer select-none items-center'>
+                    <input type='checkbox' name='autoSaver' className='sr-only' checked={namedEntitiesExpandAllIsChecked} onChange={handleNamedEntitiesToggleChange}/>
+                    <span className={`slider mr-3 flex h-[26px] w-[50px] items-center rounded-full p-1 duration-200 ${namedEntitiesExpandAllIsChecked ? 'bg-[#5a33ff]' : 'bg-[#CCCCCE]'}`}>
+                        <span className={`dot h-[18px] w-[18px] rounded-full bg-white duration-200 ${namedEntitiesExpandAllIsChecked ? 'translate-x-6' : ''}`}></span>
+                    </span>
+                    <span className='label flex items-center text-sm font-medium text-black'> Expand All </span>
+            </label>
+        );
+    };
+
     const renderNamedEntities = () => {
         if (!analysis) return null;
-        return (
-            <div className="mt-4">
-                <h2
-                    className="text-xl font-medium mb-2"
-                    style={{ textAlign: "center", fontSize: "20px" }}
-                >
-                    Most Mentioned Named Entities
-                </h2>
-                <div
-                    style={{
-                        margin: "25px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <div
-                        className="w-[150px] h-[35px] font-medium"
-                        style={{
-                            fontSize: "15px",
-                            backgroundColor: " #d9ead3",
-                            textAlign: "center",
-                            padding: "5px",
-                            borderTopLeftRadius: "5px",
-                            borderBottomLeftRadius: "5px",
-                        }}
-                    >
-                        Very Positive
-                    </div>
-                    <div
-                        className="w-[150px] h-[35px] font-medium"
-                        style={{
-                            fontSize: "15px",
-                            backgroundColor: " #d0e0e3",
-                            textAlign: "center",
-                            padding: "5px",
-                        }}
-                    >
-                        Positive
-                    </div>
-                    <div
-                        className="w-[150px] h-[35px] font-medium"
-                        style={{
-                            fontSize: "15px",
-                            backgroundColor: " #fff2cc",
-                            textAlign: "center",
-                            padding: "5px",
-                        }}
-                    >
-                        Neutral
-                    </div>
-                    <div
-                        className="w-[150px] h-[35px] font-medium"
-                        style={{
-                            fontSize: "15px",
-                            backgroundColor: " #f4cccc",
-                            textAlign: "center",
-                            padding: "5px",
-                        }}
-                    >
-                        Negative
-                    </div>
-                    <div
-                        className="w-[150px] h-[35px] font-medium"
-                        style={{
-                            fontSize: "15px",
-                            backgroundColor: " #ea9999",
-                            textAlign: "center",
-                            padding: "5px",
-                            borderTopRightRadius: "5px",
-                            borderBottomRightRadius: "5px",
-                        }}
-                    >
-                        Very Negative
-                    </div>
+
+        const ColorCodeBox = (props) => {
+            return (
+                <div className="w-[150px] h-[35px] font-medium"
+                     style={{fontSize: "15px", backgroundColor: props.backgroundColor, textAlign: "center",
+                             padding: "5px", borderTopLeftRadius: props.borderTopLeftRadius, 
+                             borderBottomLeftRadius: props.borderBottomLeftRadius, borderTopRightRadius: props.borderTopRightRadius,
+                             borderBottomRightRadius: props.borderBottomRightRadius}}>
+                    {props.label}
                 </div>
-                <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-5 gap-1">
-                    {Object.entries(analysis.top_named_entities).map(
-                        ([date, entities]) => (
-                            <div
-                                key={date}
-                                className="mb-6 mr-4 ml-4 border bg-white border-gray-300 rounded-l shadow-xl"
-                            >
-                                <h3
-                                    className="text-lg font-semibold"
-                                    style={{
-                                        fontSize: "20px",
-                                        textAlign: "center",
-                                        backgroundColor: "#efefef",
-                                        padding: "4px",
-                                    }}
-                                >
-                                    {date}
-                                </h3>
-                                <ul className="list-decimal pl-5">
-                                    {entities.map((entity, index) => {
-                                        const backgroundColor =
-                                            entity[2] >= 0.5 && entity[2] <= 1
-                                                ? "#d9ead3"
-                                                : entity[2] >= 0.1 &&
-                                                  entity[2] < 0.5
-                                                ? "#d0e0e3"
-                                                : entity[2] >= -0.1 &&
-                                                  entity[2] < 0.1
-                                                ? "#fff2cc"
-                                                : entity[2] >= -0.5 &&
-                                                  entity[2] < -0.1
-                                                ? "#f4cccc"
-                                                : entity[2] >= -1 &&
-                                                  entity[2] < -0.5
-                                                ? "#ea9999"
+            );
+        };
+
+        const TopNamedEntitiesForDate = (props) => {
+            return (
+            <div key={props.date} className="flex-1 mb-6 mr-2 ml-2 border bg-white border-gray-300 rounded-l shadow-xl">
+                <h3 className="text-lg font-semibold" style={{fontSize: "20px", textAlign: "center", backgroundColor: "#efefef", padding: "4px",}}>
+                    {props.date}
+                </h3>
+                <ul className="list-decimal pl-5">
+                    {props.entities.map((entity, index) => {
+                        const backgroundColor = entity[2] >= 0.5 && entity[2] <= 1 ? "#d9ead3"
+                                                : entity[2] >= 0.1 && entity[2] < 0.5 ? "#d0e0e3"
+                                                : entity[2] >= -0.1 && entity[2] < 0.1 ? "#fff2cc"
+                                                : entity[2] >= -0.5 && entity[2] < -0.1 ? "#f4cccc"
+                                                : entity[2] >= -1 && entity[2] < -0.5 ? "#ea9999"
                                                 : "bg-gray-100";
-                                        return (
-                                            <li
-                                                key={index}
-                                                style={{ margin: "20px" }}
-                                            >
-                                                <div
-                                                    style={{
-                                                        display: "flex",
-                                                        justifyContent:
-                                                            "space-between",
-                                                        alignItems: "center",
-                                                        backgroundColor:
-                                                            backgroundColor,
-                                                        paddingLeft: "10px",
-                                                        paddingRight: "10px",
-                                                        paddingTop: "4px",
-                                                        paddingBottom: "4px",
-                                                        borderRadius: "5px",
-                                                    }}
-                                                >
-                                                    <span
-                                                        style={{
-                                                            fontWeight: 600,
-                                                            fontSize: "15px",
-                                                        }}
-                                                    >
-                                                        {entity[0]}
-                                                    </span>
-                                                    <span
-                                                        style={{
-                                                            margin: "0 8px",
-                                                        }}
-                                                    >
-                                                        |
-                                                    </span>
-                                                    <span
-                                                        style={{
-                                                            fontWeight: 600,
-                                                            fontSize: "15px",
-                                                        }}
-                                                    >
-                                                        Sentiment Score:{" "}
-                                                        {entity[2]}
-                                                    </span>
-                                                    <span
-                                                        style={{
-                                                            margin: "0 8px",
-                                                        }}
-                                                    >
-                                                        |
-                                                    </span>
-                                                    <span
-                                                        style={{
-                                                            fontWeight: 600,
-                                                            fontSize: "15px",
-                                                        }}
-                                                    >
-                                                        # of Mentions:{" "}
-                                                        {entity[1]}
-                                                    </span>
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        fontWeight: 600,
-                                                        fontSize: "13.5px",
-                                                        marginTop: "10px",
-                                                        marginBottom: "5px",
-                                                    }}
-                                                >
-                                                    Summarized Sentiment:{" "}
-                                                </div>
-                                                <div
-                                                    style={{
-                                                        fontSize: "13.5px",
-                                                        color: "#333",
-                                                    }}
-                                                >
-                                                    {entity[3]}
-                                                </div>
-                                            </li>
-                                        );
-                                    })}
-                                </ul>
+                        return (
+                            <li key={index} style={{ margin: "20px" }}>
+                                <div style={{display: "flex", justifyContent:"space-between", alignItems: "center",
+                                        backgroundColor: backgroundColor, paddingLeft: "10px", paddingRight: "10px",
+                                        paddingTop: "4px", paddingBottom: "4px", borderRadius: "5px",}}>
+                                    <span style={{fontWeight: 600, fontSize: "15px",}}>{entity[0]}</span>
+                                    <span style={{margin: "0 8px",}}></span>
+                                    <span style={{fontWeight: 600, fontSize: "15px",}}>Sentiment Score:{" "}{entity[2]}</span>
+                                    <span style={{margin: "0 8px",}}></span>
+                                    <span style={{fontWeight: 600, fontSize: "15px",}}># of Mentions:{" "}{entity[1]}</span>
+                                </div>
+                                <div style={{fontWeight: 600, fontSize: "13.5px", marginTop: "10px", marginBottom: "5px",}}>
+                                    Summarized Sentiment:{" "}
+                                </div>
+                                <div style={{fontSize: "13.5px", color: "#333",}}>{entity[3]}</div>
+                            </li>);})}
+                </ul>
+            </div>
+            );
+        };
+
+        const incrementCurrNamedEntityCarouselIndex = () => {
+            setCurrNamedEntityCarouselIndex(currNamedEntityCarouselIndex + 1)
+        };
+
+        const decrementCurrNamedEntityCarouselIndex = () => {
+            setCurrNamedEntityCarouselIndex(currNamedEntityCarouselIndex - 1)
+        };
+
+        const renderLeftCarouselButton = () => {
+            return (
+                <div style={{ position: "absolute", left: "0" }}>{currNamedEntityCarouselIndex != 0 && 
+                    <button onClick={decrementCurrNamedEntityCarouselIndex} className="p-1 rounded-full text-white mr-30 bg-black transition hover:bg-gray-600">
+                        <ChevronLeft size={32}/>
+                    </button>}
+                </div>
+            );
+        };
+
+        const renderRightCarouselButton = () => {
+            const topNamedEntitiesLength = Object.keys(analysis.top_named_entities).length;
+            return (
+                <div style={{ position: "absolute", right: "0"  }}>{currNamedEntityCarouselIndex < topNamedEntitiesLength - 2 && 
+                    <button onClick={incrementCurrNamedEntityCarouselIndex} className="p-1 rounded-full text-white ml-30 bg-black transition hover:bg-gray-600">
+                        <ChevronRight size={32}/>
+                    </button>}
+                </div>
+            );
+        };
+
+        return (
+            <div className="mt-7">
+                <div className="flex justify-between items-center w-full relative">
+                    <h2 className="text-xl font-medium mb-2 text-center absolute left-1/2 transform -translate-x-1/2" style={{ textAlign: "center", fontSize: "20px" }}>
+                    Most Mentioned Named Entities
+                    </h2>
+                    <div className="ml-auto mr-8">{renderNamedEntitiesExpandAllToggle()}</div>
+                </div>
+                <div style={{margin: "25px", marginBottom: "40px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                    {renderLeftCarouselButton()}
+                    <div className="flex justify-center">
+                        <ColorCodeBox backgroundColor="#d9ead3" label="Very Positive" borderTopLeftRadius="5px" borderBottomLeftRadius="5px"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#d0e0e3" label="Positive"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#fff2cc" label="Neutral"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#f4cccc" label="Negative"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#ea9999" label="Very Negative" borderBottomRightRadius="5px" borderTopRightRadius="5px"></ColorCodeBox>
+                    </div>
+                    {renderRightCarouselButton()}
+                </div>
+                <div className="overflow-hidden w-full">
+                    <div className="flex transition-transform duration-600 ease-in-out"
+                        style={{ transform: `translateX(-${currNamedEntityCarouselIndex * 50}%)` }}>
+                        {Object.entries(analysis.top_named_entities).map(([date, entities]) => (
+                            <div key={date} className="w-1/2 flex-shrink-0">
+                                <TopNamedEntitiesForDate date={date} entities={entities} />
                             </div>
-                        )
-                    )}
+                        ))}
+                     </div>
                 </div>
             </div>
         );
