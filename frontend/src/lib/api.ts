@@ -1,9 +1,10 @@
+import { WordCloud } from "react-d3-cloud";
 // TODO: move to environment variable
 const API_BASE_URL = "http://localhost:8000"; // Backend FastAPI server URL
 
 export interface NGram {
-    0: string; // n-gram text
-    1: number; // count
+  0: string; // n-gram text
+  1: number; // count
 }
 
 export interface NamedEntity {
@@ -14,21 +15,22 @@ export interface NamedEntity {
 }
 
 export interface SubredditQuery {
-    name: string;
-    time_filter: string;
-    sort_by: string;
+  name: string;
+  time_filter: string;
+  sort_by: string;
 }
 
 export interface SubredditAnalysis {
-    top_n_grams: Record<string, NGram[]>;
-    top_named_entities: Record<string, NamedEntity[]>;
-    top_named_entities_embeddings: Record<string, [number, number]>; 
+  top_n_grams: Record<string, NGram[]>;
+  top_named_entities: Record<string, NamedEntity[]>;
+  top_named_entities_embeddings: Record<string, [number, number]>;
+  top_named_entities_word_cloud: Record<string, number>;
 }
 
 export interface SubredditAnalysisResponse {
-    analysis_status: string;
-    analysis_progress: number;
-    analysis: SubredditAnalysis;
+  analysis_status: string;
+  analysis_progress: number;
+  analysis: SubredditAnalysis;
 }
 
 // TODO: Update doc
@@ -40,21 +42,21 @@ export interface SubredditAnalysisResponse {
  * @returns Promise with the subreddit NLP analysis
  */
 export async function fetchSubredditAnalysis(
-    subredditQuery: SubredditQuery
+  subredditQuery: SubredditQuery
 ): Promise<SubredditAnalysisResponse> {
-    const response = await fetch(`${API_BASE_URL}/analysis/`, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(subredditQuery),
-    });
+  const response = await fetch(`${API_BASE_URL}/analysis/`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(subredditQuery),
+  });
 
-    if (!response.ok) {
-        throw new Error(
-            `Failed to fetch subreddit analysis: ${response.statusText}`
-        );
-    }
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch subreddit analysis: ${response.statusText}`
+    );
+  }
 
-    return await response.json();
+  return await response.json();
 }
