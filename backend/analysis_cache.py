@@ -33,6 +33,7 @@ class SubredditAnalysis(BaseModel):
     #   3. named entity sentiment score
     #   4. summary of comments regarding named entity 
     top_named_entities: Dict[str, List[Tuple[str, int, float, str]]]
+    top_named_entities_embeddings: Dict[str, Tuple[float, float]]
 
 class SubredditAnalysisResponse(BaseModel):
     analysis_status: Optional[str] = None

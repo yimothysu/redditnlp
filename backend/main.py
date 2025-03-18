@@ -7,6 +7,7 @@ from typing import List
 from datetime import datetime, timezone
 import asyncpraw
 import os 
+import time 
 import matplotlib.pyplot as plt
 from dotenv import load_dotenv
 
@@ -165,10 +166,22 @@ async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
     top_n_grams, top_named_entities = await get_subreddit_analysis(sorted_slice_to_posts, set_progress)
     print(top_named_entities)
 
+    t1 = time.time()
+    entity_set= set()
+    for _, entities in top_named_entities.items():
+        entity_names = [entity[0] for entity in entities] # getting just the name of each entity 
+        for entity_name in entity_names: entity_set.add(entity_name)
+    print('# of elements in entity_set: ', len(entity_set))
+    top_named_entities_embeddings = get_2d_embeddings(list(entity_set))
+    print("# of entity embeddings: ", len(top_named_entities_embeddings))
+    print(top_named_entities_embeddings)
+    t2 = time.time()
+    print('getting 2d embeddings took: ', t2 - t1)
+    
     analysis = SubredditAnalysis(
         top_n_grams = top_n_grams,
         top_named_entities = top_named_entities,
-        top_named_entities_embeddings = get_2d_embeddings(top_named_entities[:5])
+        top_named_entities_embeddings = top_named_entities_embeddings
     )
     print(analysis)
 

@@ -134,14 +134,12 @@ export default function RedditPage() {
     };
 
     const renderWordEmbeddings = () => {
-        console.log(analysis?.top_named_entities_embeddings);
-    
-        let embeddingsDisplay = undefined;
-        if (analysis){
-            let embeddings = analysis.top_named_entities_embeddings;
-            embeddingsDisplay = embeddings && Object.entries(embeddings).map(([word, [x, y]]) => ({ word, x, y,}));
-        }
-    
+        if (!analysis) return null;
+
+        console.log('top_named_entities_embeddings: ', analysis?.top_named_entities_embeddings);
+        let embeddings = analysis.top_named_entities_embeddings;
+        let embeddingsDisplay = embeddings && Object.entries(embeddings).map(([word, [x, y]]) => ({ word, x, y,}));
+        
         return (
             <div className="mt-10 p-6 bg-white shadow rounded max-w-3xl mx-auto">
                 <h1 className="font-semibold text-l p-1">Word Embeddings</h1>
@@ -494,9 +492,9 @@ export default function RedditPage() {
                         <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
                         {renderNamedEntities()}
                         {renderNGrams()}
+                        {renderWordEmbeddings()}
                     </div>
                 )}
-                {renderWordEmbeddings()}
             </div>
         </Template>
     );
