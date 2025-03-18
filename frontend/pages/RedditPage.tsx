@@ -227,11 +227,11 @@ export default function RedditPage() {
 
         const TopNamedEntitiesForDate = (props) => {
             return (
-            <div key={props.date} className="flex-1 mb-6 mr-2 ml-2 border bg-white border-gray-300 rounded-l shadow-xl">
+            <div key={props.date} className="flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-l shadow-xl">
                 <h3 className="text-lg font-semibold" style={{fontSize: "20px", textAlign: "center", backgroundColor: "#efefef", padding: "4px",}}>
                     {props.date}
                 </h3>
-                <ul className="list-decimal pl-5">
+                <ul className="list-none pl-0">
                     {props.entities.map((entity, index) => {
                         const backgroundColor = entity[2] >= 0.5 && entity[2] <= 1 ? "#d9ead3"
                                                 : entity[2] >= 0.1 && entity[2] < 0.5 ? "#d0e0e3"
@@ -244,11 +244,11 @@ export default function RedditPage() {
                                 <div style={{display: "flex", justifyContent:"space-between", alignItems: "center",
                                         backgroundColor: backgroundColor, paddingLeft: "10px", paddingRight: "10px",
                                         paddingTop: "4px", paddingBottom: "4px", borderRadius: "5px",}}>
-                                    <span style={{fontWeight: 600, fontSize: "15px",}}>{entity[0]}</span>
+                                    <span style={{fontWeight: 600, fontSize: "14.5px",}}>{entity[0]}</span>
                                     <span style={{margin: "0 8px",}}></span>
-                                    <span style={{fontWeight: 600, fontSize: "15px",}}>Sentiment Score:{" "}{entity[2]}</span>
+                                    <span style={{fontWeight: 600, fontSize: "13.5px",}}>Sentiment:{" "}{entity[2]}</span>
                                     <span style={{margin: "0 8px",}}></span>
-                                    <span style={{fontWeight: 600, fontSize: "15px",}}># of Mentions:{" "}{entity[1]}</span>
+                                    <span style={{fontWeight: 600, fontSize: "13.5px",}}># Mentions:{" "}{entity[1]}</span>
                                 </div>
                                 <div style={{fontWeight: 600, fontSize: "13.5px", marginTop: "10px", marginBottom: "5px",}}>
                                     Summarized Sentiment:{" "}
@@ -310,9 +310,9 @@ export default function RedditPage() {
                 </div>
                 <div className="overflow-hidden w-full">
                     <div className="flex transition-transform duration-600 ease-in-out"
-                        style={{ transform: `translateX(-${currNamedEntityCarouselIndex * 50}%)` }}>
+                        style={{ transform: `translateX(-${currNamedEntityCarouselIndex * 33}%)` }}>
                         {Object.entries(analysis.top_named_entities).map(([date, entities]) => (
-                            <div key={date} className="w-1/2 flex-shrink-0">
+                            <div key={date} className="w-1/3 flex-shrink-0">
                                 <TopNamedEntitiesForDate date={date} entities={entities} />
                             </div>
                         ))}
