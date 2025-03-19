@@ -7,6 +7,7 @@ import concurrent.futures
 from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import time
 import asyncio
+import re
 
 # NLP related imports 
 import numpy as np
@@ -102,17 +103,29 @@ async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called 
     top_n_grams = dict() 
     for i in range(0, len(dates)):
         filtered_post_content = preprocess_text_for_n_grams(texts[i]) # optimized and fast now 
-        top_n_grams[dates[i]] = get_top_ngrams_sklearn([filtered_post_content]) # very fast 
+        top_bigrams = get_top_ngrams_sklearn([filtered_post_content]) # very fast 
+        filtered_top_bigrams = []
+        for top_bigram, count in top_bigrams:
+            # filters out bigrams that were mentioned less than 3 times +
+            # bigrams that have more than 2 consecutive digits (most likely a nonsense 
+            # bigram --> Ex: 118 122)
+            if count >= 3 and not bool(re.search(r'\d{3,}', top_bigram)):
+                filtered_top_bigrams.append((top_bigram, count))
+        top_n_grams[dates[i]] = filtered_top_bigrams 
     t2 = time.time()
     print('finished n-gram analysis in: ', t2-t1)
 
     # Perform NER analysis + sentiment analysis to EACH named entity 
     nlp = spacy.load("en_core_web_sm", disable=["parser", "tagger"])
     nlp.add_pipe('sentencizer')
+    t3 = time.time()
+    print('initializing nlp took: ', t3 - t2)
 
     top_named_entities = dict()
     for date, doc in zip(dates, nlp.pipe(texts, batch_size=50)):
         top_named_entities[date] = doc
+    t4 = time.time()
+    print('getting top named entities using nlp took: ', t4 - t3)
 
     progress_list = [0] * len(top_named_entities.items())
     def set_item_progress(idx, progress):
@@ -130,19 +143,22 @@ async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called 
     for date, entities in results:
         top_named_entities[date] = entities
 
-    t3 = time.time()
+    t5 = time.time()
     print('finished NER analysis in: ', t3-t2)
     
     return top_n_grams, top_named_entities
 
 # async def postprocess_named_entities(date, doc, idx, set_progress):
 async def postprocess_named_entities(date, doc, set_progress):
+    t1 = time.time()
     named_entities = Counter([ent.text for ent in doc.ents])
     banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomorrow', 
                        'approx', 'half', 'idk', 'congrats', 'three', 'creepy', 'night',
                        'day', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday',
                        'saturday', 'sunday', 'month', 'months', 'day', 'days', 'week',
-                       'weeks', 'this year', 'next year', 'last year', 'year'}
+                       'weeks', 'this year', 'next year', 'last year', 'year', 'a year', 
+                       'years', 'a couple years', 'the week', 'the summer', 'spring', 
+                       'summer', 'fall', 'winter', 'zero'}
     # clustered_named_entites = cluster_similar_entities(named_entities)
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
@@ -150,12 +166,15 @@ async def postprocess_named_entities(date, doc, set_progress):
         if not (isinstance(name, str) and filter_named_entity(name)): continue
         if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
         filtered_named_entities[name] = count
-    
+    t2 = time.time()
+    print('basic named entity post processing for ', date, ' took ', t2 - t1)
     top_ten_entities = filtered_named_entities.most_common(10)
     top_ten_entity_names = set([entity[0] for entity in top_ten_entities])
     # Write entity_to_sentences to a text file - I want to inspect the sentences individually
     #f = open("entity_to_sentences.txt", "w", encoding="utf-8")
     entity_to_sentiment, entity_to_sentences = await get_sentiments_of_entities(top_ten_entity_names, doc)
+    t3 = time.time()
+    print('getting sentiment + summary of named entities in ', date, ' took ', t3 - t2)
     #f.close()
 
     for i in range(len(top_ten_entities)):
@@ -201,7 +220,10 @@ async def get_sentiments_of_entities(top_ten_entity_names, doc):
     return entity_to_sentiment, entity_to_summary
 
 def get_sentiment_of_entity(entity, flattened_sentences):
+    t1 = time.time()
     sentiment = classifier(flattened_sentences, text_pair=entity)
+    t2 = time.time()
+    print('getting sentiment of the entity ', entity, ' took ', t2 - t1)
     # sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
     # label = 'Positive', 'Neutral', or 'Negative' 
     # score = value in range [0, 1]
@@ -219,8 +241,8 @@ def split_text(text, chunk_size=3000):
 
 def summarize_comments(entity, flattened_comments):
     #print('# characters in text: ', len(text))
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
     if len(flattened_comments) > 3000:
+        t1 = time.time()
         # will probably exceed the token limit of 1024, so analyze each 3000 character chunk seperately
         chunks = split_text(flattened_comments)
         complete_summary = ""
@@ -230,8 +252,11 @@ def summarize_comments(entity, flattened_comments):
             summary = summarizer(truncated_chunk, max_length=100, min_length=20, do_sample=False)
             summary_text = summary[0]['summary_text']
             complete_summary += summary_text + "\n --- \n"
+        t2 = time.time()
+        print('getting summarized sentiment of entity (len(flattened_comments) > 3000)', entity, ' took ', t2 - t1)
         return (entity, complete_summary)
     else:
+        t1 = time.time()
         tokenized = tokenizer.encode(flattened_comments, truncation=True, max_length=1024)
         truncated_flattened_comments = tokenizer.decode(tokenized) 
         num_tokens = len(tokenized)
@@ -239,6 +264,8 @@ def summarize_comments(entity, flattened_comments):
         summary = summarizer(truncated_flattened_comments, max_length=max_length, min_length=5, do_sample=False)
         summary_text = summary[0]['summary_text']
         #print(summary_text)
+        t2 = time.time()
+        print('getting summarized sentiment of entity ', entity, ' took ', t2 - t1)
         return (entity, summary_text)
 
 
@@ -257,7 +284,7 @@ def preprocess_text_for_n_grams(post_content):
     return filtered_post_content 
 
 # can parallelize this so for each (date, posts) pair runs concurrently 
-def get_top_ngrams_sklearn(texts, n=3, top_k=10):
+def get_top_ngrams_sklearn(texts, n=2, top_k=10):
     vectorizer = CountVectorizer(ngram_range=(n, n))  # Extract only n-grams
     X = vectorizer.fit_transform(texts)  # Fit to the text
     freqs = X.sum(axis=0)  # Sum frequencies
