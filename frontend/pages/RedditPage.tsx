@@ -38,6 +38,7 @@ export default function RedditPage() {
     const [sortBy, setSortBy] = useState("top");
     const [namedEntitiesExpandAllIsChecked, setNamedEntitiesExpandAllIsChecked] = useState(false)
     const [currNamedEntityCarouselIndex, setCurrNamedEntityCarouselIndex] = useState(0);
+    const [currNGramsCarouselIndex, setCurrNGramsCarouselIndex] = useState(0);
     const handleNamedEntitiesToggleChange = () => {
         setNamedEntitiesExpandAllIsChecked(!namedEntitiesExpandAllIsChecked)
     }
@@ -170,29 +171,73 @@ export default function RedditPage() {
     const renderNGrams = () => {
         if (!analysis) return null;
 
+        const NGramsForDate = ({date, ngrams}) => {
+            return (
+            <div key={date} className="flex-grow mb-3 mr-1 ml-1 border bg-white border-gray-200 rounded-l shadow-xl">
+                <h3 className="text-lg text-center p-1 font-semibold bg-gray-200">{date}</h3>
+                <div className="flex font-semibold pt-1 pb-1 pr-5 pl-5 bg-blue-200 justify-between">
+                    <h2>Word</h2>
+                    <h2>Count</h2>
+                </div>
+                <ul className="list-none pl-5 pr-5 pt-2">
+                    {ngrams.map((ngram, index) => (
+                        <li key={index}>
+                            <div className='text-[14px] flex justify-between'>
+                                <div>{ngram[0]}</div> 
+                                <div>{ngram[1]}</div>
+                            </div>
+                            <hr className="border-t border-gray-300 my-1" />
+                        </li>))}
+                </ul>
+            </div>
+            );
+        };
+
+        const incrementCurrNGramsCarouselIndex = () => {
+            setCurrNGramsCarouselIndex(currNGramsCarouselIndex + 1)
+        };
+
+        const decrementCurrNGramsCarouselIndex = () => {
+            setCurrNGramsCarouselIndex(currNGramsCarouselIndex - 1)
+        };
+
+        const renderLeftCarouselButton = () => {
+            return (
+                <div style={{ position: "absolute", left: "0" }}>{currNGramsCarouselIndex != 0 && 
+                    <button onClick={decrementCurrNGramsCarouselIndex} className="p-1 rounded-full text-white mr-30 bg-black transition hover:bg-gray-600">
+                        <ChevronLeft size={28}/>
+                    </button>}
+                </div>
+            );
+        };
+
+        const renderRightCarouselButton = () => {
+            const topNGramsLength = Object.keys(analysis.top_n_grams).length;
+            return (
+                <div style={{ position: "absolute", right: "0"  }}>{currNGramsCarouselIndex < topNGramsLength - 5 && 
+                    <button onClick={incrementCurrNGramsCarouselIndex} className="p-1 rounded-full text-white ml-30 bg-black transition hover:bg-gray-600">
+                        <ChevronRight size={28}/>
+                    </button>}
+                </div>
+            );
+        };
+
         return (
             <div className="mt-4">
-                <h2 className="text-xl font-bold mb-2">Top N-Grams</h2>
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2">
-                    {Object.entries(analysis.top_n_grams).map(
-                        ([date, ngrams]) => (
-                            <div
-                                key={date}
-                                className="mb-3 border bg-white border-gray-200 p-4 rounded-l shadow-md"
-                            >
-                                <h3 className="text-lg font-semibold">
-                                    {date}
-                                </h3>
-                                <ul className="list-disc pl-5">
-                                    {ngrams.map((ngram, index) => (
-                                        <li key={index}>
-                                            {ngram[0]}: {ngram[1]}
-                                        </li>
-                                    ))}
-                                </ul>
+                <div style={{margin: "25px", marginBottom: "30px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                    {renderLeftCarouselButton()}
+                    <h2 className="text-xl text-center font-bold">Top N-Grams</h2>
+                    {renderRightCarouselButton()}
+                </div>
+                <div className="overflow-hidden w-full">
+                    <div className="flex transition-transform duration-600 ease-in-out"
+                        style={{ transform: `translateX(-${currNGramsCarouselIndex * 20}%)` }}>
+                        {Object.entries(analysis.top_n_grams).map(([date, ngrams]) => (
+                            <div key={date} className="flex w-1/5 flex-shrink-0">
+                                <NGramsForDate date={date} ngrams={ngrams } />
                             </div>
-                        )
-                    )}
+                        ))}
+                     </div>
                 </div>
             </div>
         );
@@ -227,8 +272,8 @@ export default function RedditPage() {
 
         const TopNamedEntitiesForDate = (props) => {
             return (
-            <div key={props.date} className="flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-l shadow-xl">
-                <h3 className="text-lg font-semibold" style={{fontSize: "20px", textAlign: "center", backgroundColor: "#efefef", padding: "4px",}}>
+            <div key={props.date} className="flex-grow flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-l shadow-xl">
+                <h3 className="text-lg font-semibold bg-gray-200" style={{fontSize: "20px", textAlign: "center", padding: "4px",}}>
                     {props.date}
                 </h3>
                 <ul className="list-none pl-0">
@@ -281,7 +326,7 @@ export default function RedditPage() {
         const renderRightCarouselButton = () => {
             const topNamedEntitiesLength = Object.keys(analysis.top_named_entities).length;
             return (
-                <div style={{ position: "absolute", right: "0"  }}>{currNamedEntityCarouselIndex < topNamedEntitiesLength - 2 && 
+                <div style={{ position: "absolute", right: "0"  }}>{currNamedEntityCarouselIndex < topNamedEntitiesLength - 3 && 
                     <button onClick={incrementCurrNamedEntityCarouselIndex} className="p-1 rounded-full text-white ml-30 bg-black transition hover:bg-gray-600">
                         <ChevronRight size={32}/>
                     </button>}
@@ -292,7 +337,7 @@ export default function RedditPage() {
         return (
             <div className="mt-7">
                 <div className="flex justify-between items-center w-full relative">
-                    <h2 className="text-xl font-medium mb-2 text-center absolute left-1/2 transform -translate-x-1/2" style={{ textAlign: "center", fontSize: "20px" }}>
+                    <h2 className="text-xl font-bold mt-3 mb-2 text-center absolute left-1/2 transform -translate-x-1/2" style={{ textAlign: "center", fontSize: "20px" }}>
                     Most Mentioned Named Entities
                     </h2>
                     <div className="ml-auto mr-8">{renderNamedEntitiesExpandAllToggle()}</div>
@@ -312,7 +357,7 @@ export default function RedditPage() {
                     <div className="flex transition-transform duration-600 ease-in-out"
                         style={{ transform: `translateX(-${currNamedEntityCarouselIndex * 33}%)` }}>
                         {Object.entries(analysis.top_named_entities).map(([date, entities]) => (
-                            <div key={date} className="w-1/3 flex-shrink-0">
+                            <div key={date} className="flex w-1/3 flex-shrink-0">
                                 <TopNamedEntitiesForDate date={date} entities={entities} />
                             </div>
                         ))}
@@ -416,8 +461,9 @@ export default function RedditPage() {
                 {!analysisProgress && !error && analysis && (
                     <div className="mt-4">
                         <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
-                        {renderNamedEntities()}
                         {renderNGrams()}
+                        <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
+                        {renderNamedEntities()}
                         {renderWordEmbeddings()}
                     </div>
                 )}
