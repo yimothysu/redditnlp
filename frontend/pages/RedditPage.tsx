@@ -27,6 +27,24 @@ const spinnerStyle = {
 };
 */
 
+const months = {
+    '01': 'January','02': 'February','03': 'March','04': 'April','05': 'May','06': 'June','07': 'July','08': 'August',
+    '09': 'September','10': 'October','11': 'November','12': 'December'
+};
+
+function formatDate(date, time_filter) {
+    const currentYear = new Date().getFullYear();
+    if (time_filter == 'week') {
+        // Ex: 03-13 --> May 13, 2024
+        return months[date.slice(0, 2)] + ' ' + date.slice(3, 5) + ', ' + currentYear
+    }
+    else if (time_filter == 'year') {
+        // Ex: 03-24 --> May 2024 
+        return months[date.slice(0, 2)] + ' ' + currentYear
+    }
+    return date 
+}
+
 export default function RedditPage() {
     const { name } = useParams();
     const [error, setError] = useState<string | null>(null);
@@ -174,7 +192,7 @@ export default function RedditPage() {
         const NGramsForDate = ({date, ngrams}) => {
             return (
             <div key={date} className="flex-grow mb-3 mr-1 ml-1 border bg-white border-gray-200 rounded-l shadow-xl">
-                <h3 className="text-lg text-center p-1 font-semibold bg-gray-200">{date}</h3>
+                <h3 className="text-lg text-center p-1 font-semibold bg-gray-200">{formatDate(date, timeFilter)}</h3>
                 <div className="flex font-semibold pt-1 pb-1 pr-5 pl-5 bg-blue-200 justify-between">
                     <h2>Word</h2>
                     <h2>Count</h2>
@@ -226,7 +244,7 @@ export default function RedditPage() {
             <div className="mt-4">
                 <div style={{margin: "25px", marginBottom: "30px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
                     {renderLeftCarouselButton()}
-                    <h2 className="text-xl text-center font-bold">Top N-Grams</h2>
+                    <h2 className="text-xl text-center font-bold">Most Mentioned Bi-Grams</h2>
                     {renderRightCarouselButton()}
                 </div>
                 <div className="overflow-hidden w-full">
@@ -274,7 +292,7 @@ export default function RedditPage() {
             return (
             <div key={props.date} className="flex-grow flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-l shadow-xl">
                 <h3 className="text-lg font-semibold bg-gray-200" style={{fontSize: "20px", textAlign: "center", padding: "4px",}}>
-                    {props.date}
+                    {formatDate(props.date, timeFilter)}
                 </h3>
                 <ul className="list-none pl-0">
                     {props.entities.map((entity, index) => {
