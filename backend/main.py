@@ -16,6 +16,7 @@ import asyncio
 # TODO: Remove aiofiles if not needed
 import aiofiles
 import json
+import random
 
 #from reddit import get_comments, reddit
 from plot_post_distribution import plot_post_distribution
@@ -99,6 +100,15 @@ async def fetch_post_data(post):
                 post_comments.append(comment.body)
             if hasattr(comment, "score"):
                 comment_scores.append(comment.score)
+
+        # randomly sampling comments if there's a large # of comments 
+        if len(post_comments) > 30 and len(post_comments) <= 60:
+            post_comments = random.sample(post_comments, 25)
+        if len(post_comments) > 60 and len(post_comments) <= 100:
+            post_comments = random.sample(post_comments, 50)
+        if len(post_comments) > 100:
+            post_comments = random.sample(post_comments, 75)
+
         return RedditPost(
             title=post.title,
             description=post.selftext,
