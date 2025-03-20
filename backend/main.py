@@ -293,7 +293,7 @@ async def get_popular_subreddits():
         user_agent="reddit_api"
     )
 
-    most_popular_reddits = reddit.subreddits.popular(limit=10)
+    most_popular_reddits = reddit.subreddits.popular(limit=5)
     reddits = []
     async for subreddit in most_popular_reddits:
         reddits.append(

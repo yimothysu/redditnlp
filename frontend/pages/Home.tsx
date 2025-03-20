@@ -1,30 +1,53 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Template from "./Template.tsx";
-
-import { useState } from "react";
-
 import { SubredditCard } from "../src/components/SubredditCard.tsx";
 import { useNavigate } from "react-router-dom";
+import { fetchPopularSubreddits, PopularSubredditsResponse } from "../src/lib/api.ts";
 
 function PopularCommunities() {
-  const popularCommunities = ["ufl", "cats", "dogs"];
+  const [popularCommunities, setPopularCommunities] = useState<PopularSubredditsResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  return (
-    <div className="bg-gray-200 mt-6 p-4">
-      <h1 className="font-bold text-xl mb-1">
-        Explore NLP For Popular Communities
-      </h1>
-      <p>
-        Below are some of the most popular subreddit communities right now.
-        Explore NLP for them.
-      </p>
-      <div className="flex flex-wrap gap-4 mt-4">
-        {popularCommunities.map((subredditName) => (
-          <SubredditCard subredditName={subredditName} />
-        ))}
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const communities = await fetchPopularSubreddits();
+        setPopularCommunities(communities);
+        setLoading(false);
+      } catch (err) {
+        setError("Failed to fetch popular communities.");
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (popularCommunities){
+    return (
+      <div className="bg-gray-200 mt-6 p-4">
+        <h1 className="font-bold text-xl mb-1">
+          Explore NLP For Popular Communities
+        </h1>
+        <p>
+          Below are some of the most popular subreddit communities right now.
+          Explore NLP for them.
+        </p>
+        <div className="flex flex-wrap gap-4 mt-4">
+          {popularCommunities.reddits.map((subreddit) => (
+            <SubredditCard key={subreddit.name} subredditName={subreddit.name} />
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  } else if (error){
+      return <div>{error}</div>;
+  }
 }
 
 export default function Home() {

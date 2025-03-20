@@ -33,6 +33,15 @@ export interface SubredditAnalysisResponse {
   analysis: SubredditAnalysis;
 }
 
+export interface Subreddit {
+  name: string;
+  description: string;
+}
+
+export interface PopularSubredditsResponse {
+  reddits: Subreddit[];
+}
+
 // TODO: Update doc
 /**
  * Fetches NLP analysis data for a subreddit
@@ -55,6 +64,24 @@ export async function fetchSubredditAnalysis(
   if (!response.ok) {
     throw new Error(
       `Failed to fetch subreddit analysis: ${response.statusText}`
+    );
+  }
+
+  return await response.json();
+}
+
+
+export async function fetchPopularSubreddits(): Promise<PopularSubredditsResponse> {
+  const response = await fetch(`${API_BASE_URL}/popular_subreddits/`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    }
+  });
+
+  if (!response.ok) {
+    throw new Error(
+      `Failed to fetch popular subreddits: ${response.statusText}`
     );
   }
 
