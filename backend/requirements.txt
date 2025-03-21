@@ -1,3 +1,5 @@
+vaderSentiment==3.3.2
+detoxify==0.5.2
 wordcloud==1.9.4
 aiofiles==24.1.0
 aiohappyeyeballs==2.4.6
