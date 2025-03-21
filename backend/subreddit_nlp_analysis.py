@@ -158,7 +158,20 @@ async def postprocess_named_entities(date, doc, set_progress):
                        'saturday', 'sunday', 'month', 'months', 'day', 'days', 'week',
                        'weeks', 'this year', 'next year', 'last year', 'year', 'a year', 
                        'years', 'a couple years', 'the week', 'the summer', 'spring', 
-                       'summer', 'fall', 'winter', 'zero'}
+                       'summer', 'fall', 'winter', 'zero', 'one day', 'the next day', 
+                       'six', 'seven', 'eight', 'the years', 'every day', "n't", 'that day',
+                       'one year', 'each day', 'last week', 'all day', 'a couple of weeks', 'daily',
+                       'some days', 'hours', 'a week', 'some days', 'the day', 'a few years', 'every morning',
+                       'morning', 'an hour', 'a month', 'a year ago', 'most days', 'tonight', 'overnight', 
+                       'the end of the day', 'kinda', 'last month', 'a few minutes', 'dude', 'those years',
+                       'n’t', 'lot', 'only two', 'ten', 'the morning', 'five years', 'op', 'a ton', 'a few years ago',
+                       'decades', 'a few months', 'a few days', 'over a decade', 'this summer', 'a bad day',
+                       'the days', 'these days', 'shit', 'fuck', 'ass', 'asshole', 'bitch',
+                       'three years', 'two years', 'one year', 'every single day', 'this day',
+                       'thousands', 'af', 'weekly', 'a decade', 'another day', 'each year', 'each week',
+                       'ten years', 'january', 'february', 'march', 'april', 'may', 'june',
+                       'july', 'august', 'september', 'october', 'november', 'december', 'four',
+                       'five', 'nine', 'this week', 'next week', 'a few more years', 'a new day'}
     # clustered_named_entites = cluster_similar_entities(named_entities)
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
@@ -167,8 +180,8 @@ async def postprocess_named_entities(date, doc, set_progress):
         if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
         filtered_named_entities[name] = count
     t2 = time.time()
-    print('basic named entity post processing for ', date, ' took ', t2 - t1)
-    top_ten_entities = filtered_named_entities.most_common(10)
+
+    top_ten_entities = filtered_named_entities.most_common(6)
     top_ten_entity_names = set([entity[0] for entity in top_ten_entities])
     # Write entity_to_sentences to a text file - I want to inspect the sentences individually
     #f = open("entity_to_sentences.txt", "w", encoding="utf-8")
@@ -276,7 +289,7 @@ def preprocess_text_for_n_grams(post_content):
     
     words = word_tokenize(post_content) # tokenize post_content 
     # Remove non-word characters, remove whitespace before and after word, make all lowercase
-    filtered_words = [re.sub(r'[^\w\s]', '', word).lower().strip() for word in words] 
+    filtered_words = [re.sub(r"[^\w\s']", '', word).lower().strip() for word in words] 
     filtered_words = [word for word in filtered_words if word]  # Remove empty strings
     filtered_words = [word for word in filtered_words if word not in full_stop_words and 
                       not any(exclude in word for exclude in partial_stop_words)]
