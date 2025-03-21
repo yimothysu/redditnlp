@@ -35,12 +35,12 @@ const months = {
 function formatDate(date, time_filter) {
     const currentYear = new Date().getFullYear();
     if (time_filter == 'week') {
-        // Ex: 03-13 --> May 13, 2024
+        // Ex: 03-13 --> May 13, 2025
         return months[date.slice(0, 2)] + ' ' + date.slice(3, 5) + ', ' + currentYear
     }
     else if (time_filter == 'year') {
         // Ex: 03-24 --> May 2024 
-        return months[date.slice(0, 2)] + ' ' + currentYear
+        return months[date.slice(0, 2)] + ' 20' + date.slice(3, 5)
     }
     return date 
 }
@@ -278,8 +278,8 @@ export default function RedditPage() {
 
         const ColorCodeBox = (props) => {
             return (
-                <div className="w-[150px] h-[35px] font-medium"
-                     style={{fontSize: "15px", backgroundColor: props.backgroundColor, textAlign: "center",
+                <div className="w-[180px] h-[35px] font-medium"
+                     style={{fontSize: "14px", backgroundColor: props.backgroundColor, textAlign: "center",
                              padding: "5px", borderTopLeftRadius: props.borderTopLeftRadius, 
                              borderBottomLeftRadius: props.borderBottomLeftRadius, borderTopRightRadius: props.borderTopRightRadius,
                              borderBottomRightRadius: props.borderBottomRightRadius}}>
@@ -309,7 +309,7 @@ export default function RedditPage() {
                                         paddingTop: "4px", paddingBottom: "4px", borderRadius: "5px",}}>
                                     <span style={{fontWeight: 600, fontSize: "14.5px",}}>{entity[0]}</span>
                                     <span style={{margin: "0 8px",}}></span>
-                                    <span style={{fontWeight: 600, fontSize: "13.5px",}}>Sentiment:{" "}{entity[2]}</span>
+                                    <span style={{fontWeight: 600, fontSize: "13.5px",}}>Sentiment Score [-1, 1]:{" "}{entity[2]}</span>
                                     <span style={{margin: "0 8px",}}></span>
                                     <span style={{fontWeight: 600, fontSize: "13.5px",}}># Mentions:{" "}{entity[1]}</span>
                                 </div>
@@ -363,11 +363,11 @@ export default function RedditPage() {
                 <div style={{margin: "25px", marginBottom: "40px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
                     {renderLeftCarouselButton()}
                     <div className="flex justify-center">
-                        <ColorCodeBox backgroundColor="#d9ead3" label="Very Positive" borderTopLeftRadius="5px" borderBottomLeftRadius="5px"></ColorCodeBox>
-                        <ColorCodeBox backgroundColor="#d0e0e3" label="Positive"></ColorCodeBox>
-                        <ColorCodeBox backgroundColor="#fff2cc" label="Neutral"></ColorCodeBox>
-                        <ColorCodeBox backgroundColor="#f4cccc" label="Negative"></ColorCodeBox>
-                        <ColorCodeBox backgroundColor="#ea9999" label="Very Negative" borderBottomRightRadius="5px" borderTopRightRadius="5px"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#d9ead3" label="Very Positive Consensus" borderTopLeftRadius="5px" borderBottomLeftRadius="5px"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#d0e0e3" label="Positive Consensus"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#fff2cc" label="Neutral Consensus"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#f4cccc" label="Negative Consensus"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#ea9999" label="Very Negative Consensus" borderBottomRightRadius="5px" borderTopRightRadius="5px"></ColorCodeBox>
                     </div>
                     {renderRightCarouselButton()}
                 </div>
