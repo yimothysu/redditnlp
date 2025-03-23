@@ -20,7 +20,7 @@ import random
 
 #from reddit import get_comments, reddit
 from plot_post_distribution import plot_post_distribution
-from subreddit_nlp_analysis import get_subreddit_analysis
+from subreddit_nlp_analysis import get_subreddit_analysis, get_positive_content_metrics, get_toxicity_metrics
 
 from word_embeddings import get_2d_embeddings
 from word_cloud import generate_word_cloud
@@ -188,12 +188,24 @@ async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
     print(top_named_entities_embeddings)
     t2 = time.time()
     print('getting 2d embeddings took: ', t2 - t1)
+    toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores = await get_toxicity_metrics(subreddit_query.name)
+    positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores = await get_positive_content_metrics(subreddit_query.name)
     
     analysis = SubredditAnalysis(
         top_n_grams = top_n_grams,
         top_named_entities = top_named_entities,
         top_named_entities_embeddings = top_named_entities_embeddings,
-        top_named_entities_word_cloud = generate_word_cloud(top_named_entities)
+        top_named_entities_word_cloud = generate_word_cloud(top_named_entities),
+        # toxicity metrics 
+        toxicity_score = toxicity_score,
+        toxicity_grade = toxicity_grade,
+        toxicity_percentile = toxicity_percentile,
+        all_toxicity_scores = all_toxicity_scores,
+        # positive content metrics 
+        positive_content_score = positive_content_score,
+        positive_content_grade = positive_content_grade,
+        positive_content_percentile = positive_content_percentile,
+        all_positive_content_scores = all_positive_content_scores,
     )
     print(analysis)
 
