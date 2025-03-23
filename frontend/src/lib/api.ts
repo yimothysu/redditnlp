@@ -25,6 +25,16 @@ export interface SubredditAnalysis {
   top_named_entities: Record<string, NamedEntity[]>;
   top_named_entities_embeddings: Record<string, [number, number]>;
   top_named_entities_word_cloud: Record<string, number>;
+  // For subreddit ranking
+  toxicity_score: number // [0, 1] --> 0 = not toxic at all, 1 = all toxic 
+  toxicity_grade: string // A+ to F 
+  toxicity_percentile: number // [0, 100]
+  all_toxicity_scores: [number] // for generating a toxicity distribution graph on the UI 
+
+  positive_content_score: number // [0, 1] --> 0 = no positive content, 1 = all positive content
+  positive_content_grade: string // A+ to F 
+  positive_content_percentile: number // [0, 100]
+  all_positive_content_scores: [number] // for generating a positive content scores distribution graph on the UI 
 }
 
 export interface SubredditAnalysisResponse {

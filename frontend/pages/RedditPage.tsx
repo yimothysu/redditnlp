@@ -10,6 +10,13 @@ import { SubredditAvatar } from "../src/components/SubredditAvatar.tsx";
 
 import Template from "./Template.tsx";
 import WordEmbeddingsGraph from "../Components/WordEmbeddingsGraph.tsx";
+import { render } from "react-dom";
+import Button from '@mui/material/Button';
+import Popover from '@mui/material/Popover';
+import { Typography } from "@mui/material";
+import PopupState, { bindTrigger, bindPopover } from 'material-ui-popup-state';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+
 
 interface AnalysisProgress {
     status: string;
@@ -186,6 +193,207 @@ export default function RedditPage() {
         );
     };
 
+    function createHistogram(values) {
+        console.log('inside createHistogram')
+        console.log(values)
+        const minVal = 0;
+        const maxVal = Math.max(...values);
+        const num_bins = 30
+        const binWidth = (maxVal - minVal) / num_bins;
+    
+        const histogram = Array.from({ length: num_bins }, () => ({ bin: 0, count: 0 }));
+  
+        values.forEach(value => {
+            const bin_index = Math.min(Math.floor((value - minVal) / binWidth), num_bins - 1); 
+            histogram[bin_index].count += 1;
+        });
+  
+        return histogram.map((d, i) => ({
+            bin: (minVal + i * binWidth).toFixed(2),
+            count: d.count
+        }));
+    };
+
+    const renderComparativeAnalysis = () => {
+        if (!analysis) return null;
+
+        const ToxicityPopoverButton = () => {
+            return (
+                <PopupState variant="popover" popupId="demo-popup-popover">
+                  {(popupState) => (
+                    <div>
+                      <Button sx={{ backgroundColor: "#719efd", mt: 2, mb: 3, fontWeight: "bold", fontSize: "15px"}}  variant="contained" {...bindTrigger(popupState)}>
+                        What is Toxicity Score?
+                      </Button>
+                      <Popover
+                        {...bindPopover(popupState)}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'center',
+                        }}
+                      >
+                        <Typography sx={{ p: 2, maxWidth: 500, fontWeight: 'bold', fontSize: '18px', textAlign: 'center', color: '#FF0000'}}> Toxicity Score is a float in the range [0, 1]. 
+                       </Typography>
+                       <Typography sx={{ p: 1, maxWidth: 500, fontWeight: 'bold', fontSize: '18px', textAlign: 'center', color: '#FF0000'}}>0 = no toxic content, 1 = all toxic content</Typography>
+                       <hr className="border-t-3 border-gray-300 my-4 ml-5 mr-5" ></hr>
+                        <Typography sx={{ p: 1, maxWidth: 500, textAlign: 'center', fontWeight: 'bold'}}>How is Toxicity Score calculated?</Typography>
+                        <Typography sx={{ p: 1, maxWidth: 500}}>400 top posts of all time from r/{name} are sampled. Only the TITLE 
+                            and DESCRIPTION of the posts are analyzed. 
+                       </Typography>
+                       <Typography sx={{ p: 1, maxWidth: 500}}>The python library 'Detoxify' analyzes all 
+                            the post text and scores the text on 6 metrics: toxicity, severe_toxicity, obscene, threat, insult,
+                            identify attack. A weighted average of these 6 metrics is taken to get an overall toxicity score.
+                       </Typography>
+                       <Typography sx={{ p: 1, maxWidth: 500, fontWeight: 'bold'}}>
+                            NOTE: 'Detoxify' analyzes text LITERALLY. It cannot grasp humor or sarcasm (so dark jokes will have a high
+                            toxic score)
+                       </Typography>
+                      </Popover>
+                    </div>
+                  )}
+                </PopupState>
+              );
+          }
+
+          const PositiveContentPopoverButton = () => {
+            return (
+                <PopupState variant="popover" popupId="demo-popup-popover">
+                  {(popupState) => (
+                    <div>
+                      <Button sx={{ backgroundColor: "#719efd", mt: 2, mb: 3, fontWeight: "bold", fontSize: "15px"}}  variant="contained" {...bindTrigger(popupState)}>
+                        What is Positive Content Score?
+                      </Button>
+                      <Popover
+                        {...bindPopover(popupState)}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'center',
+                        }}
+                      >
+                        <Typography sx={{ p: 2, maxWidth: 500, fontWeight: 'bold', fontSize: '18px', textAlign: 'center', color: '#FF0000'}}> Positive Content Score is a float in the range [0, 1]. 
+                       </Typography>
+                       <Typography sx={{ p: 1, maxWidth: 500, fontWeight: 'bold', fontSize: '18px', textAlign: 'center', color: '#FF0000'}}>0 = no positive content, 1 = all positive content</Typography>
+                       <hr className="border-t-3 border-gray-300 my-4 ml-5 mr-5" ></hr>
+                        <Typography sx={{ p: 1, maxWidth: 500, textAlign: 'center', fontWeight: 'bold'}}>How is Positive Content Score calculated?</Typography>
+                        <Typography sx={{ p: 2, maxWidth: 500}}>400 top posts of all time from r/{name} are sampled. Only the TITLE 
+                            and DESCRIPTION of the posts are analyzed. 
+                       </Typography>
+                       <Typography sx={{ p: 2, maxWidth: 500}}>The python class 'nltk.sentiment.vader.SentimentIntensityAnalyzer' 
+                            analyzes all the post text and scores the text from -1 to 1 (with -1 being most negative, 0 being 
+                            neutral, and 1 being most positive). This score is normalized to [0, 1]. 
+                       </Typography>
+                       <Typography sx={{ p: 2, maxWidth: 500}}>
+                            Posts that have more upvotes have a greater effect on the overall positive content score (i.e. the positive
+                            content score is a weighted average)
+                       </Typography>
+                      </Popover>
+                    </div>
+                  )}
+                </PopupState>
+              );
+          }
+        
+        const GradeCircle = ({grade}) => {
+            const getGradeBackgroundColor = () => {
+                if (['A+', 'A', 'A-'].includes(grade)) { return 'bg-green-300'; }
+                if (['B+', 'B', 'B-'].includes(grade)) { return 'bg-lime-300'; }
+                if (['C+', 'C', 'C-'].includes(grade)) { return 'bg-yellow-300'; }
+                if (['D+', 'D', 'D-'].includes(grade)) { return 'bg-orange-300'; }
+                if (['F'].includes(grade)) { return 'bg-red-300'; }
+            };
+        
+
+            const getGradeBorderColor = () => {
+                if (['A+', 'A', 'A-'].includes(grade)) { return 'border-4 border-green-400'; }
+                if (['B+', 'B', 'B-'].includes(grade)) { return 'border-4 border-lime-400'; }
+                if (['C+', 'C', 'C-'].includes(grade)) { return 'border-4 border-yellow-400'; }
+                if (['D+', 'D', 'D-'].includes(grade)) { return 'border-4 border-orange-400'; }
+                if (['F'].includes(grade)) { return 'border-4 border-red-500'; }
+            };
+
+            return (
+                <span className={`inline-flex items-center justify-center w-13 h-13 ${getGradeBackgroundColor()} 
+                    ${getGradeBorderColor()} text-black text-[20px] m-3 rounded-full`}>{grade}</span>
+            );
+        }
+
+        const Histogram = ({values, xaxis_label}) => {
+            //console.log(values)
+            const histogramData = createHistogram(values);
+
+            return (
+              <div className="mt-5 h-90 w-120 p-4 bg-white shadow-md rounded-xl">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={histogramData} margin={{ bottom: 15, left: 7}}>
+                    <XAxis dataKey="bin" tick={{ fontSize: 10, fill: 'black' }} label={{ value: xaxis_label, fill: 'black', position: "outsideBottom", dy: 20 }}/>
+                    <YAxis tick={{ fill: "black" }} label={{ value: "Count", fill: 'black', angle: -90, position: "insideLeft", dy: 20, dx: -4 }}/>
+                    <Tooltip />
+                    <Bar dataKey="count" fill="#4f46e5"></Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            );
+        };
+
+        return (
+            <div style={{margin: "15px", marginBottom: "30px"}}>
+                {/* <h2 className="text-xl text-center font-bold">How does r/{name} compare to other subreddits?</h2> */}
+                <div className="flex justify-between ml-10 mt-7 mr-10">
+                    <div className="items-center">
+                        <div className="text-center">
+                            <h1 className="text-xl font-bold">Ranking r/{name}'s Toxicity Score</h1>
+                            <ToxicityPopoverButton></ToxicityPopoverButton>
+                        </div>
+                        <ul className="list-disc pl-5 ml-25">
+                            <li><h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity score = {Number(analysis.toxicity_score.toFixed(2))}</h1></li>
+                            <li><h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity grade = 
+                                    <GradeCircle grade={analysis.toxicity_grade}></GradeCircle>
+                                </h1>
+                            </li>
+                            <li>
+                                <h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity percentile = {Number(analysis.toxicity_percentile.toFixed(1))}%</h1>
+                                <h1 className="text-[16px] max-w-xs m-1 italic">This means that r/{name} has a higher toxicity score than {Number(analysis.toxicity_percentile.toFixed(1))}% 
+                                    of the 4000+ sampled subreddits </h1>
+                            </li>
+                        </ul>
+                        <Histogram values={analysis.all_toxicity_scores} xaxis_label="Toxicity Score"></Histogram>
+                        {/* <h1 className="mt-3 text-[15px] text-center text-red-500">Red bar is where r/{name} lies in the distribution</h1> */}
+                    </div>
+                    <div className="h-auto w-[2px] bg-gray-200"></div>
+                    <div className="items-center">
+                        <div className="text-center">
+                            <h1 className="text-xl font-bold">Ranking r/{name}'s Positive Content Score</h1>
+                            <PositiveContentPopoverButton></PositiveContentPopoverButton>
+                        </div>
+                        <ul className="list-disc pl-5 ml-25">
+                            <li><h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content score = {Number(analysis.positive_content_score.toFixed(2))}</h1></li>
+                            <li><h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content grade = 
+                                    <GradeCircle grade={analysis.positive_content_grade}></GradeCircle>
+                                </h1>
+                            </li>
+                            <li>
+                                <h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content percentile = {Number(analysis.positive_content_percentile.toFixed(1))}%</h1>
+                                <h1 className="text-[16px] max-w-xs m-1 italic">This means that r/{name} has a higher positive content score than {Number(analysis.positive_content_percentile.toFixed(1))}% 
+                                    of the 4000+ sampled subreddits</h1>
+                            </li>
+                        </ul>
+                        <Histogram values={analysis.all_positive_content_scores} xaxis_label="Positive Content Score"></Histogram>
+                        {/* <h1 className="mt-3 text-[15px] text-center text-red-500">Red bar is where r/{name} lies in the distribution</h1> */}
+                    </div>
+                </div>
+               
+            </div>
+        )
+    }
+
     const renderNGrams = () => {
         if (!analysis) return null;
 
@@ -279,7 +487,7 @@ export default function RedditPage() {
         const ColorCodeBox = (props) => {
             return (
                 <div className="w-[180px] h-[35px] font-medium"
-                     style={{fontSize: "14px", backgroundColor: props.backgroundColor, textAlign: "center",
+                     style={{fontSize: "14px", backgroundColor: props.backgroundColor, textAlign: "center", 
                              padding: "5px", borderTopLeftRadius: props.borderTopLeftRadius, 
                              borderBottomLeftRadius: props.borderBottomLeftRadius, borderTopRightRadius: props.borderTopRightRadius,
                              borderBottomRightRadius: props.borderBottomRightRadius}}>
@@ -360,6 +568,10 @@ export default function RedditPage() {
                     </h2>
                     <div className="ml-auto mr-8">{renderNamedEntitiesExpandAllToggle()}</div>
                 </div>
+                {/* <div className="flex flex-col mt-3 items-center space-y-4">
+                    <Button variant="outlined" sx={{ width: '500px', borderColor: "#719efd", mt: 2, fontWeight: "bold", fontSize: "14px"}}>How is a sentiment score computed for each entity?</Button>
+                    <Button variant="outlined" sx={{ width: '500px', borderColor: "#719efd", mt: 2, fontWeight: "bold", fontSize: "14px"}}>How is summarized sentiment computed for each entity?</Button>
+                </div> */}
                 <div style={{margin: "25px", marginBottom: "40px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
                     {renderLeftCarouselButton()}
                     <div className="flex justify-center">
@@ -380,6 +592,10 @@ export default function RedditPage() {
                             </div>
                         ))}
                      </div>
+                </div>
+                <div className="flex flex-col mt-3 items-center space-y-4">
+                    <Button variant="outlined" sx={{ width: '500px', borderColor: "#719efd", mt: 2, fontWeight: "bold", fontSize: "14px"}}>How is a sentiment score computed for each entity?</Button>
+                    <Button variant="outlined" sx={{ width: '500px', borderColor: "#719efd", mt: 2, fontWeight: "bold", fontSize: "14px"}}>How is summarized sentiment computed for each entity?</Button>
                 </div>
             </div>
         );
@@ -478,6 +694,8 @@ export default function RedditPage() {
 
                 {!analysisProgress && !error && analysis && (
                     <div className="mt-4">
+                        <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
+                        {renderComparativeAnalysis()}
                         <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
                         {renderNGrams()}
                         <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
