@@ -121,15 +121,18 @@ export default function RedditPage() {
 
     const renderGenerationTimeEstimatesTable = () => {
         return (
-            <div className="overflow-x-auto mt-7 mb-0 flex items-center justify-center">
+            <div className="overflow-x-auto flex items-center justify-center">
                 <table className="table-auto border-collapse text-sm m-2.5">
                     <thead>
                         <tr>
-                            <th className="px-6 py-2 text-center text-left text-indigo-600">
+                            <th className="px-6 py-2 text-center text-left">
                                 Time Filter
                             </th>
-                            <th className="px-8 py-2 text-center text-left text-indigo-600">
-                                Approx Generation Time
+                            <th className="px-4 py-2 text-center text-left">
+                                # of Posts Sampled 
+                            </th>
+                            <th className="px-6 py-2 text-center text-left">
+                                Generation Time
                             </th>
                         </tr>
                     </thead>
@@ -139,26 +142,36 @@ export default function RedditPage() {
                                 Week
                             </td>
                             <td className="px-4 py-1.5 text-center bg-gray-200">
-                                3-5 min
+                                50 
+                            </td>
+                            <td className="px-4 py-1.5 text-center bg-gray-200">
+                                ~3-5 min
                             </td>
                         </tr>
                         <tr>
                             <td className="px-4 py-1.5 text-center">Month</td>
-                            <td className="px-4 py-1.5 text-center">5-7 min</td>
+                            <td className="px-4 py-1.5 text-center">100</td>
+                            <td className="px-4 py-1.5 text-center">~5-7 min</td>
                         </tr>
                         <tr>
                             <td className="px-4 py-1.5 text-center bg-gray-200">
                                 Year
                             </td>
                             <td className="px-4 py-1.5 text-center bg-gray-200">
-                                10 min
+                                200
+                            </td>
+                            <td className="px-4 py-1.5 text-center bg-gray-200">
+                                ~10 min
                             </td>
                         </tr>
                         <tr>
                             <td className="px-4 py-1.5 text-center">
                                 All Time
                             </td>
-                            <td className="px-4 py-1.5 text-center">15 min</td>
+                            <td className="px-4 py-1.5 text-center">
+                                350
+                            </td>
+                            <td className="px-4 py-1.5 text-center">~15 min</td>
                         </tr>
                     </tbody>
                 </table>
@@ -808,8 +821,8 @@ export default function RedditPage() {
                     <SubredditAvatar subredditName={name ?? ""} />
                     <h1 className="text-lg font-bold">r/{name}</h1>
                 </div>
-                <div className="flex gap-25 justify-center">
-                    <div className="mb-4 flex items-center justify-center">
+                <div className="flex gap-50 justify-center">
+                    <div className="mb-4 ml-30 flex items-center justify-center">
                         <div className="flex gap-4 mb-2">
                             <div>
                                 <label className="block text-sm font-medium text-gray-700">
