@@ -39,12 +39,14 @@ class SubredditAnalysis(BaseModel):
     toxicity_score: float # [0, 1] --> 0 = not toxic at all, 1 = all toxic 
     toxicity_grade: str # A+ to F 
     toxicity_percentile: float # [0, 100]
-    all_toxicity_scores: List[float] # for generating a toxicity distribution graph on the UI 
+    all_toxicity_scores: List[float] # for generating a toxicity scores distribution graph on the UI 
+    all_toxicity_grades: List[str] # for generating a toxicity grades distribution graph on the UI 
 
     positive_content_score: float # [0, 1] --> 0 = no positive content, 1 = all positive content
     positive_content_grade: str # A+ to F 
     positive_content_percentile: float # [0, 100]
     all_positive_content_scores: List[float] # for generating a positive content scores distribution graph on the UI 
+    all_positive_content_grades: List[str] # for generating a positive content grades distribution graph on the UI 
 
 
 class SubredditAnalysisResponse(BaseModel):

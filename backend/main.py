@@ -188,8 +188,8 @@ async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
     print(top_named_entities_embeddings)
     t2 = time.time()
     print('getting 2d embeddings took: ', t2 - t1)
-    toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores = await get_toxicity_metrics(subreddit_query.name)
-    positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores = await get_positive_content_metrics(subreddit_query.name)
+    toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores, all_toxicity_grades = await get_toxicity_metrics(subreddit_query.name)
+    positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores, all_positive_content_grades = await get_positive_content_metrics(subreddit_query.name)
     
     analysis = SubredditAnalysis(
         top_n_grams = top_n_grams,
@@ -201,11 +201,13 @@ async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
         toxicity_grade = toxicity_grade,
         toxicity_percentile = toxicity_percentile,
         all_toxicity_scores = all_toxicity_scores,
+        all_toxicity_grades = all_toxicity_grades,
         # positive content metrics 
         positive_content_score = positive_content_score,
         positive_content_grade = positive_content_grade,
         positive_content_percentile = positive_content_percentile,
         all_positive_content_scores = all_positive_content_scores,
+        all_positive_content_grades = all_positive_content_grades
     )
     print(analysis)
 

@@ -15,7 +15,7 @@ import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
 import { Typography } from "@mui/material";
 import PopupState, { bindTrigger, bindPopover } from 'material-ui-popup-state';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 
 interface AnalysisProgress {
@@ -222,7 +222,8 @@ export default function RedditPage() {
                 <PopupState variant="popover" popupId="demo-popup-popover">
                   {(popupState) => (
                     <div>
-                      <Button sx={{ backgroundColor: "#719efd", mt: 2, mb: 3, fontWeight: "bold", fontSize: "15px"}}  variant="contained" {...bindTrigger(popupState)}>
+                      <Button sx={{ backgroundColor: "#4f46e5", mt: 3, mb: 3, fontSize: "14px",  transition: "background-color 0.2s ease-in-out", 
+                                   "&:hover": { backgroundColor: "#4338ca"},}}  variant="contained" {...bindTrigger(popupState)}>
                         What is Toxicity Score?
                       </Button>
                       <Popover
@@ -264,7 +265,8 @@ export default function RedditPage() {
                 <PopupState variant="popover" popupId="demo-popup-popover">
                   {(popupState) => (
                     <div>
-                      <Button sx={{ backgroundColor: "#719efd", mt: 2, mb: 3, fontWeight: "bold", fontSize: "15px"}}  variant="contained" {...bindTrigger(popupState)}>
+                      <Button sx={{ backgroundColor: "#4f46e5", mt: 3, mb: 3, fontSize: "14px", transition: "background-color 0.2s ease-in-out", 
+                                   "&:hover": { backgroundColor: "#4338ca"}}}  variant="contained" {...bindTrigger(popupState)}>
                         What is Positive Content Score?
                       </Button>
                       <Popover
@@ -343,45 +345,90 @@ export default function RedditPage() {
             );
         };
 
+        const GradeBarGraph = ({label, all_scores}) => {
+            // console.log('inside GradeDistributionPopoverButton')
+            // console.log('all_scores: ', all_scores)
+
+            const grade_to_count = all_scores.reduce((acc, grade) => {
+                acc[grade] = (acc[grade] || 0) + 1; // Increment count or initialize to 1
+                return acc;
+              }, {});
+            const gradeData = Object.entries(grade_to_count).map(([label, count]) => ({
+                label,
+                count
+              }));
+            const gradeOrder = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"];
+            gradeData.sort((a, b) => gradeOrder.indexOf(a.label) - gradeOrder.indexOf(b.label));
+
+            function getBarColor(grade)  {
+                if (["A+", "A", "A-"].includes(grade)) return "#00A36C"; // Green
+                if (["B+", "B", "B-"].includes(grade)) return "#a3e635"; // Lime
+                if (["C+", "C", "C-"].includes(grade)) return "#FDDA0D"; // Yellow
+                if (["D+", "D", "D-"].includes(grade)) return "#fb923c"; // Orange
+                if (grade === "F") return "#EE4B2B"; // Red
+            };
+
+            return (
+                <div className="mt-2 mb-4 h-50 w-90 bg-white shadow-md rounded-xl">
+                <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={gradeData}>
+                    <XAxis dataKey="label" tick={{ fill: "black", fontSize: 12 }} />
+                    <YAxis tick={{ fill: "black" }} label={{ value: "Count", angle: -90, position: "insideLeft", fill: "black" }} />
+                    <Tooltip />
+                    <Bar dataKey="count">
+                    {gradeData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={getBarColor(entry.label)} />
+                    ))}
+                    </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+                </div>
+            );
+        };
+
         return (
-            <div style={{margin: "15px", marginBottom: "30px"}}>
+            <div>
                 {/* <h2 className="text-xl text-center font-bold">How does r/{name} compare to other subreddits?</h2> */}
-                <div className="flex justify-between ml-10 mt-7 mr-10">
-                    <div className="items-center">
+                <div className="flex justify-between">
+                    <div className="items-center ml-10 mt-4 mr-10">
                         <div className="text-center">
                             <h1 className="text-xl font-bold">Ranking r/{name}'s Toxicity Score</h1>
                             <ToxicityPopoverButton></ToxicityPopoverButton>
                         </div>
-                        <ul className="list-disc pl-5 ml-25">
+                        <ul className="list-disc">
                             <li><h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity score = {Number(analysis.toxicity_score.toFixed(2))}</h1></li>
-                            <li><h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity grade = 
+                            <li>
+                                <h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity grade = 
                                     <GradeCircle grade={analysis.toxicity_grade}></GradeCircle>
                                 </h1>
+                                <GradeBarGraph label="See Toxicity Grade Distribution" all_scores={analysis.all_toxicity_grades}></GradeBarGraph>
                             </li>
                             <li>
                                 <h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity percentile = {Number(analysis.toxicity_percentile.toFixed(1))}%</h1>
-                                <h1 className="text-[16px] max-w-xs m-1 italic">This means that r/{name} has a higher toxicity score than {Number(analysis.toxicity_percentile.toFixed(1))}% 
+                                <h1 className="text-[16px] max-w-110 m-1 italic">This means that r/{name} has a higher toxicity score than {Number(analysis.toxicity_percentile.toFixed(1))}% 
                                     of the 4000+ sampled subreddits </h1>
                             </li>
                         </ul>
                         <Histogram values={analysis.all_toxicity_scores} xaxis_label="Toxicity Score"></Histogram>
                         {/* <h1 className="mt-3 text-[15px] text-center text-red-500">Red bar is where r/{name} lies in the distribution</h1> */}
                     </div>
-                    <div className="h-auto w-[2px] bg-gray-200"></div>
-                    <div className="items-center">
+                    <div className="w-[1px] bg-gray-400"></div>
+                    <div className="items-center ml-10 mt-4 mr-10">
                         <div className="text-center">
                             <h1 className="text-xl font-bold">Ranking r/{name}'s Positive Content Score</h1>
                             <PositiveContentPopoverButton></PositiveContentPopoverButton>
                         </div>
-                        <ul className="list-disc pl-5 ml-25">
+                        <ul className="list-disc">
                             <li><h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content score = {Number(analysis.positive_content_score.toFixed(2))}</h1></li>
-                            <li><h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content grade = 
+                            <li>
+                                <h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content grade = 
                                     <GradeCircle grade={analysis.positive_content_grade}></GradeCircle>
                                 </h1>
+                                <GradeBarGraph label="See Positive Content Grade Distribution" all_scores={analysis.all_positive_content_grades}></GradeBarGraph>
                             </li>
                             <li>
                                 <h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content percentile = {Number(analysis.positive_content_percentile.toFixed(1))}%</h1>
-                                <h1 className="text-[16px] max-w-xs m-1 italic">This means that r/{name} has a higher positive content score than {Number(analysis.positive_content_percentile.toFixed(1))}% 
+                                <h1 className="text-[16px] max-w-110 m-1 italic">This means that r/{name} has a higher positive content score than {Number(analysis.positive_content_percentile.toFixed(1))}% 
                                     of the 4000+ sampled subreddits</h1>
                             </li>
                         </ul>
@@ -430,7 +477,7 @@ export default function RedditPage() {
         const renderLeftCarouselButton = () => {
             return (
                 <div style={{ position: "absolute", left: "0" }}>{currNGramsCarouselIndex != 0 && 
-                    <button onClick={decrementCurrNGramsCarouselIndex} className="p-1 rounded-full text-white mr-30 bg-black transition hover:bg-gray-600">
+                    <button onClick={decrementCurrNGramsCarouselIndex} className="p-1 rounded-full text-black mr-30 bg-white border-2 border-black transition hover:bg-gray-200">
                         <ChevronLeft size={28}/>
                     </button>}
                 </div>
@@ -441,18 +488,51 @@ export default function RedditPage() {
             const topNGramsLength = Object.keys(analysis.top_n_grams).length;
             return (
                 <div style={{ position: "absolute", right: "0"  }}>{currNGramsCarouselIndex < topNGramsLength - 5 && 
-                    <button onClick={incrementCurrNGramsCarouselIndex} className="p-1 rounded-full text-white ml-30 bg-black transition hover:bg-gray-600">
+                    <button onClick={incrementCurrNGramsCarouselIndex} className="p-1 rounded-full text-black ml-30 bg-white transition border-2 border-black hover:bg-gray-200">
                         <ChevronRight size={28}/>
                     </button>}
                 </div>
             );
         };
 
+        const BiGramsPopoverButton = () => {
+            return (
+                <PopupState variant="popover" popupId="demo-popup-popover">
+                  {(popupState) => (
+                    <div>
+                      <Button sx={{ backgroundColor: "#4f46e5", mt: 3, mb: 0, fontSize: "14px",  transition: "background-color 0.2s ease-in-out", 
+                                   "&:hover": { backgroundColor: "#4338ca"},}}  variant="contained" {...bindTrigger(popupState)}>
+                        What's a Bi-Gram?
+                      </Button>
+                      <Popover
+                        {...bindPopover(popupState)}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'center',
+                        }}
+                      >
+                        <Typography sx={{ p: 2, maxWidth: 500, fontSize: '14px'}}>
+                            A Bi-Gram is 2 consecutive words in a text. For example, the sentence "I love pizza" has 2 bigrams: "I love" and "love pizza". 
+                       </Typography>
+                      </Popover>
+                    </div>
+                  )}
+                </PopupState>
+              );
+          }
+
         return (
-            <div className="mt-4">
-                <div style={{margin: "25px", marginBottom: "30px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
-                    {renderLeftCarouselButton()}
+            <div className="mt-7">
+                <div className="flex flex-col items-center">
                     <h2 className="text-xl text-center font-bold">Most Mentioned Bi-Grams</h2>
+                    <BiGramsPopoverButton></BiGramsPopoverButton>
+                </div>
+                <div style={{marginTop: "0px", marginBottom: "40px", marginLeft: '25px', marginRight: '25px', display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                    {renderLeftCarouselButton()}
                     {renderRightCarouselButton()}
                 </div>
                 <div className="overflow-hidden w-full">
@@ -486,7 +566,7 @@ export default function RedditPage() {
 
         const ColorCodeBox = (props) => {
             return (
-                <div className="w-[180px] h-[35px] font-medium"
+                <div className="w-[180px] h-[35px] font-medium border-1"
                      style={{fontSize: "14px", backgroundColor: props.backgroundColor, textAlign: "center", 
                              padding: "5px", borderTopLeftRadius: props.borderTopLeftRadius, 
                              borderBottomLeftRadius: props.borderBottomLeftRadius, borderTopRightRadius: props.borderTopRightRadius,
@@ -497,34 +577,50 @@ export default function RedditPage() {
         };
 
         const TopNamedEntitiesForDate = (props) => {
+            
+            const SummarizedSentimentBulletPoints = ({entity}) => {
+                const summary = entity;
+                if (!summary) return null; 
+                const sentences = summary.split('---').filter(sentence => sentence.trim() !== ''); 
+                return (
+                    <ul className="list-disc pl-4"> {sentences.map((sentence, index) => (
+                        <li key={index}>{sentence.trim()}</li> ))}
+                    </ul>
+                );
+            };
+
             return (
             <div key={props.date} className="flex-grow flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-l shadow-xl">
                 <h3 className="text-lg font-semibold bg-gray-200" style={{fontSize: "20px", textAlign: "center", padding: "4px",}}>
                     {formatDate(props.date, timeFilter)}
                 </h3>
-                <ul className="list-none pl-0">
+                <ul className="list-none pl-0 pt-3">
                     {props.entities.map((entity, index) => {
-                        const backgroundColor = entity[2] >= 0.5 && entity[2] <= 1 ? "#d9ead3"
-                                                : entity[2] >= 0.1 && entity[2] < 0.5 ? "#d0e0e3"
-                                                : entity[2] >= -0.1 && entity[2] < 0.1 ? "#fff2cc"
-                                                : entity[2] >= -0.5 && entity[2] < -0.1 ? "#f4cccc"
-                                                : entity[2] >= -1 && entity[2] < -0.5 ? "#ea9999"
+                        const backgroundColor = entity[2] >= 0.5 && entity[2] <= 1 ? "#AFE1AF"
+                                                : entity[2] >= 0.1 && entity[2] < 0.5 ? "#e2f4a5"
+                                                : entity[2] >= -0.1 && entity[2] < 0.1 ? "#FFFFC5"
+                                                : entity[2] >= -0.5 && entity[2] < -0.1 ? "#FFD580"
+                                                : entity[2] >= -1 && entity[2] < -0.5 ? "#ffb9b9"
                                                 : "bg-gray-100";
                         return (
-                            <li key={index} style={{ margin: "20px" }}>
-                                <div style={{display: "flex", justifyContent:"space-between", alignItems: "center",
-                                        backgroundColor: backgroundColor, paddingLeft: "10px", paddingRight: "10px",
-                                        paddingTop: "4px", paddingBottom: "4px", borderRadius: "5px",}}>
-                                    <span style={{fontWeight: 600, fontSize: "14.5px",}}>{entity[0]}</span>
-                                    <span style={{margin: "0 8px",}}></span>
-                                    <span style={{fontWeight: 600, fontSize: "13.5px",}}>Sentiment Score [-1, 1]:{" "}{entity[2]}</span>
-                                    <span style={{margin: "0 8px",}}></span>
-                                    <span style={{fontWeight: 600, fontSize: "13.5px",}}># Mentions:{" "}{entity[1]}</span>
+                            <li key={index}>
+                                <div className="flex justify-center">
+                                    <div className="inline-block justify-center items-center text-center mb-2 font-[14.5px] font-semibold pl-3 pr-3 pt-1 pb-1" 
+                                         style={{ backgroundColor: backgroundColor}}>{entity[0]}</div>
                                 </div>
-                                <div style={{fontWeight: 600, fontSize: "13.5px", marginTop: "10px", marginBottom: "5px",}}>
-                                    Summarized Sentiment:{" "}
+                                <div className="ml-5 mr-5 mt-3 mb-3">
+                                    <div style={{display: "flex", justifyContent:"space-between", alignItems: "center"}}>
+                                        <span style={{fontWeight: 600, fontSize: "14px",}}>Sentiment Score [-1, 1]:{" "}{entity[2]}</span>
+                                        <span style={{fontWeight: 600, fontSize: "14px",}}># Mentions:{" "}{entity[1]}</span>
+                                    </div>
+                                    <div style={{fontWeight: 600, fontSize: "13.5px", marginTop: "10px", marginBottom: "5px",}}>
+                                        Summarized Sentiment:{" "}
+                                    </div>
+                                    <div style={{fontSize: "13.5px", color: "#333",}}>
+                                        <SummarizedSentimentBulletPoints entity={entity[3]}></SummarizedSentimentBulletPoints>
+                                    </div>
+                                    {index !== props.entities.length - 1 && <hr className="bg-black mt-3 mb-2"></hr>}
                                 </div>
-                                <div style={{fontSize: "13.5px", color: "#333",}}>{entity[3]}</div>
                             </li>);})}
                 </ul>
             </div>
@@ -542,8 +638,8 @@ export default function RedditPage() {
         const renderLeftCarouselButton = () => {
             return (
                 <div style={{ position: "absolute", left: "0" }}>{currNamedEntityCarouselIndex != 0 && 
-                    <button onClick={decrementCurrNamedEntityCarouselIndex} className="p-1 rounded-full text-white mr-30 bg-black transition hover:bg-gray-600">
-                        <ChevronLeft size={32}/>
+                    <button onClick={decrementCurrNamedEntityCarouselIndex} className="p-1 rounded-full text-black mr-30 border-2 border-black transition hover:bg-gray-200">
+                        <ChevronLeft size={28}/>
                     </button>}
                 </div>
             );
@@ -553,33 +649,139 @@ export default function RedditPage() {
             const topNamedEntitiesLength = Object.keys(analysis.top_named_entities).length;
             return (
                 <div style={{ position: "absolute", right: "0"  }}>{currNamedEntityCarouselIndex < topNamedEntitiesLength - 3 && 
-                    <button onClick={incrementCurrNamedEntityCarouselIndex} className="p-1 rounded-full text-white ml-30 bg-black transition hover:bg-gray-600">
-                        <ChevronRight size={32}/>
+                    <button onClick={incrementCurrNamedEntityCarouselIndex} className="p-1 rounded-full text-black ml-30 border-2 border-black transition hover:bg-gray-200">
+                        <ChevronRight size={28}/>
                     </button>}
                 </div>
             );
         };
 
+        const NamedEntitiesDefinitionPopoverButton = () => {
+            return (
+                <PopupState variant="popover" popupId="demo-popup-popover">
+                  {(popupState) => (
+                    <div>
+                      <Button sx={{ backgroundColor: "#4f46e5", mt: 3, mb: 0, fontSize: "14px",  transition: "background-color 0.2s ease-in-out", 
+                                   "&:hover": { backgroundColor: "#4338ca"},}}  variant="contained" {...bindTrigger(popupState)}>
+                        What's a Named Entity?
+                      </Button>
+                      <Popover
+                        {...bindPopover(popupState)}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'center',
+                        }}
+                      >
+                        <Typography sx={{ p: 2, maxWidth: 500, fontSize: '14px'}}>
+                            A Named Entity is a key subject in a piece of text (include names of people, organizations, locations, and dates)
+                       </Typography>
+                      </Popover>
+                    </div>
+                  )}
+                </PopupState>
+              );
+          }
+
+          const SentimentScorePopoverButton = () => {
+            return (
+                <PopupState variant="popover" popupId="demo-popup-popover">
+                  {(popupState) => (
+                    <div>
+                      <Button sx={{ backgroundColor: "#4f46e5", mt: 3, mb: 0, fontSize: "14px",  transition: "background-color 0.2s ease-in-out", 
+                                   "&:hover": { backgroundColor: "#4338ca"},}}  variant="contained" {...bindTrigger(popupState)}>
+                        How is Sentiment Score computed?
+                      </Button>
+                      <Popover
+                        {...bindPopover(popupState)}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'center',
+                        }}
+                      >
+                        <Typography sx={{ p: 2, maxWidth: 500, fontSize: '14px'}}>
+                            The aspect-based sentiment analysis model <strong>"yangheng/deberta-v3-base-absa-v1.1"</strong> is used to generate 
+                            a sentiment score from -1 (most negative) to 1 (most positive). This sentiment score represents how
+                            the writer feels TOWARD the named entity (and is independent of the sentence's overall tone & sentiment).
+                       </Typography>
+                       <Typography sx={{ p: 1, maxWidth: 500, fontSize: '16px', textAlign: 'center', fontWeight: 'bold'}}>
+                            Example: 
+                       </Typography>
+                       <Typography className="italic" sx={{ p: 1, maxWidth: 500, fontSize: '14px', textAlign: 'center'}}>
+                            "It's so unfair that Taylor Swift didn't get nominated for a grammy this year - she got 
+                            cheated"
+                       </Typography>
+                       <Typography sx={{ p: 2, maxWidth: 500, fontSize: '14px'}}>
+                            The overall tone/sentiment of this sentence is frustrated/angry, but the writer feels 
+                            <strong style={{ color: 'green' }}> POSITIVELY</strong> toward Taylor Swift because they believe she is deserving of a grammy. 
+                       </Typography>
+                      </Popover>
+                    </div>
+                  )}
+                </PopupState>
+              );
+          }
+
+          const SummaryPopoverButton = () => {
+            return (
+                <PopupState variant="popover" popupId="demo-popup-popover">
+                  {(popupState) => (
+                    <div>
+                      <Button sx={{ backgroundColor: "#4f46e5", mt: 3, mb: 0, fontSize: "14px",  transition: "background-color 0.2s ease-in-out", 
+                                   "&:hover": { backgroundColor: "#4338ca"},}}  variant="contained" {...bindTrigger(popupState)}>
+                        How is Summarized Sentiment computed?
+                      </Button>
+                      <Popover
+                        {...bindPopover(popupState)}
+                        anchorOrigin={{
+                          vertical: 'bottom',
+                          horizontal: 'center',
+                        }}
+                        transformOrigin={{
+                          vertical: 'top',
+                          horizontal: 'center',
+                        }}
+                      >
+                        <Typography sx={{ p: 2, maxWidth: 500, fontSize: '14px'}}>
+                            The summarization ML model <strong>"facebook/bart-large-cnn"</strong> processes all of the 
+                            sentences where a named entity is directly mentioned and creates a short summary. 
+                       </Typography>
+                      </Popover>
+                    </div>
+                  )}
+                </PopupState>
+              );
+          }
+
+        
         return (
             <div className="mt-7">
-                <div className="flex justify-between items-center w-full relative">
-                    <h2 className="text-xl font-bold mt-3 mb-2 text-center absolute left-1/2 transform -translate-x-1/2" style={{ textAlign: "center", fontSize: "20px" }}>
+                <div className="flex flex-col items-center">
+                    <h2 className="text-xl font-bold text-center" style={{ textAlign: "center", fontSize: "20px" }}>
                     Most Mentioned Named Entities
                     </h2>
-                    <div className="ml-auto mr-8">{renderNamedEntitiesExpandAllToggle()}</div>
+                    <div className="flex gap-3">
+                        <NamedEntitiesDefinitionPopoverButton></NamedEntitiesDefinitionPopoverButton>
+                        <SentimentScorePopoverButton></SentimentScorePopoverButton>
+                        <SummaryPopoverButton></SummaryPopoverButton>
+                    </div>
+                    {/* <div className="ml-auto mr-8">{renderNamedEntitiesExpandAllToggle()}</div> */}
                 </div>
-                {/* <div className="flex flex-col mt-3 items-center space-y-4">
-                    <Button variant="outlined" sx={{ width: '500px', borderColor: "#719efd", mt: 2, fontWeight: "bold", fontSize: "14px"}}>How is a sentiment score computed for each entity?</Button>
-                    <Button variant="outlined" sx={{ width: '500px', borderColor: "#719efd", mt: 2, fontWeight: "bold", fontSize: "14px"}}>How is summarized sentiment computed for each entity?</Button>
-                </div> */}
-                <div style={{margin: "25px", marginBottom: "40px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+                <div style={{margin: "25px", marginBottom: "25px", marginTop: "35px", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
                     {renderLeftCarouselButton()}
-                    <div className="flex justify-center">
-                        <ColorCodeBox backgroundColor="#d9ead3" label="Very Positive Consensus" borderTopLeftRadius="5px" borderBottomLeftRadius="5px"></ColorCodeBox>
-                        <ColorCodeBox backgroundColor="#d0e0e3" label="Positive Consensus"></ColorCodeBox>
-                        <ColorCodeBox backgroundColor="#fff2cc" label="Neutral Consensus"></ColorCodeBox>
-                        <ColorCodeBox backgroundColor="#f4cccc" label="Negative Consensus"></ColorCodeBox>
-                        <ColorCodeBox backgroundColor="#ea9999" label="Very Negative Consensus" borderBottomRightRadius="5px" borderTopRightRadius="5px"></ColorCodeBox>
+                    <div className="flex justify-center border-1">
+                        <ColorCodeBox backgroundColor="#AFE1AF" label="Very Positive Consensus"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#e2f4a5" label="Positive Consensus"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#FFFFC5" label="Neutral Consensus"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#FFD580" label="Negative Consensus"></ColorCodeBox>
+                        <ColorCodeBox backgroundColor="#ffb9b9" label="Very Negative Consensus"></ColorCodeBox>
                     </div>
                     {renderRightCarouselButton()}
                 </div>
@@ -592,10 +794,6 @@ export default function RedditPage() {
                             </div>
                         ))}
                      </div>
-                </div>
-                <div className="flex flex-col mt-3 items-center space-y-4">
-                    <Button variant="outlined" sx={{ width: '500px', borderColor: "#719efd", mt: 2, fontWeight: "bold", fontSize: "14px"}}>How is a sentiment score computed for each entity?</Button>
-                    <Button variant="outlined" sx={{ width: '500px', borderColor: "#719efd", mt: 2, fontWeight: "bold", fontSize: "14px"}}>How is summarized sentiment computed for each entity?</Button>
                 </div>
             </div>
         );
@@ -694,12 +892,13 @@ export default function RedditPage() {
 
                 {!analysisProgress && !error && analysis && (
                     <div className="mt-4">
-                        <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
+                        <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {renderComparativeAnalysis()}
-                        <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
+                        <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {renderNGrams()}
-                        <hr className="my-4 border-t border-gray-300 mx-auto w-[97%]" />
+                        <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {renderNamedEntities()}
+                        <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {renderWordEmbeddings()}
                     </div>
                 )}

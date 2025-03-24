@@ -499,7 +499,8 @@ def composite_toxicity(text):
 #   1. toxicity_score: float # [0, 1] --> 0 = not toxic at all, 1 = all toxic 
 #   2. toxicity_grade: str # A+ to F 
 #   3. toxicity_percentile: float # [0, 100]
-#   4. all_toxicity_scores: List[float] # for generating a toxicity distribution graph on the UI 
+#   4. all_toxicity_scores: List[float] # for generating a toxicity scores distribution graph on the UI 
+#   5. all_toxicity_grades: List[str] # for generating a toxicity grades distribution graph on the UI 
 async def get_toxicity_metrics(sub_name):
     toxicity_dict = {}
     with open("top_subreddits_toxicity_score.txt", "r", encoding="utf-8") as file:
@@ -509,11 +510,16 @@ async def get_toxicity_metrics(sub_name):
                 subreddit_name, score = parts
                 toxicity_dict[subreddit_name] = round(float(score), 4)
     all_toxicity_scores = list(toxicity_dict.values())
+    all_toxicity_grades = [get_toxicity_grade(toxicity_score) for toxicity_score in all_toxicity_scores]
     
     if (sub_name in toxicity_dict):
         print('toxicity score already in top_subreddits_toxicity_score.txt')
         toxicity_score = toxicity_dict[sub_name]
-        return (toxicity_score, get_toxicity_grade(toxicity_score), get_percentile(all_toxicity_scores, toxicity_score), all_toxicity_scores)
+        return (toxicity_score, 
+                get_toxicity_grade(toxicity_score), 
+                get_percentile(all_toxicity_scores, toxicity_score), 
+                all_toxicity_scores, 
+                all_toxicity_grades)
     else:
         reddit = asyncpraw.Reddit(
         client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -537,7 +543,12 @@ async def get_toxicity_metrics(sub_name):
             f.write(sub_name + " " + str(composite_toxicity_score) + "\n")
             print('wrote toxicity score for r/', sub_name, ' to top_subreddits_toxicity_score.txt')
             all_toxicity_scores.append(composite_toxicity_score)
-            return (composite_toxicity_score, get_toxicity_grade(composite_toxicity_score), get_percentile(all_toxicity_scores, composite_toxicity_score), all_toxicity_scores)
+            all_toxicity_grades.append(get_toxicity_grade(composite_toxicity_score))
+            return (composite_toxicity_score, 
+                    get_toxicity_grade(composite_toxicity_score), 
+                    get_percentile(all_toxicity_scores, composite_toxicity_score), 
+                    all_toxicity_scores,
+                    all_toxicity_grades)
         except Exception as e:
             print('couldnt get posts to calculate toxicity score because ', e)
 
@@ -547,6 +558,7 @@ async def get_toxicity_metrics(sub_name):
 #   2. positive_content_grade: str # A+ to F 
 #   3. positive_content_percentile: float # [0, 100]
 #   4. all_positive_content_scores: List[float] # for generating a positive content scores distribution graph on the UI 
+#   5. all_positive_content_grades: List[str] # for generating a positive content grades distribution graph on the UI 
 async def get_positive_content_metrics(sub_name):
     positive_content_dict = {}
     with open("top_subreddits_positive_content_score.txt", "r", encoding="utf-8") as file:
@@ -557,6 +569,7 @@ async def get_positive_content_metrics(sub_name):
                 positive_content_dict[subreddit_name] = round(float(score), 4)
     all_positive_content_scores = list(positive_content_dict.values())
     all_positive_content_scores_normalized = [(x + 1) / 2 for x in all_positive_content_scores] # changes score range from [-1, 1] to [0, 1]
+    all_positive_content_grades = [get_positive_content_grade(x) for x in all_positive_content_scores_normalized]
     positive_content_score = 0
     
     if (sub_name in positive_content_dict):
@@ -566,7 +579,8 @@ async def get_positive_content_metrics(sub_name):
         return (positive_content_score_normalized, 
                 get_positive_content_grade(positive_content_score_normalized), 
                 get_percentile(all_positive_content_scores_normalized, positive_content_score_normalized), 
-                all_positive_content_scores_normalized)
+                all_positive_content_scores_normalized,
+                all_positive_content_grades)
     else:
         reddit = asyncpraw.Reddit(
         client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -598,9 +612,11 @@ async def get_positive_content_metrics(sub_name):
             f.write(sub_name + " " + str(positive_content_score) + "\n")
             print('wrote positive content score for r/', sub_name, ' to top_subreddits_positive_content_score.txt')
             all_positive_content_scores_normalized.append(positive_content_score_normalized)
+            all_positive_content_grades.append(get_positive_content_grade(positive_content_score_normalized))
             return (positive_content_score_normalized, 
                     get_positive_content_grade(positive_content_score_normalized), 
                     get_percentile(all_positive_content_scores_normalized, positive_content_score_normalized), 
-                    all_positive_content_scores_normalized)
+                    all_positive_content_scores_normalized,
+                    all_positive_content_grades)
         except Exception as e:
             print('couldnt get posts to calculate positive content score because ', e)
