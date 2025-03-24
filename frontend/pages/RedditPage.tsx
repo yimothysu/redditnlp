@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
+    NamedEntity,
+    NGram,
     fetchSubredditAnalysis,
     SubredditAnalysis,
     SubredditAnalysisResponse,
@@ -10,7 +12,6 @@ import { SubredditAvatar } from "../src/components/SubredditAvatar.tsx";
 
 import Template from "./Template.tsx";
 import WordEmbeddingsGraph from "../Components/WordEmbeddingsGraph.tsx";
-import { render } from "react-dom";
 import Button from '@mui/material/Button';
 import Popover from '@mui/material/Popover';
 import { Typography } from "@mui/material";
@@ -34,12 +35,12 @@ const spinnerStyle = {
 };
 */
 
-const months = {
+const months: Record<string, string> = {
     '01': 'January','02': 'February','03': 'March','04': 'April','05': 'May','06': 'June','07': 'July','08': 'August',
     '09': 'September','10': 'October','11': 'November','12': 'December'
 };
 
-function formatDate(date, time_filter) {
+function formatDate(date: string, time_filter: string) {
     const currentYear = new Date().getFullYear();
     if (time_filter == 'week') {
         // Ex: 03-13 --> May 13, 2025
@@ -61,12 +62,12 @@ export default function RedditPage() {
     const [analysis, setAnalysis] = useState<SubredditAnalysis | null>(null);
     const [timeFilter, setTimeFilter] = useState("week");
     const [sortBy, setSortBy] = useState("top");
-    const [namedEntitiesExpandAllIsChecked, setNamedEntitiesExpandAllIsChecked] = useState(false)
     const [currNamedEntityCarouselIndex, setCurrNamedEntityCarouselIndex] = useState(0);
     const [currNGramsCarouselIndex, setCurrNGramsCarouselIndex] = useState(0);
-    const handleNamedEntitiesToggleChange = () => {
-        setNamedEntitiesExpandAllIsChecked(!namedEntitiesExpandAllIsChecked)
-    }
+    // const [namedEntitiesExpandAllIsChecked, setNamedEntitiesExpandAllIsChecked] = useState(false)
+    // const handleNamedEntitiesToggleChange = () => {
+    //     setNamedEntitiesExpandAllIsChecked(!namedEntitiesExpandAllIsChecked)
+    // }
 
     const isMounted = useRef(true);
 
@@ -206,7 +207,7 @@ export default function RedditPage() {
         );
     };
 
-    function createHistogram(values) {
+    function createHistogram(values: number[]) {
         console.log('inside createHistogram')
         console.log(values)
         const minVal = 0;
@@ -316,7 +317,7 @@ export default function RedditPage() {
               );
           }
         
-        const GradeCircle = ({grade}) => {
+        const GradeCircle: React.FC<{ grade: string; }> = ({grade}) => {
             const getGradeBackgroundColor = () => {
                 if (['A+', 'A', 'A-'].includes(grade)) { return 'bg-green-300'; }
                 if (['B+', 'B', 'B-'].includes(grade)) { return 'bg-lime-300'; }
@@ -340,7 +341,7 @@ export default function RedditPage() {
             );
         }
 
-        const Histogram = ({values, xaxis_label}) => {
+        const Histogram: React.FC<{ values: number[]; xaxis_label: string }> = ({values, xaxis_label}) => {
             //console.log(values)
             const histogramData = createHistogram(values);
 
@@ -358,11 +359,11 @@ export default function RedditPage() {
             );
         };
 
-        const GradeBarGraph = ({label, all_scores}) => {
+        const GradeBarGraph: React.FC<{all_scores: string[] }> = ({all_scores}) => {
             // console.log('inside GradeDistributionPopoverButton')
             // console.log('all_scores: ', all_scores)
 
-            const grade_to_count = all_scores.reduce((acc, grade) => {
+            const grade_to_count = all_scores.reduce((acc: Record<string, number>, grade: string) => {
                 acc[grade] = (acc[grade] || 0) + 1; // Increment count or initialize to 1
                 return acc;
               }, {});
@@ -373,7 +374,7 @@ export default function RedditPage() {
             const gradeOrder = ["A+", "A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D+", "D", "D-", "F"];
             gradeData.sort((a, b) => gradeOrder.indexOf(a.label) - gradeOrder.indexOf(b.label));
 
-            function getBarColor(grade)  {
+            function getBarColor(grade: string)  {
                 if (["A+", "A", "A-"].includes(grade)) return "#00A36C"; // Green
                 if (["B+", "B", "B-"].includes(grade)) return "#a3e635"; // Lime
                 if (["C+", "C", "C-"].includes(grade)) return "#FDDA0D"; // Yellow
@@ -414,7 +415,7 @@ export default function RedditPage() {
                                 <h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity grade = 
                                     <GradeCircle grade={analysis.toxicity_grade}></GradeCircle>
                                 </h1>
-                                <GradeBarGraph label="See Toxicity Grade Distribution" all_scores={analysis.all_toxicity_grades}></GradeBarGraph>
+                                <GradeBarGraph all_scores={analysis.all_toxicity_grades}></GradeBarGraph>
                             </li>
                             <li>
                                 <h1 className="text-[16px] font-semibold m-1">r/{name}'s toxicity percentile = {Number(analysis.toxicity_percentile.toFixed(1))}%</h1>
@@ -437,7 +438,7 @@ export default function RedditPage() {
                                 <h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content grade = 
                                     <GradeCircle grade={analysis.positive_content_grade}></GradeCircle>
                                 </h1>
-                                <GradeBarGraph label="See Positive Content Grade Distribution" all_scores={analysis.all_positive_content_grades}></GradeBarGraph>
+                                <GradeBarGraph all_scores={analysis.all_positive_content_grades}></GradeBarGraph>
                             </li>
                             <li>
                                 <h1 className="text-[16px] font-semibold m-1">r/{name}'s positive content percentile = {Number(analysis.positive_content_percentile.toFixed(1))}%</h1>
@@ -457,7 +458,7 @@ export default function RedditPage() {
     const renderNGrams = () => {
         if (!analysis) return null;
 
-        const NGramsForDate = ({date, ngrams}) => {
+        const NGramsForDate: React.FC<{ date: string; ngrams: NGram[] }> = ({ date, ngrams }) => {
             return (
             <div key={date} className="flex-grow mb-3 mr-1 ml-1 border bg-white border-gray-200 rounded-l shadow-xl">
                 <h3 className="text-lg text-center p-1 font-semibold bg-gray-200">{formatDate(date, timeFilter)}</h3>
@@ -466,7 +467,7 @@ export default function RedditPage() {
                     <h2>Count</h2>
                 </div>
                 <ul className="list-none pl-5 pr-5 pt-2">
-                    {ngrams.map((ngram, index) => (
+                    {ngrams.map((ngram: NGram, index: number) => (
                         <li key={index}>
                             <div className='text-[14px] flex justify-between'>
                                 <div>{ngram[0]}</div> 
@@ -562,22 +563,22 @@ export default function RedditPage() {
         );
     };
 
-    const renderNamedEntitiesExpandAllToggle = () => {
-        return (
-            <label className='autoSaverSwitch relative inline-flex cursor-pointer select-none items-center'>
-                    <input type='checkbox' name='autoSaver' className='sr-only' checked={namedEntitiesExpandAllIsChecked} onChange={handleNamedEntitiesToggleChange}/>
-                    <span className={`slider mr-3 flex h-[26px] w-[50px] items-center rounded-full p-1 duration-200 ${namedEntitiesExpandAllIsChecked ? 'bg-[#5a33ff]' : 'bg-[#CCCCCE]'}`}>
-                        <span className={`dot h-[18px] w-[18px] rounded-full bg-white duration-200 ${namedEntitiesExpandAllIsChecked ? 'translate-x-6' : ''}`}></span>
-                    </span>
-                    <span className='label flex items-center text-sm font-medium text-black'> Expand All </span>
-            </label>
-        );
-    };
+    // const renderNamedEntitiesExpandAllToggle = () => {
+    //     return (
+    //         <label className='autoSaverSwitch relative inline-flex cursor-pointer select-none items-center'>
+    //                 <input type='checkbox' name='autoSaver' className='sr-only' checked={namedEntitiesExpandAllIsChecked} onChange={handleNamedEntitiesToggleChange}/>
+    //                 <span className={`slider mr-3 flex h-[26px] w-[50px] items-center rounded-full p-1 duration-200 ${namedEntitiesExpandAllIsChecked ? 'bg-[#5a33ff]' : 'bg-[#CCCCCE]'}`}>
+    //                     <span className={`dot h-[18px] w-[18px] rounded-full bg-white duration-200 ${namedEntitiesExpandAllIsChecked ? 'translate-x-6' : ''}`}></span>
+    //                 </span>
+    //                 <span className='label flex items-center text-sm font-medium text-black'> Expand All </span>
+    //         </label>
+    //     );
+    // };
 
     const renderNamedEntities = () => {
         if (!analysis) return null;
 
-        const ColorCodeBox = (props) => {
+        const ColorCodeBox = (props: any) => {
             return (
                 <div className="w-[180px] h-[35px] font-medium border-1"
                      style={{fontSize: "14px", backgroundColor: props.backgroundColor, textAlign: "center", 
@@ -589,14 +590,13 @@ export default function RedditPage() {
             );
         };
 
-        const TopNamedEntitiesForDate = (props) => {
+        const TopNamedEntitiesForDate = (props: any) => {
             
-            const SummarizedSentimentBulletPoints = ({entity}) => {
-                const summary = entity;
+            const SummarizedSentimentBulletPoints: React.FC<{ summary: string; }> = ({summary}) => {
                 if (!summary) return null; 
-                const sentences = summary.split('---').filter(sentence => sentence.trim() !== ''); 
+                const sentences = summary.split('---').filter((sentence: string) => sentence.trim() !== ''); 
                 return (
-                    <ul className="list-disc pl-4"> {sentences.map((sentence, index) => (
+                    <ul className="list-disc pl-4"> {sentences.map((sentence: string, index: number) => (
                         <li key={index}>{sentence.trim()}</li> ))}
                     </ul>
                 );
@@ -608,7 +608,7 @@ export default function RedditPage() {
                     {formatDate(props.date, timeFilter)}
                 </h3>
                 <ul className="list-none pl-0 pt-3">
-                    {props.entities.map((entity, index) => {
+                    {props.entities.map((entity: NamedEntity, index: number) => {
                         const backgroundColor = entity[2] >= 0.5 && entity[2] <= 1 ? "#AFE1AF"
                                                 : entity[2] >= 0.1 && entity[2] < 0.5 ? "#e2f4a5"
                                                 : entity[2] >= -0.1 && entity[2] < 0.1 ? "#FFFFC5"
@@ -630,7 +630,7 @@ export default function RedditPage() {
                                         Summarized Sentiment:{" "}
                                     </div>
                                     <div style={{fontSize: "13.5px", color: "#333",}}>
-                                        <SummarizedSentimentBulletPoints entity={entity[3]}></SummarizedSentimentBulletPoints>
+                                        <SummarizedSentimentBulletPoints summary={entity[3]}></SummarizedSentimentBulletPoints>
                                     </div>
                                     {index !== props.entities.length - 1 && <hr className="bg-black mt-3 mb-2"></hr>}
                                 </div>

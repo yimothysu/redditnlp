@@ -1,4 +1,4 @@
-import { WordCloud } from "react-d3-cloud";
+//import { WordCloud } from "react-d3-cloud";
 // TODO: move to environment variable
 const API_BASE_URL = "http://localhost:8000"; // Backend FastAPI server URL
 
