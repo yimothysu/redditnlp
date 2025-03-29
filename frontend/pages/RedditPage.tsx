@@ -1,50 +1,8 @@
-import React from "react";
-import { useState, useEffect, useRef } from "react";
+import {ChangeEvent} from "react";
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 import RedditAnalysisDisplay from "../Components/RedditAnalysisDisplay.tsx";
 import Template from "../pages/Template.tsx";
-
-const renderGenerationTimeEstimatesTable = () => {
-  return (
-    <div className="overflow-x-auto flex items-center justify-center">
-      <table className="table-auto border-collapse text-sm m-2.5">
-        <thead>
-          <tr>
-            <th className="px-6 py-2 text-center text-left">Time Filter</th>
-            <th className="px-4 py-2 text-center text-left">
-              # of Posts Sampled
-            </th>
-            <th className="px-6 py-2 text-center text-left">
-              Generation Time
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td className="px-4 py-1.5 text-center bg-gray-200">Week</td>
-            <td className="px-4 py-1.5 text-center bg-gray-200">50</td>
-            <td className="px-4 py-1.5 text-center bg-gray-200">~3-5 min</td>
-          </tr>
-          <tr>
-            <td className="px-4 py-1.5 text-center">Month</td>
-            <td className="px-4 py-1.5 text-center">100</td>
-            <td className="px-4 py-1.5 text-center">~5-7 min</td>
-          </tr>
-          <tr>
-            <td className="px-4 py-1.5 text-center bg-gray-200">Year</td>
-            <td className="px-4 py-1.5 text-center bg-gray-200">200</td>
-            <td className="px-4 py-1.5 text-center bg-gray-200">~10 min</td>
-          </tr>
-          <tr>
-            <td className="px-4 py-1.5 text-center">All Time</td>
-            <td className="px-4 py-1.5 text-center">350</td>
-            <td className="px-4 py-1.5 text-center">~15 min</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  );
-};
 
 // TODO: Replace list with list of cached subreddits
 const subreddits = ["AskReddit", "ufl", "teenagers"];
@@ -54,7 +12,7 @@ export default function RedditPage() {
   const { name } = useParams();
   const [subreddit, setSubreddit] = useState("");
 
-  const handleSubredditChange = (e) => {
+  const handleSubredditChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setSubreddit(e.target.value);
   }
 

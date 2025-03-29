@@ -1,4 +1,3 @@
-import React from "react";
 import { useState, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
@@ -70,7 +69,11 @@ function formatDate(date: string, time_filter: string) {
   return date;
 }
 
-export default function RedditAnalysisDisplay({name}) {
+type Props = {
+  name?: string;
+} 
+
+export default function RedditAnalysisDisplay({name}: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [analysisProgress, setAnalysisProgress] =
