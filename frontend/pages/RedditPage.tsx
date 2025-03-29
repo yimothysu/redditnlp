@@ -198,13 +198,12 @@ export default function RedditPage() {
           the subreddit. The size of the word corresponds to its frequency in
           the subreddit.
         </p>
-        <div className="bg-gray-100 rounded">
-          {analysis?.top_named_entities_wordcloud ? (
-            <img src={wordCloud.src} alt="Word Cloud" />
-          ) : (
-            <p className="text-gray-400 p-4">No Word Cloud</p>
-          )}
-        </div>
+
+        {analysis?.top_named_entities_wordcloud ? (
+          <img className="mx-auto w-fit" src={wordCloud.src} alt="Word Cloud" />
+        ) : (
+          <p className="text-gray-400 p-4">No Word Cloud</p>
+        )}
       </div>
     );
   };
