@@ -24,19 +24,19 @@ export interface SubredditAnalysis {
   top_n_grams: Record<string, NGram[]>;
   top_named_entities: Record<string, NamedEntity[]>;
   top_named_entities_embeddings: Record<string, [number, number]>;
-  top_named_entities_word_cloud: Record<string, number>;
+  top_named_entities_wordcloud: string;
   // For subreddit ranking
-  toxicity_score: number // [0, 1] --> 0 = not toxic at all, 1 = all toxic 
-  toxicity_grade: string // A+ to F 
-  toxicity_percentile: number // [0, 100]
-  all_toxicity_scores: [number] // for generating a toxicity scores distribution graph on the UI 
-  all_toxicity_grades: [string] // for generating a toxicity grades distribution graph on the UI 
+  toxicity_score: number; // [0, 1] --> 0 = not toxic at all, 1 = all toxic
+  toxicity_grade: string; // A+ to F
+  toxicity_percentile: number; // [0, 100]
+  all_toxicity_scores: [number]; // for generating a toxicity scores distribution graph on the UI
+  all_toxicity_grades: [string]; // for generating a toxicity grades distribution graph on the UI
 
-  positive_content_score: number // [0, 1] --> 0 = no positive content, 1 = all positive content
-  positive_content_grade: string // A+ to F 
-  positive_content_percentile: number // [0, 100]
-  all_positive_content_scores: [number] // for generating a positive content scores distribution graph on the UI 
-  all_positive_content_grades: [string] // for generating a positive content grades distribution graph on the UI 
+  positive_content_score: number; // [0, 1] --> 0 = no positive content, 1 = all positive content
+  positive_content_grade: string; // A+ to F
+  positive_content_percentile: number; // [0, 100]
+  all_positive_content_scores: [number]; // for generating a positive content scores distribution graph on the UI
+  all_positive_content_grades: [string]; // for generating a positive content grades distribution graph on the UI
 }
 
 export interface SubredditAnalysisResponse {
@@ -82,13 +82,12 @@ export async function fetchSubredditAnalysis(
   return await response.json();
 }
 
-
 export async function fetchPopularSubreddits(): Promise<PopularSubredditsResponse> {
   const response = await fetch(`${API_BASE_URL}/popular_subreddits/`, {
     method: "GET",
     headers: {
       "Content-Type": "application/json",
-    }
+    },
   });
 
   if (!response.ok) {

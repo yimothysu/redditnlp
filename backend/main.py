@@ -190,12 +190,16 @@ async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
     print('getting 2d embeddings took: ', t2 - t1)
     toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores, all_toxicity_grades = await get_toxicity_metrics(subreddit_query.name)
     positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores, all_positive_content_grades = await get_positive_content_metrics(subreddit_query.name)
+    print('generating wordcloud: ')
+    top_named_entities_wordcloud = generate_word_cloud(top_named_entities)
+    print("wordcloud generated")
     
     analysis = SubredditAnalysis(
         top_n_grams = top_n_grams,
         top_named_entities = top_named_entities,
         top_named_entities_embeddings = top_named_entities_embeddings,
-        top_named_entities_word_cloud = generate_word_cloud(top_named_entities),
+        top_named_entities_wordcloud = top_named_entities_wordcloud,
+
         # toxicity metrics 
         toxicity_score = toxicity_score,
         toxicity_grade = toxicity_grade,
@@ -207,9 +211,9 @@ async def perform_subreddit_analysis(cache_entry: SubredditAnalysisCacheEntry):
         positive_content_grade = positive_content_grade,
         positive_content_percentile = positive_content_percentile,
         all_positive_content_scores = all_positive_content_scores,
-        all_positive_content_grades = all_positive_content_grades
+        all_positive_content_grades = all_positive_content_grades       
     )
-    print(analysis)
+    #print(analysis)
 
     cache_entry.analysis = analysis
     cache_entry.updating = False

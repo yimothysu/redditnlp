@@ -34,6 +34,8 @@ class SubredditAnalysis(BaseModel):
     #   4. summary of comments regarding named entity 
     top_named_entities: Dict[str, List[Tuple[str, int, float, str]]]
     top_named_entities_embeddings: Dict[str, Tuple[float, float]]
+    top_named_entities_wordcloud: str
+
     
     # For subreddit ranking
     toxicity_score: float # [0, 1] --> 0 = not toxic at all, 1 = all toxic 
