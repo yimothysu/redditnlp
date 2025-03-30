@@ -228,7 +228,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 3,
-                                    fontSize: "14px",
+                                    fontSize: "12px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -327,7 +327,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 3,
-                                    fontSize: "14px",
+                                    fontSize: "12px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -468,7 +468,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
             const histogramData = createHistogram(values);
 
             return (
-                <div className="mt-5 h-90 w-120 p-4 bg-white shadow-md rounded-xl">
+                <div className="mt-5 h-90 w-[90%] p-4 bg-white shadow-md rounded-xl">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={histogramData}
@@ -551,7 +551,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
             }
 
             return (
-                <div className="mt-2 mb-4 h-50 w-90 bg-white shadow-md rounded-xl">
+                <div className="mt-2 mr-10 mb-4 h-50 w-[90%] bg-white shadow-md rounded-xl">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={gradeData}>
                             <XAxis
@@ -583,26 +583,25 @@ export default function RedditAnalysisDisplay({ name }: Props) {
         };
 
         return (
-            <div>
-                {/* <h2 className="text-xl text-center font-bold">How does r/{name} compare to other subreddits?</h2> */}
-                <div className="flex justify-between">
-                    <div className="items-center ml-10 mt-4 mr-10">
+            <div >
+                <div className="flex">
+                    <div className="w-1/2">
                         <div className="text-center">
-                            <h1 className="text-xl font-bold">
-                                Ranking r/{name}'s Toxicity Score
+                            <h1 className="text-l font-bold">
+                                Ranking Toxicity Score
                             </h1>
                             <ToxicityPopoverButton></ToxicityPopoverButton>
                         </div>
                         <ul className="list-disc">
                             <li>
-                                <h1 className="text-[16px] font-semibold m-1">
-                                    r/{name}'s toxicity score ={" "}
+                                <h1 className="text-base font-semibold m-1">
+                                    toxicity score ={" "}
                                     {Number(analysis.toxicity_score.toFixed(2))}
                                 </h1>
                             </li>
                             <li>
-                                <h1 className="text-[16px] font-semibold m-1">
-                                    r/{name}'s toxicity grade =
+                                <h1 className="text-base font-semibold m-1">
+                                    toxicity grade =
                                     <GradeCircle
                                         grade={analysis.toxicity_grade}
                                     ></GradeCircle>
@@ -612,14 +611,14 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                 ></GradeBarGraph>
                             </li>
                             <li>
-                                <h1 className="text-[16px] font-semibold m-1">
-                                    r/{name}'s toxicity percentile ={" "}
+                                <h1 className="text-base font-semibold m-1">
+                                    toxicity percentile ={" "}
                                     {Number(
                                         analysis.toxicity_percentile.toFixed(1)
                                     )}
                                     %
                                 </h1>
-                                <h1 className="text-[16px] max-w-110 m-1 italic">
+                                <h1 className="text-base max-w-110 m-1 italic">
                                     This means that r/{name} has a higher
                                     toxicity score than{" "}
                                     {Number(
@@ -635,18 +634,19 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                         ></Histogram>
                         {/* <h1 className="mt-3 text-[15px] text-center text-red-500">Red bar is where r/{name} lies in the distribution</h1> */}
                     </div>
+                    <div className="w-1/2">
                     <div className="w-[1px] bg-gray-400"></div>
-                    <div className="items-center ml-10 mt-4 mr-10">
+                    <div className="items-center">
                         <div className="text-center">
-                            <h1 className="text-xl font-bold">
-                                Ranking r/{name}'s Positive Content Score
+                            <h1 className="text-l font-bold">
+                                Ranking Positive Content Score
                             </h1>
                             <PositiveContentPopoverButton></PositiveContentPopoverButton>
                         </div>
                         <ul className="list-disc">
                             <li>
                                 <h1 className="text-[16px] font-semibold m-1">
-                                    r/{name}'s positive content score ={" "}
+                                    positive content score ={" "}
                                     {Number(
                                         analysis.positive_content_score.toFixed(
                                             2
@@ -656,7 +656,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                             </li>
                             <li>
                                 <h1 className="text-[16px] font-semibold m-1">
-                                    r/{name}'s positive content grade =
+                                    positive content grade =
                                     <GradeCircle
                                         grade={analysis.positive_content_grade}
                                     ></GradeCircle>
@@ -669,7 +669,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                             </li>
                             <li>
                                 <h1 className="text-[16px] font-semibold m-1">
-                                    r/{name}'s positive content percentile ={" "}
+                                    positive content percentile ={" "}
                                     {Number(
                                         analysis.positive_content_percentile.toFixed(
                                             1
@@ -695,6 +695,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                         ></Histogram>
                         {/* <h1 className="mt-3 text-[15px] text-center text-red-500">Red bar is where r/{name} lies in the distribution</h1> */}
                     </div>
+                </div>
                 </div>
             </div>
         );
@@ -891,9 +892,9 @@ export default function RedditAnalysisDisplay({ name }: Props) {
         const ColorCodeBox = (props: any) => {
             return (
                 <div
-                    className="w-[180px] h-[35px] font-medium border-1"
+                    className="w-[20%] h-[35px] font-medium border-1"
                     style={{
-                        fontSize: "14px",
+                        fontSize: "50%",
                         backgroundColor: props.backgroundColor,
                         textAlign: "center",
                         padding: "5px",

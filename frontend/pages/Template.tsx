@@ -2,7 +2,7 @@ import { Home as HomeIcon } from "lucide-react";
 
 export default function Template(props: any) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-gray-200">
       <div className="flex p-2">
         <a href="/" className="text-black!">
           <div className="flex ml-3 mt-2 ">
