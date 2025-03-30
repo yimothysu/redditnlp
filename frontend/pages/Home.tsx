@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+//import React, { useState, useEffect } from "react";
 import Template from "./Template.tsx";
 import { SubredditCard } from "../src/components/SubredditCard.tsx";
-import { useNavigate } from "react-router-dom";
-import { fetchPopularSubreddits, PopularSubredditsResponse } from "../src/lib/api.ts";
+// import { useNavigate } from "react-router-dom";
+// import { fetchPopularSubreddits, PopularSubredditsResponse } from "../src/lib/api.ts";
 
 function SubredditsCached() {
   const subreddits = [
@@ -77,67 +77,67 @@ function RequestAnalysisForSpecificSubreddit() {
   );
 }
 
-function PopularCommunities() {
-  const [popularCommunities, setPopularCommunities] = useState<PopularSubredditsResponse | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+// function PopularCommunities() {
+//   const [popularCommunities, setPopularCommunities] = useState<PopularSubredditsResponse | null>(null);
+//   const [loading, setLoading] = useState<boolean>(true);
+//   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const communities = await fetchPopularSubreddits();
-        setPopularCommunities(communities);
-        setLoading(false);
-      } catch (err) {
-        setError("Failed to fetch popular communities.");
-        setLoading(false);
-      }
-    };
+//   useEffect(() => {
+//     const fetchData = async () => {
+//       try {
+//         const communities = await fetchPopularSubreddits();
+//         setPopularCommunities(communities);
+//         setLoading(false);
+//       } catch (err) {
+//         setError("Failed to fetch popular communities.");
+//         setLoading(false);
+//       }
+//     };
 
-    fetchData();
-  }, []);
+//     fetchData();
+//   }, []);
 
-  if (loading) {
-    return <div>Loading...</div>;
-  }
+//   if (loading) {
+//     return <div>Loading...</div>;
+//   }
 
-  if (popularCommunities){
-    return (
-      <div className="bg-gray-200 mt-6 p-4">
-        <h1 className="font-bold text-xl mb-1">
-          Explore NLP For Popular Communities
-        </h1>
-        <p>
-          Below are some of the most popular subreddit communities right now.
-          Explore NLP for them.
-        </p>
-        <div className="flex flex-wrap gap-4 mt-4">
-          {popularCommunities.reddits.map((subreddit) => (
-            <SubredditCard key={subreddit.name} subredditName={subreddit.name} />
-          ))}
-        </div>
-      </div>
-    );
-  } else if (error){
-      return <div>{error}</div>;
-  }
-}
+//   if (popularCommunities){
+//     return (
+//       <div className="bg-gray-200 mt-6 p-4">
+//         <h1 className="font-bold text-xl mb-1">
+//           Explore NLP For Popular Communities
+//         </h1>
+//         <p>
+//           Below are some of the most popular subreddit communities right now.
+//           Explore NLP for them.
+//         </p>
+//         <div className="flex flex-wrap gap-4 mt-4">
+//           {popularCommunities.reddits.map((subreddit) => (
+//             <SubredditCard key={subreddit.name} subredditName={subreddit.name} />
+//           ))}
+//         </div>
+//       </div>
+//     );
+//   } else if (error){
+//       return <div>{error}</div>;
+//   }
+// }
 
 export default function Home() {
-  const [subreddit, setSubreddit] = useState("");
+  // const [subreddit, setSubreddit] = useState("");
 
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
-  const handleSubredditInputBoxChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setSubreddit(e.target.value);
-  };
+  // const handleSubredditInputBoxChange = (
+  //   e: React.ChangeEvent<HTMLInputElement>
+  // ) => {
+  //   setSubreddit(e.target.value);
+  // };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    navigate(`/subreddit/${subreddit}`);
-  };
+  // const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   navigate(`/subreddit/${subreddit}`);
+  // };
 
   return (
     <Template>

@@ -1,5 +1,4 @@
 import { SubredditAvatar, DefaultSubredditAvatar } from "./SubredditAvatar";
-import { hashColor } from "../lib/hashColor";
 
 interface SubredditCardProps {
   subredditName: string;
