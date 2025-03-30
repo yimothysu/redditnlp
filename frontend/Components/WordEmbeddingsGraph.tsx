@@ -12,7 +12,7 @@ function WordEmbeddingsGraph({ embeddings }: { embeddings: { word: string; x: nu
        embeddings.map(({ x, y, word }, index) => {
         annotations[index] = {
             type: 'line',
-            borderWidth: 5,
+            borderWidth: 3,
             xMin: 0, yMin: 0,
             xMax: x, yMax: y,
             arrowHeads: { end: { display: true } } 

@@ -162,8 +162,8 @@ export default function RedditAnalysisDisplay({ name }: Props) {
             embeddings &&
             Object.entries(embeddings).map(([word, [x, y]]) => ({
                 word,
-                x,
-                y,
+                x: x * 5,
+                y: y * 5,
             }));
 
         return (
@@ -268,7 +268,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                         p: 1,
                                         maxWidth: 500,
                                         fontWeight: "bold",
-                                        fontSize: "18px",
+                                        fontSize: "12px",
                                         textAlign: "center",
                                         color: "#FF0000",
                                     }}
@@ -327,7 +327,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 3,
-                                    fontSize: "12px",
+                                    fontSize: "8px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -353,7 +353,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                         p: 2,
                                         maxWidth: 500,
                                         fontWeight: "bold",
-                                        fontSize: "18px",
+                                        fontSize: "12px",
                                         textAlign: "center",
                                         color: "#FF0000",
                                     }}
@@ -367,7 +367,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                         p: 1,
                                         maxWidth: 500,
                                         fontWeight: "bold",
-                                        fontSize: "18px",
+                                        fontSize: "12px",
                                         textAlign: "center",
                                         color: "#FF0000",
                                     }}
@@ -452,8 +452,8 @@ export default function RedditAnalysisDisplay({ name }: Props) {
 
             return (
                 <span
-                    className={`inline-flex items-center justify-center w-13 h-13 ${getGradeBackgroundColor()} 
-                    ${getGradeBorderColor()} text-black text-[20px] m-3 rounded-full`}
+                    className={`inline-flex items-center justify-center w-7 h-7 ${getGradeBackgroundColor()} 
+                    ${getGradeBorderColor()} text-black text-[60%] m-3 rounded-full`}
                 >
                     {grade}
                 </span>
@@ -1083,7 +1083,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 0,
-                                    fontSize: "14px",
+                                    fontSize: "10px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -1108,7 +1108,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     sx={{
                                         p: 2,
                                         maxWidth: 500,
-                                        fontSize: "14px",
+                                        fontSize: "10px",
                                     }}
                                 >
                                     A Named Entity is a key subject in a piece
@@ -1132,7 +1132,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 0,
-                                    fontSize: "14px",
+                                    fontSize: "10px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -1228,7 +1228,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 0,
-                                    fontSize: "14px",
+                                    fontSize: "10px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
