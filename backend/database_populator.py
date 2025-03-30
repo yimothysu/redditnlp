@@ -29,7 +29,13 @@ async def fetch_subreddit_data(subreddit):
     )
 
     analysis = await perform_subreddit_analysis(subreddit_query)
-    # COLLECTIONS[subreddit_query.time_filter].insert_one(analysis.model_dump())
+
+    collection = COLLECTIONS[subreddit_query.time_filter]
+    collection.update_one(
+        {"name": subreddit_query.name},
+        {"$set": analysis.model_dump()},
+        upsert=True
+    )
 
     """
     response = requests.post(BASE_URL, json=subreddit_query)

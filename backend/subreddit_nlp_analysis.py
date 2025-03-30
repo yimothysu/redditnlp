@@ -37,6 +37,14 @@ from subreddit_classes import (
     SubredditAnalysis,
 )
 
+from word_embeddings import (
+    get_2d_embeddings,
+)
+
+from word_cloud import (
+    generate_word_cloud,
+)
+
 # Topic extraction with BERTopic
 from bertopic import BERTopic
 
