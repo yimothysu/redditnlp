@@ -4,8 +4,27 @@ import { useParams } from "react-router-dom";
 import RedditAnalysisDisplay from "../Components/RedditAnalysisDisplay.tsx";
 import Template from "../pages/Template.tsx";
 
-// TODO: Replace list with list of cached subreddits
-const subreddits = ["AskReddit", "ufl", "teenagers"];
+const subreddits = [
+  'AskReddit', 
+  'politics', 
+  'AskOldPeople',
+  'gaming', 
+  'science', 
+  'popculturechat',
+  'worldnews',
+  'technology', 
+  '100YearsAgo',
+  'Feminism',
+  'unpopularopinion', 
+  'philosophy',
+  'mentalhealth', 
+  'teenagers',
+  'AskMen',
+  'AskWomen', 
+  'personalfinance', 
+  'changemyview',
+  'LateStageCapitalism', 
+  'UpliftingNews'];
 
 
 export default function RedditPage() {
