@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 from detoxify import Detoxify
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from scipy.stats import percentileofscore
-
+from datetime import datetime, timezone
 
 # NLP related imports 
 import numpy as np
@@ -27,6 +27,15 @@ from nltk.stem import WordNetLemmatizer
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import spacy 
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+
+from reddit_topic_extractor import (
+    fetch_post_data,
+)
+
+from subreddit_classes import (
+    SubredditQuery,
+    SubredditAnalysis,
+)
 
 # Topic extraction with BERTopic
 from bertopic import BERTopic
@@ -43,6 +52,8 @@ model = AutoModelForSequenceClassification.from_pretrained(model_name)
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
 summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
+
+TIME_FILTER_TO_POST_LIMIT = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
 
 load_dotenv()
 
@@ -400,52 +411,6 @@ def extract_topics(texts, num_topics=10):
             "topic_representations": {}
         }
 
-def get_subreddit_topics(sorted_slice_to_posts, num_topics=10):
-    """
-    Extract topics from subreddit posts and comments for each time slice.
-    
-    Args:
-        sorted_slice_to_posts (dict): Dictionary mapping time slices to posts
-        num_topics (int, optional): Number of topics to extract per slice. Defaults to 10.
-        
-    Returns:
-        dict: Dictionary mapping time slices to topic extraction results
-    """
-    t1 = time.time()
-    subreddit_topics = {}
-    
-    for date, posts in sorted_slice_to_posts.items():
-        # Combine post titles and comments for topic modeling
-        texts = []
-        for post in posts:
-            # Add post title (titles are often more informative than comments)
-            if post.title and len(post.title.strip()) > 10:  # Only add substantial titles
-                texts.append(post.title)
-            
-            # Process and add comments
-            filtered_comments = []
-            for comment in post.comments:
-                # Skip very short comments or empty comments
-                if comment and len(comment.strip()) > 15:
-                    filtered_comments.append(comment)
-            
-            # Add filtered comments
-            texts.extend(filtered_comments)
-        
-        # Skip if there are not enough texts for meaningful topic modeling
-        if len(texts) < 5:
-            continue
-            
-        # Extract topics from the texts
-        topics_result = extract_topics(texts, num_topics)
-        subreddit_topics[date] = topics_result
-    
-    t2 = time.time()
-    print('finished topic extraction in: ', t2-t1)
-    
-    return subreddit_topics
-
-
 def get_percentile(values, target_value):
     # gets the percentile of target_value in values distribution 
     percentile = percentileofscore(values, target_value, kind='rank')
@@ -620,3 +585,110 @@ async def get_positive_content_metrics(sub_name):
                     all_positive_content_grades)
         except Exception as e:
             print('couldnt get posts to calculate positive content score because ', e)
+
+# posts_list is a list of RedditPost objects
+# function returns a sorted map by date where:
+#   key = date of slice (Ex: 07/24)
+#   value = vector of RedditPost objects for slice 
+
+def slice_posts_list(posts_list, time_filter):
+    slice_to_posts = dict()
+    for post in posts_list:
+        # convert post date from utc to readable format 
+        date_format = ''
+        if time_filter == 'all': date_format = '%y' # slicing all time by years 
+        elif time_filter == 'year': date_format = '%m-%y' # slicing a year by months 
+        else: date_format = '%m-%d' # slicing a month and week by days 
+        post_date = datetime.fromtimestamp(post.created_utc).strftime(date_format)
+
+        if post_date not in slice_to_posts:
+            slice_to_posts[post_date] = []
+        slice_to_posts[post_date].append(post)
+
+    # sort slice_to_posts by date
+    dates = list(slice_to_posts.keys())
+    sorted_months = sorted(dates, key=lambda x: datetime.strptime(x, date_format))
+    sorted_slice_to_posts = {i: slice_to_posts[i] for i in sorted_months}
+    return sorted_slice_to_posts
+
+async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
+    # !!! WARNING !!!
+    # sometimes PRAW will be down, or the # of posts you're trying to get at once 
+    # is too much. PRAW will often return a 500 HTTP response in this case.
+    # Try to: reduce post_limit, or wait a couple minutes
+
+    # Lol
+    def set_progress(_bruh_):
+        pass
+
+    reddit = asyncpraw.Reddit(
+        client_id=os.environ["REDDIT_CLIENT_ID"],
+        client_secret=os.environ["REDDIT_CLIENT_SECRET"],
+        user_agent="reddit sampler",
+    )
+
+    post_limit = TIME_FILTER_TO_POST_LIMIT[subreddit_query.time_filter]
+
+    subreddit_instance = await reddit.subreddit(subreddit_query.name)
+    posts = [post async for post in subreddit_instance.top(
+        limit=post_limit,
+        time_filter=subreddit_query.time_filter
+    )]
+
+    # Fetch post data concurrently
+    posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
+    posts_list = [post for post in posts_list if post is not None]
+
+    # Save post to file (uncomment to use)
+    # await print_to_json(posts_list, "posts.txt")
+
+    sorted_slice_to_posts = slice_posts_list(posts_list, subreddit_query.time_filter)
+
+    print('Finished getting sorted_slice_to_posts')
+
+    #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
+    top_n_grams, top_named_entities = await get_subreddit_analysis(sorted_slice_to_posts, set_progress)
+    print(top_named_entities)
+
+    t1 = time.time()
+    entity_set= set()
+    for _, entities in top_named_entities.items():
+        entity_names = [entity[0] for entity in entities] # getting just the name of each entity 
+        for entity_name in entity_names: entity_set.add(entity_name)
+    print('# of elements in entity_set: ', len(entity_set))
+    top_named_entities_embeddings = get_2d_embeddings(list(entity_set))
+    print("# of entity embeddings: ", len(top_named_entities_embeddings))
+    print(top_named_entities_embeddings)
+    t2 = time.time()
+    print('getting 2d embeddings took: ', t2 - t1)
+    toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores, all_toxicity_grades = await get_toxicity_metrics(subreddit_query.name)
+    positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores, all_positive_content_grades = await get_positive_content_metrics(subreddit_query.name)
+    print('generating wordcloud: ')
+    top_named_entities_wordcloud = generate_word_cloud(top_named_entities)
+    print("wordcloud generated")
+    
+    analysis = SubredditAnalysis(
+        subreddit = subreddit_query.name,
+
+        top_n_grams = top_n_grams,
+        top_named_entities = top_named_entities,
+        top_named_entities_embeddings = top_named_entities_embeddings,
+        top_named_entities_wordcloud = top_named_entities_wordcloud,
+
+        # toxicity metrics 
+        toxicity_score = toxicity_score,
+        toxicity_grade = toxicity_grade,
+        toxicity_percentile = toxicity_percentile,
+        all_toxicity_scores = all_toxicity_scores,
+        all_toxicity_grades = all_toxicity_grades,
+        # positive content metrics 
+        positive_content_score = positive_content_score,
+        positive_content_grade = positive_content_grade,
+        positive_content_percentile = positive_content_percentile,
+        all_positive_content_scores = all_positive_content_scores,
+        all_positive_content_grades = all_positive_content_grades       
+    )
+    #print(analysis)
+
+    return analysis
+

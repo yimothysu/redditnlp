@@ -1,8 +1,7 @@
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
-import json
-
-wc = WordCloud(background_color="white", max_words=2000, contour_width=3, contour_color='steelblue')
+from io import BytesIO
+import base64
 
 # Takes in dictionary of named entities
 def generate_word_cloud(named_entities):    
@@ -16,8 +15,17 @@ def generate_word_cloud(named_entities):
                 fullDict[entity[0]] = entity[1]
             elif entity[0] in fullDict:
                 fullDict[entity[0]] += entity[1]
-                    
-    return fullDict
+    
+    wc = WordCloud(background_color="white", max_words=2000, contour_width=3, contour_color='steelblue')
+    
+    wc.generate_from_frequencies(fullDict)
+        
+    buffer = BytesIO()
+    wc.to_image().save(buffer, "PNG")
+    buffer.seek(0)
+    img_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+    
+    return img_base64
 
 # Takes in dictionary of named entities
 def generate_by_date(named_entities):
@@ -34,6 +42,9 @@ def generate_by_date(named_entities):
         # If no named entities for date, skip
         if not entity_list:
             continue
+        
+        wc = WordCloud(background_color="white", max_words=2000, contour_width=3, contour_color='steelblue')
+
                 
         wc.generate_from_frequencies(tempDict)
         print("Word cloud generated")
