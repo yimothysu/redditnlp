@@ -14,6 +14,8 @@ ONE_MONTH = timedelta(days=30)
 
 # Classes
 
+# These classes have been relocated to subreddit_classes.py
+"""
 class SubredditQuery(BaseModel):
     name: str
     time_filter: str
@@ -23,6 +25,7 @@ class SubredditQuery(BaseModel):
         return f"{self.name}#{self.time_filter}#{self.sort_by}"
 
 class SubredditAnalysis(BaseModel):
+    subreddit: str
     #  key = date, value = list of top n grams for slice 
     # Tuple[str, int] = (n-gram, n-gram # occurrences)
     top_n_grams: Dict[str, List[Tuple[str, int]]]
@@ -36,7 +39,6 @@ class SubredditAnalysis(BaseModel):
     top_named_entities_embeddings: Dict[str, Tuple[float, float]]
     top_named_entities_wordcloud: str
 
-    
     # For subreddit ranking
     toxicity_score: float # [0, 1] --> 0 = not toxic at all, 1 = all toxic 
     toxicity_grade: str # A+ to F 
@@ -48,9 +50,11 @@ class SubredditAnalysis(BaseModel):
     positive_content_grade: str # A+ to F 
     positive_content_percentile: float # [0, 100]
     all_positive_content_scores: List[float] # for generating a positive content scores distribution graph on the UI 
-    all_positive_content_grades: List[str] # for generating a positive content grades distribution graph on the UI 
+    all_positive_content_grades: List[str] # for generating a positive content grades distribution graph on the UI
+"""
 
-
+# DEPRECATED ?
+"""
 class SubredditAnalysisResponse(BaseModel):
     analysis_status: Optional[str] = None
     analysis_progress: Optional[float] = None
@@ -83,7 +87,7 @@ class SubredditAnalysisCacheEntry():
         if time_filter == "week":
             return delta >= ONE_DAY
         return delta >= ONE_HOUR
-
+"""
 
 # Cache setup
 
@@ -92,6 +96,9 @@ Cache for analyses with composite key of the following form.
 
 Composite Key: "[subreddit_name]#[sort_method]#[time_filter]"
     Example: "ufl#top#week"
+"""
+
+# DEPRECATED ?
 """
 cache: Dict[str, SubredditAnalysisCacheEntry] = {}
 cache_locks: Dict[str, Lock] = {}
@@ -110,4 +117,4 @@ def get_cache_entry(query: SubredditQuery) -> SubredditAnalysisCacheEntry:
     cache_entry = SubredditAnalysisCacheEntry(query)
     cache[key] = cache_entry
     return cache_entry
-
+"""

@@ -8,9 +8,6 @@ from pydantic import BaseModel
 from typing import List, Dict, Tuple
 import time
 
-# Import the topic extraction functionality
-from subreddit_nlp_analysis import get_subreddit_topics
-
 # Need to load environment variables for Reddit API access
 load_dotenv()
 
@@ -30,6 +27,51 @@ class RedditPost(BaseModel):
 
 # Time filter to post limit mapping
 time_filter_to_post_limit = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
+
+def get_subreddit_topics(sorted_slice_to_posts, num_topics=10):
+    """
+    Extract topics from subreddit posts and comments for each time slice.
+    
+    Args:
+        sorted_slice_to_posts (dict): Dictionary mapping time slices to posts
+        num_topics (int, optional): Number of topics to extract per slice. Defaults to 10.
+        
+    Returns:
+        dict: Dictionary mapping time slices to topic extraction results
+    """
+    t1 = time.time()
+    subreddit_topics = {}
+    
+    for date, posts in sorted_slice_to_posts.items():
+        # Combine post titles and comments for topic modeling
+        texts = []
+        for post in posts:
+            # Add post title (titles are often more informative than comments)
+            if post.title and len(post.title.strip()) > 10:  # Only add substantial titles
+                texts.append(post.title)
+            
+            # Process and add comments
+            filtered_comments = []
+            for comment in post.comments:
+                # Skip very short comments or empty comments
+                if comment and len(comment.strip()) > 15:
+                    filtered_comments.append(comment)
+            
+            # Add filtered comments
+            texts.extend(filtered_comments)
+        
+        # Skip if there are not enough texts for meaningful topic modeling
+        if len(texts) < 5:
+            continue
+            
+        # Extract topics from the texts
+        topics_result = extract_topics(texts, num_topics)
+        subreddit_topics[date] = topics_result
+    
+    t2 = time.time()
+    print('finished topic extraction in: ', t2-t1)
+    
+    return subreddit_topics
 
 async def fetch_post_data(post):
     """Fetch data from a Reddit post including its comments"""

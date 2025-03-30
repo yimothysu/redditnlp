@@ -2,22 +2,36 @@
 # the db 
 
 import requests
-from db import week, month, year, all_time 
+from db import COLLECTIONS
+import asyncio
+
+from subreddit_classes import (
+    SubredditQuery,
+)
+
+from subreddit_nlp_analysis import (
+    perform_subreddit_analysis,
+)
+
 
 time_filter = "week" # CHANGE IF YOU WANT A DIFFERENT TIME FILTER 
-BASE_URL = "http://localhost:8000/analysis"
+# BASE_URL = "http://localhost:8000/analysis"
 f = open("20_subreddits.txt", "r", encoding="utf-8")
 subreddits = []
 for line in f:
     subreddits.append(line.strip())  
 
-def fetch_subreddit_data(subreddit):
-    subreddit_query = {
-        "name": subreddit,
-        "time_filter": time_filter, 
-        "sort_by": "top" 
-    }
+async def fetch_subreddit_data(subreddit):
+    subreddit_query = SubredditQuery(
+        name=subreddit,
+        time_filter=time_filter,
+        sort_by="top"
+    )
 
+    analysis = await perform_subreddit_analysis(subreddit_query)
+    # COLLECTIONS[subreddit_query.time_filter].insert_one(analysis.model_dump())
+
+    """
     response = requests.post(BASE_URL, json=subreddit_query)
     if response.status_code == 200:
         print("Response:", response.json())
@@ -27,8 +41,10 @@ def fetch_subreddit_data(subreddit):
         if time_filter == "all_time": all_time.insert_one(response.json())
     else:
         print("Error:", response.status_code, response.text)
+    """
 
 
 if __name__ == "__main__":
     for subreddit in subreddits:
-        fetch_subreddit_data(subreddit)
+        print(f"Working on subreddit {subreddit}")
+        asyncio.run(fetch_subreddit_data(subreddit))
