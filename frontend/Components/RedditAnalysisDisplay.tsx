@@ -127,8 +127,9 @@ export default function RedditAnalysisDisplay({ name }: Props) {
         wordCloud.src = `data:image/png;base64, ${analysis.top_named_entities_wordcloud}`;
 
         return (
-            <div className="mt-10 p-6 bg-white shadow rounded max-w-3xl mx-auto">
-                <h1 className="font-semibold text-l p-1">Word Cloud</h1>
+            <div>
+            <h1 className="font-bold text-xl text-center mt-5 p-1">Word Cloud</h1>
+            <div className="mt-2 p-2 pl-6 pr-6 pb-6 bg-white shadow rounded max-w-3xl mx-auto">
                 <p className="text-gray-500 p-3">
                     A word cloud is a visual representation of the most popular
                     words in the subreddit. The size of the word corresponds to
@@ -144,6 +145,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                 ) : (
                     <p className="text-gray-400 p-4">No Word Cloud</p>
                 )}
+            </div>
             </div>
         );
     };
@@ -165,8 +167,9 @@ export default function RedditAnalysisDisplay({ name }: Props) {
             }));
 
         return (
-            <div className="mt-10 p-6 bg-white shadow rounded max-w-3xl mx-auto">
-                <h1 className="font-semibold text-l p-1">Word Embeddings</h1>
+            <div>
+            <h1 className="font-bold text-xl mt-5 text-center p-1">Word Embeddings</h1>
+            <div className="mt-2 p-2 pl-6 pr-6 pb-6 bg-white shadow rounded max-w-3xl mx-auto">
                 <p className="text-gray-500 p-3">
                     Word embeddings are vector representations of words in
                     high-dimensional space, offering insights into meaning and
@@ -180,6 +183,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                         <p className="text-gray-400 p-4">No Embeddings</p>
                     )}
                 </div>
+            </div>
             </div>
         );
     };
