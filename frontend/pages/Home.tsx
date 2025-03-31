@@ -172,6 +172,17 @@ export default function Home() {
       {/* <hr className="border-gray-200"></hr> */}
       <SubredditsCached></SubredditsCached>
       <RequestAnalysisForSpecificSubreddit></RequestAnalysisForSpecificSubreddit>
+      <div className="flex gap-5 justify-end">
+        <img 
+          src={"github_logo.png"}
+          className="rounded-full w-9 h-9 object-cover"
+        />
+        <img 
+          src={"discord_logo.png"}
+          className="rounded-full w-9 h-9 mr-4 object-cover"
+        />
+      </div>
+      <div className="w-full h-4"></div>
       {/* <hr className="border-gray-200"></hr> */}
     </Template>
   );

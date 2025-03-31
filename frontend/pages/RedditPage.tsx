@@ -38,9 +38,9 @@ export default function RedditPage() {
   const renderSelectReddit = () => {
     return (
       <div className="flex items-center mr-5">
-        <p className="text-gray-800 font-medium mr-2">Compare r/{name} to Another Subreddit: </p>
+        <p className="text-black font-medium mr-2">Compare r/{name} to: </p>
         <select 
-          className="ml-2 bg-white border-gray-500 rounded-lg p-2 shadow-sm"
+          className="ml-2 bg-white border-2 border-black rounded-lg p-2 shadow-sm"
           onChange={handleSubredditChange}
           value={subreddit}>
             <option key="" value="">Select Subreddit</option>
@@ -90,9 +90,9 @@ export default function RedditPage() {
         </div>
       </div>
       {subreddit && 
-        <div className="bg-white w-[80%] mx-auto p-3 mt-4 rounded-sm shadow-sm">
-          <h1 className="text-center font-bold mb-1 text-2xl">r/{name} vs. r/{subreddit}</h1>
-          <p className="text-center text-gray-500">Below is an in-depth analysis comparing r/{name} and r/{subreddit}</p>
+        <div className="bg-gray-200 w-[50%] mx-auto p-3 mt-4 rounded-sm ">
+          <h1 className="text-center text-black font-bold mb-2 text-2xl">r/{name} vs. r/{subreddit}</h1>
+          <p className="text-center text-black">Below is an in-depth analysis comparing r/{name} and r/{subreddit}</p>
         </div>}
       {/* <div className="flex w-full">
         <div className={displayFull}>
