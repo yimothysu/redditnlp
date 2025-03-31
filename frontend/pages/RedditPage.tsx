@@ -53,6 +53,34 @@ export default function RedditPage() {
     }
 
   let displayFull = !subreddit ? "w-full" : "w-1/2";
+  
+  const Analysis = () => {
+    if(subreddit != "") {
+      return (
+        <div className="flex w-full">
+        <div className={displayFull}>
+          <RedditAnalysisDisplay name={name} inComparisonMode="true"/>
+        </div>
+        {subreddit && <div className="w-1/2">
+          {<RedditAnalysisDisplay name={subreddit} inComparisonMode="true"/>}
+        </div>
+        }     
+      </div>
+      );
+    }
+    
+    return (
+      <div className="flex w-full">
+      <div className={displayFull}>
+        <RedditAnalysisDisplay name={name}  inComparisonMode="false"/>
+      </div>
+      {subreddit && <div className="w-1/2">
+        {<RedditAnalysisDisplay name={subreddit}  inComparisonMode="false"/>}
+      </div>
+      }     
+    </div>
+    );
+  }
 
   return (
     <Template>
@@ -63,10 +91,10 @@ export default function RedditPage() {
       </div>
       {subreddit && 
         <div className="bg-white w-[80%] mx-auto p-3 mt-4 rounded-sm shadow-sm">
-          <h1 className="text-center text-2xl">r/{name} vs. r/{subreddit}</h1>
+          <h1 className="text-center font-bold mb-1 text-2xl">r/{name} vs. r/{subreddit}</h1>
           <p className="text-center text-gray-500">Below is an in-depth analysis comparing r/{name} and r/{subreddit}</p>
         </div>}
-      <div className="flex w-full">
+      {/* <div className="flex w-full">
         <div className={displayFull}>
           <RedditAnalysisDisplay name={name}/>
         </div>
@@ -74,7 +102,8 @@ export default function RedditPage() {
           {<RedditAnalysisDisplay name={subreddit}/>}
         </div>
         }     
-      </div>
+      </div> */}
+      <Analysis></Analysis>
     </Template>
   );
 }

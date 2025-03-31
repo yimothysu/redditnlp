@@ -69,9 +69,10 @@ function formatDate(date: string, time_filter: string) {
 
 type Props = {
     name?: string;
+    inComparisonMode?: string; 
 };
 
-export default function RedditAnalysisDisplay({ name }: Props) {
+export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props) {
     const [error, setError] = useState<string | null>(null);
     const [analysis, setAnalysis] = useState<SubredditAnalysis | null>(null);
     const [isBusy, setIsBusy] = useState(false);
@@ -80,12 +81,23 @@ export default function RedditAnalysisDisplay({ name }: Props) {
     const [currNamedEntityCarouselIndex, setCurrNamedEntityCarouselIndex] =
         useState(0);
     const [currNGramsCarouselIndex, setCurrNGramsCarouselIndex] = useState(0);
+    const [numNGramCardsAtOnce, setNumNGramCardsAtOnce] = useState(5);
+    const [numNamedEntityCardsAtOnce, setNumNamedEntityCardsAtOnce] = useState(3);
     // const [namedEntitiesExpandAllIsChecked, setNamedEntitiesExpandAllIsChecked] = useState(false)
     // const handleNamedEntitiesToggleChange = () => {
     //     setNamedEntitiesExpandAllIsChecked(!namedEntitiesExpandAllIsChecked)
     // }
 
     const isMounted = useRef(true);
+    
+    useEffect(() => {
+        if (inComparisonMode === "true") {
+            setNumNGramCardsAtOnce(2);
+            setNumNamedEntityCardsAtOnce(1);
+            //console.log("hiii numNGramCardsAtOnce: ", numNGramCardsAtOnce)
+        }
+    }, [inComparisonMode]);
+
 
     useEffect(() => {
         isMounted.current = true;
@@ -93,6 +105,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
             isMounted.current = false;
         };
     }, []);
+    
 
     const loadSubredditAnalysis = async () => {
         if (isBusy || !name || name.trim().length === 0) return;
@@ -327,7 +340,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 3,
-                                    fontSize: "8px",
+                                    fontSize: "12px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -468,7 +481,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
             const histogramData = createHistogram(values);
 
             return (
-                <div className="mt-5 h-90 w-[90%] p-4 bg-white shadow-md rounded-xl">
+                <div className="mt-5 h-60 w-[90%] p-4 bg-white shadow-md rounded-xl">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={histogramData}
@@ -482,6 +495,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     fill: "black",
                                     position: "outsideBottom",
                                     dy: 20,
+                                    dx: -12
                                 }}
                             />
                             <YAxis
@@ -618,7 +632,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     )}
                                     %
                                 </h1>
-                                <h1 className="text-base max-w-110 m-1 italic">
+                                <h1 className="text-base text-[15px] max-w-110 m-1 italic">
                                     This means that r/{name} has a higher
                                     toxicity score than{" "}
                                     {Number(
@@ -677,7 +691,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                                     )}
                                     %
                                 </h1>
-                                <h1 className="text-[16px] max-w-110 m-1 italic">
+                                <h1 className="text-[15px] max-w-110 m-1 italic">
                                     This means that r/{name} has a higher
                                     positive content score than{" "}
                                     {Number(
@@ -823,6 +837,8 @@ export default function RedditAnalysisDisplay({ name }: Props) {
             );
         };
 
+        console.log("# of n-gram cards at once: ", numNGramCardsAtOnce)
+
         return (
             <div className="mt-7">
                 <div className="flex flex-col items-center">
@@ -851,7 +867,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                         className="flex transition-transform duration-600 ease-in-out"
                         style={{
                             transform: `translateX(-${
-                                currNGramsCarouselIndex * 20
+                                currNGramsCarouselIndex * (100 / numNGramCardsAtOnce)
                             }%)`,
                         }}
                     >
@@ -859,7 +875,8 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                             ([date, ngrams]) => (
                                 <div
                                     key={date}
-                                    className="flex w-1/5 flex-shrink-0"
+                                    className="flex flex-shrink-0"
+                                    style={{width: `${100 / numNGramCardsAtOnce}%`}}
                                 >
                                     <NGramsForDate
                                         date={date}
@@ -892,12 +909,13 @@ export default function RedditAnalysisDisplay({ name }: Props) {
         const ColorCodeBox = (props: any) => {
             return (
                 <div
-                    className="w-[20%] h-[35px] font-medium border-1"
+                    className="w-[20%] h-[40px] font-medium border-1"
                     style={{
-                        fontSize: "50%",
+                        fontSize: "65%",
                         backgroundColor: props.backgroundColor,
                         textAlign: "center",
                         padding: "5px",
+                        maxWidth: "80px", 
                         borderTopLeftRadius: props.borderTopLeftRadius,
                         borderBottomLeftRadius: props.borderBottomLeftRadius,
                         borderTopRightRadius: props.borderTopRightRadius,
@@ -1326,7 +1344,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                         className="flex transition-transform duration-600 ease-in-out"
                         style={{
                             transform: `translateX(-${
-                                currNamedEntityCarouselIndex * 33
+                                currNamedEntityCarouselIndex * (100 / numNamedEntityCardsAtOnce)
                             }%)`,
                         }}
                     >
@@ -1334,7 +1352,8 @@ export default function RedditAnalysisDisplay({ name }: Props) {
                             ([date, entities]) => (
                                 <div
                                     key={date}
-                                    className="flex w-1/3 flex-shrink-0"
+                                    className="flex flex-shrink-0"
+                                    style={{ width: `${100 / numNamedEntityCardsAtOnce}%` }}
                                 >
                                     <TopNamedEntitiesForDate
                                         date={date}
@@ -1353,7 +1372,7 @@ export default function RedditAnalysisDisplay({ name }: Props) {
 
     return (
         <div>
-            <div className="m-4 p-5 bg-white rounded-md shadow-sm">
+            <div className="ml-2 mr-2 mt-4 mb-4 p-5 bg-white rounded-md shadow-sm">
                 <div className="flex flex-col items-center mb-6">
                     <SubredditAvatar subredditName={name ?? ""} />
                     <h1 className="text-lg font-bold">r/{name}</h1>
