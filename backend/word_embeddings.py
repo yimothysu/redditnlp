@@ -21,9 +21,8 @@ def get_2d_embeddings(word_list):
         return None
     if embeddings:
         pca = PCA(n_components=2)
-        #tsne = TSNE(n_components = 2, perplexity = min(25, len(words) - 1), max_iter=500)
         np_embedding = np.array(embeddings)
-        coordinates_2d = pca.fit_transform(np_embedding)#tsne.fit_transform(np.array(embeddings))
+        coordinates_2d = pca.fit_transform(np_embedding)
 
         word_to_coordinates = {}
         for word, embedding in zip(words, coordinates_2d):
