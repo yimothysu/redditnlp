@@ -27,6 +27,8 @@ export interface SubredditAnalysis {
     top_named_entities: Record<string, NamedEntity[]>;
     top_named_entities_embeddings: Record<string, [number, number]>;
     top_named_entities_wordcloud: string;
+    readability_metrics:  Record<string, number>;
+    
     // For subreddit ranking
     toxicity_score: number; // [0, 1] --> 0 = not toxic at all, 1 = all toxic
     toxicity_grade: string; // A+ to F

@@ -15,6 +15,7 @@ from detoxify import Detoxify
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from scipy.stats import percentileofscore
 from datetime import datetime, timezone
+from readability import Readability
 
 # NLP related imports 
 import numpy as np
@@ -594,6 +595,34 @@ async def get_positive_content_metrics(sub_name):
         except Exception as e:
             print('couldnt get posts to calculate positive content score because ', e)
 
+def get_readability_metrics(posts):
+    total_num_words_title = 0
+    total_num_words_description = 0
+    num_posts_over_100_words = 0
+    for post in posts:
+        num_words_title = len(word_tokenize(post.title))
+        num_words_description = len(word_tokenize(post.description))
+        total_num_words_title += num_words_title
+        total_num_words_description += total_num_words_description
+        if num_words_description >= 100:
+            num_posts_over_100_words += 1
+            readability_metrics = {}
+            r = Readability(post.description)
+            flesch_kincaid = r.flesch_kincaid()
+            dale_chall = r.dale_chall()
+            readability_metrics["flesh_score"] = flesch_kincaid.score + readability_metrics.get("flesh_score", 0)
+            readability_metrics["flesh_grade_level"] = flesch_kincaid.grade_level + readability_metrics.get("flesh_grade_level", 0)
+            readability_metrics["dale_chall_score"] = dale_chall.score + readability_metrics.get("dale_chall_score", 0)
+            readability_metrics["dale_chall_grade_level"] = dale_chall.grade_levels + readability_metrics.get("dale_chall_grade_level", 0)
+    return {
+            "avg_num_words_title": total_num_words_title / len(posts), 
+            "avg_num_words_description": total_num_words_description / len(posts),
+            "avg_flesh_score": readability_metrics["flesh_score"] / num_posts_over_100_words,
+            "avg_flesh_grade_level": readability_metrics["flesh_grade_level"] / num_posts_over_100_words,
+            "avg_dale_chall_score": readability_metrics["dale_chall_score"] / num_posts_over_100_words,
+            "avg_dale_chall_grade_level": readability_metrics["dale_chall_score"] / num_posts_over_100_words
+            }
+    
 # posts_list is a list of RedditPost objects
 # function returns a sorted map by date where:
 #   key = date of slice (Ex: 07/24)
@@ -651,6 +680,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     # await print_to_json(posts_list, "posts.txt")
 
     sorted_slice_to_posts = slice_posts_list(posts_list, subreddit_query.time_filter)
+    readability_metrics = get_readability_metrics(posts_list)
 
     print('Finished getting sorted_slice_to_posts')
 
@@ -682,6 +712,8 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
         top_named_entities = top_named_entities,
         top_named_entities_embeddings = top_named_entities_embeddings,
         top_named_entities_wordcloud = top_named_entities_wordcloud,
+        
+        readability_metrics =  readability_metrics,  
 
         # toxicity metrics 
         toxicity_score = toxicity_score,
@@ -696,7 +728,6 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
         all_positive_content_scores = all_positive_content_scores,
         all_positive_content_grades = all_positive_content_grades       
     )
-    #print(analysis)
 
     return analysis
 
