@@ -599,6 +599,7 @@ def get_readability_metrics(posts):
     total_num_words_title = 0
     total_num_words_description = 0
     num_posts_over_100_words = 0
+    readability_metrics = {}
     for post in posts:
         num_words_title = len(word_tokenize(post.title))
         num_words_description = len(word_tokenize(post.description))
@@ -606,21 +607,20 @@ def get_readability_metrics(posts):
         total_num_words_description += total_num_words_description
         if num_words_description >= 100:
             num_posts_over_100_words += 1
-            readability_metrics = {}
             r = Readability(post.description)
             flesch_kincaid = r.flesch_kincaid()
             dale_chall = r.dale_chall()
-            readability_metrics["flesh_score"] = flesch_kincaid.score + readability_metrics.get("flesh_score", 0)
-            readability_metrics["flesh_grade_level"] = flesch_kincaid.grade_level + readability_metrics.get("flesh_grade_level", 0)
-            readability_metrics["dale_chall_score"] = dale_chall.score + readability_metrics.get("dale_chall_score", 0)
+            readability_metrics["flesch_grade_level"] = flesch_kincaid.grade_level + readability_metrics.get("flesh_grade_level", 0)
             readability_metrics["dale_chall_grade_level"] = dale_chall.grade_levels + readability_metrics.get("dale_chall_grade_level", 0)
+    avg_num_words_title = total_num_words_title / len(posts) if len(posts) != 0 else None
+    avg_num_words_description = total_num_words_description / len(posts) if len(posts) != 0 else None
+    avg_flesh_grade_level =  readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else None
+    avg_dale_chall_grade_level = readability_metrics.get("dale_chall_score", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else None
     return {
-            "avg_num_words_title": total_num_words_title / len(posts), 
-            "avg_num_words_description": total_num_words_description / len(posts),
-            "avg_flesh_score": readability_metrics["flesh_score"] / num_posts_over_100_words,
-            "avg_flesh_grade_level": readability_metrics["flesh_grade_level"] / num_posts_over_100_words,
-            "avg_dale_chall_score": readability_metrics["dale_chall_score"] / num_posts_over_100_words,
-            "avg_dale_chall_grade_level": readability_metrics["dale_chall_score"] / num_posts_over_100_words
+            avg_num_words_title,
+            avg_num_words_description,
+            avg_flesh_grade_level,
+            avg_dale_chall_grade_level
             }
     
 # posts_list is a list of RedditPost objects

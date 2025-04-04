@@ -135,7 +135,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 <h1 className="font-bold text-xl text-center mt-5 p-1">Readability Metrics</h1>
                 <p className="text-center"><b>Average Number of Words Per Post Description:</b>{analysis.readability_metrics["avg_num_words_title"]}</p>
                 <p className="text-center"><b>Average Number of Words Per Post Title:</b>{analysis.readability_metrics["avg_num_words_title"]}</p>
-                <p className="text-center"><b>Average Grade Level of Text (Flesh Score):</b>{analysis.readability_metrics["avg_flesh_grade_level"]}</p>
+                <p className="text-center"><b>Average Grade Level of Text (Flesh Score):</b>{analysis.readability_metrics["avg_flesch_grade_level"]}</p>
                 <p className="text-center"><b>Average Grade Level of Text (Dale Chall Score):</b>{analysis.readability_metrics["avg_dale_chall_grade_level"]}</p>
             </div>);
     }
