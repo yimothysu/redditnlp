@@ -23,7 +23,7 @@ class SubredditAnalysis(BaseModel):
     top_named_entities: Dict[str, List[Tuple[str, int, float, str]]]
     top_named_entities_embeddings: Dict[str, Tuple[float, float]]
     top_named_entities_wordcloud: str
-
+    readability_metrics: Dict[str, float]
     # For subreddit ranking
     toxicity_score: float # [0, 1] --> 0 = not toxic at all, 1 = all toxic 
     toxicity_grade: str # A+ to F 

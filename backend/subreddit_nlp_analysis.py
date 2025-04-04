@@ -601,26 +601,28 @@ def get_readability_metrics(posts):
     num_posts_over_100_words = 0
     readability_metrics = {}
     for post in posts:
-        num_words_title = len(word_tokenize(post.title))
-        num_words_description = len(word_tokenize(post.description))
+        # num_words_title = len(word_tokenize(post.title))
+        # num_words_description = len(word_tokenize(post.description))
+        num_words_title = len(post.title.split())
+        num_words_description = len(post.description.split())
         total_num_words_title += num_words_title
-        total_num_words_description += total_num_words_description
+        total_num_words_description += num_words_description
         if num_words_description >= 100:
             num_posts_over_100_words += 1
             r = Readability(post.description)
             flesch_kincaid = r.flesch_kincaid()
             dale_chall = r.dale_chall()
-            readability_metrics["flesch_grade_level"] = flesch_kincaid.grade_level + readability_metrics.get("flesh_grade_level", 0)
-            readability_metrics["dale_chall_grade_level"] = dale_chall.grade_levels + readability_metrics.get("dale_chall_grade_level", 0)
+            readability_metrics["flesch_grade_level"] = float(flesch_kincaid.grade_level) + float(readability_metrics.get("flesh_grade_level", 0))
+            #readability_metrics["dale_chall_grade_level"] = float(dale_chall.grade_levels) + float(readability_metrics.get("dale_chall_grade_level", 0))
     avg_num_words_title = total_num_words_title / len(posts) if len(posts) != 0 else None
     avg_num_words_description = total_num_words_description / len(posts) if len(posts) != 0 else None
     avg_flesh_grade_level =  readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else None
-    avg_dale_chall_grade_level = readability_metrics.get("dale_chall_score", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else None
+    #avg_dale_chall_grade_level = readability_metrics.get("dale_chall_score", 0) / num_posts_over_50_words if num_posts_over_50_words != 0 else None
     return {
-            avg_num_words_title,
-            avg_num_words_description,
-            avg_flesh_grade_level,
-            avg_dale_chall_grade_level
+             "avg_num_words_title": avg_num_words_title,
+             "avg_num_words_description": avg_num_words_description,
+             "avg_flesh_grade_level": avg_flesh_grade_level,
+             #"avg_dale_chall_grade_level": avg_dale_chall_grade_level
             }
     
 # posts_list is a list of RedditPost objects
@@ -680,9 +682,11 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     # await print_to_json(posts_list, "posts.txt")
 
     sorted_slice_to_posts = slice_posts_list(posts_list, subreddit_query.time_filter)
-    readability_metrics = get_readability_metrics(posts_list)
-
     print('Finished getting sorted_slice_to_posts')
+
+    readability_metrics = get_readability_metrics(posts_list)
+    print('Finished getting readability_metrics')
+    print(readability_metrics)
 
     #plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts)
     top_n_grams, top_named_entities = await get_subreddit_analysis(sorted_slice_to_posts, set_progress)

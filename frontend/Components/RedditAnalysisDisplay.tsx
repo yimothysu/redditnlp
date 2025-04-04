@@ -130,23 +130,24 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
     const renderReadabilityMetrics = () => {
         if (!analysis) return null;
+        console.log(analysis.readability_metrics)
         return (
             <div>
                 <h1 className="font-bold text-xl text-center mt-5 p-1">Readability Metrics</h1>
-                <p className="text-center"><b>Average Number of Words Per Post Description:</b>{analysis.readability_metrics["avg_num_words_title"]}</p>
-                <p className="text-center"><b>Average Number of Words Per Post Title:</b>{analysis.readability_metrics["avg_num_words_title"]}</p>
-                <p className="text-center"><b>Average Grade Level of Text (Flesh Score):</b>{analysis.readability_metrics["avg_flesch_grade_level"]}</p>
-                <p className="text-center"><b>Average Grade Level of Text (Dale Chall Score):</b>{analysis.readability_metrics["avg_dale_chall_grade_level"]}</p>
+                <p className="text-center"><b>Average Number of Words Per Post Title: </b>{analysis.readability_metrics["avg_num_words_title"]}</p>
+                <p className="text-center"><b>Average Number of Words Per Post Description: </b>{analysis.readability_metrics["avg_num_words_description"]}</p>
+                <p className="text-center"><b>Average Grade Level of Text (Flesh Score): </b>{analysis.readability_metrics["avg_flesh_grade_level"].toFixed(2)}</p>
+                {/* <p className="text-center"><b>Average Grade Level of Text (Dale Chall Score): </b>{analysis.readability_metrics["avg_dale_chall_grade_level"]}</p> */}
             </div>);
     }
 
     const renderWordCloud = () => {
         if (!analysis) return null;
 
-        console.log(
-            "top_named_entities_wordcloud: ",
-            analysis?.top_named_entities_wordcloud
-        );
+        // console.log(
+        //     "top_named_entities_wordcloud: ",
+        //     analysis?.top_named_entities_wordcloud
+        // );
 
         const wordCloud = new Image();
         wordCloud.src = `data:image/png;base64, ${analysis.top_named_entities_wordcloud}`;
