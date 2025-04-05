@@ -92,7 +92,7 @@ export default function RedditPage() {
               "@type": "WebSite",
               "name": "Reddit NLP | subreddit",
               "url": "https://redditnlp.com/subreddit",
-              "description": "Explore NLP for Reddit communities"
+              "description": "Reddit NLP helps you explore natural language trends in Reddit communities."
             }
         `}
         </script>

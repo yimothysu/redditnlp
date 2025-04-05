@@ -46,7 +46,7 @@ function SubredditsCached() {
               "@type": "WebSite",
               "name": "Reddit NLP",
               "url": "https://redditnlp.com",
-              "description": "Explore NLP for Reddit communities"
+              "description": "Reddit NLP helps you explore natural language trends in Reddit communities."
             }
         `}
         </script>
