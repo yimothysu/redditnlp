@@ -3,31 +3,54 @@ import Template from "./Template.tsx";
 import { SubredditCard } from "../src/components/SubredditCard.tsx";
 // import { useNavigate } from "react-router-dom";
 // import { fetchPopularSubreddits, PopularSubredditsResponse } from "../src/lib/api.ts";
+import { Helmet } from "react-helmet";
 
 function SubredditsCached() {
   const subreddits = [
-    'AskReddit', 
-    'politics', 
-    'AskOldPeople',
-    'gaming', 
-    'science', 
-    'popculturechat',
-    'worldnews',
-    'technology', 
-    '100YearsAgo',
-    'Feminism',
-    'unpopularopinion', 
-    'philosophy',
-    'mentalhealth', 
-    'teenagers',
-    'AskMen',
-    'AskWomen', 
-    'personalfinance', 
-    'changemyview',
-    'LateStageCapitalism', 
-    'UpliftingNews'];
+    "AskReddit",
+    "politics",
+    "AskOldPeople",
+    "gaming",
+    "science",
+    "popculturechat",
+    "worldnews",
+    "technology",
+    "100YearsAgo",
+    "Feminism",
+    "unpopularopinion",
+    "philosophy",
+    "mentalhealth",
+    "teenagers",
+    "AskMen",
+    "AskWomen",
+    "personalfinance",
+    "changemyview",
+    "LateStageCapitalism",
+    "UpliftingNews",
+  ];
 
-    return (
+  return (
+    <>
+      <Helmet>
+        <title>Reddit NLP</title>
+        <meta name="description" content="Explore NLP for Reddit communities" />
+        <meta
+          name="keywords"
+          content="Reddit, NLP, Natural Language Processing"
+        />
+        <link rel="canonical" href="https://redditnlp.com" />
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              "name": "Reddit NLP",
+              "url": "https://redditnlp.com",
+              "description": "Explore NLP for Reddit communities"
+            }
+        `}
+        </script>
+      </Helmet>
       <div className="bg-gray-100 p-7">
         <h1 className="font-bold text-xl mb-1">
           Explore NLP For Popular Communities
@@ -42,38 +65,42 @@ function SubredditsCached() {
           ))}
         </div>
       </div>
-    );
-
+    </>
+  );
 }
 
 function RequestAnalysisForSpecificSubreddit() {
   return (
     <div className="p-7 flex flex-col justify-center items-center">
       <h1 className="font-bold text-xl mb-1">Submit a Request</h1>
-      <h1 className="mb-4"> Have a subreddit you want to analyze that's not on our website? Submit up to one request/day.</h1>
+      <h1 className="mb-4">
+        {" "}
+        Have a subreddit you want to analyze that's not on our website? Submit
+        up to one request/day.
+      </h1>
       <div className="relative mb-4">
-            <div className="absolute pl-4 flex items-center inset-y-0 text-xl">
-              r/
-            </div>
-            <input
-              type="text"
-              placeholder="enter a community"
-              className={`bg-white rounded-lg p-2 pl-8 w-70 shadow outline outline-2 outline-black`}
-            />
+        <div className="absolute pl-4 flex items-center inset-y-0 text-xl">
+          r/
+        </div>
+        <input
+          type="text"
+          placeholder="enter a community"
+          className={`bg-white rounded-lg p-2 pl-8 w-70 shadow outline outline-2 outline-black`}
+        />
       </div>
       <div className="relative">
-            <input
-              type="text"
-              placeholder="enter your email"
-              className={`bg-white rounded-lg p-2 pl-8 w-70 shadow outline outline-2 outline-black`}
-            />
+        <input
+          type="text"
+          placeholder="enter your email"
+          className={`bg-white rounded-lg p-2 pl-8 w-70 shadow outline outline-2 outline-black`}
+        />
       </div>
       <input
-            type="submit"
-            value="Submit"
-            className="rounded-xl bg-[#57bcb3] py-2 px-7 mt-7 text-white font-bold shadow hover:cursor-pointer hover:bg-[#58ada6]"
-          />
-      </div>
+        type="submit"
+        value="Submit"
+        className="rounded-xl bg-[#57bcb3] py-2 px-7 mt-7 text-white font-bold shadow hover:cursor-pointer hover:bg-[#58ada6]"
+      />
+    </div>
   );
 }
 
@@ -173,11 +200,11 @@ export default function Home() {
       <SubredditsCached></SubredditsCached>
       <RequestAnalysisForSpecificSubreddit></RequestAnalysisForSpecificSubreddit>
       <div className="flex gap-5 justify-end">
-        <img 
+        <img
           src={"github_logo.png"}
           className="rounded-full w-9 h-9 object-cover"
         />
-        <img 
+        <img
           src={"discord_logo.png"}
           className="rounded-full w-9 h-9 mr-4 object-cover"
         />
