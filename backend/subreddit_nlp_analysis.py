@@ -9,6 +9,7 @@ import time
 import asyncio
 import re
 import os 
+import math 
 import asyncpraw
 from dotenv import load_dotenv
 from detoxify import Detoxify
@@ -261,11 +262,40 @@ async def get_sentiments_of_entities(top_ten_entity_names, doc):
 
     return entity_to_sentiment, entity_to_summary
 
+def split_string_into_chunks(text, num_chunks):
+    words = text.split()
+    avg = math.ceil(len(words) / num_chunks)
+    chunks = [" ".join(words[i * avg:(i + 1) * avg]) for i in range(num_chunks)]
+    return [chunk for chunk in chunks if chunk]
+
 def get_sentiment_of_entity(entity, flattened_sentences):
-    t1 = time.time()
-    sentiment = classifier(flattened_sentences, text_pair=entity)
-    t2 = time.time()
-    print('getting sentiment of the entity ', entity, ' took ', t2 - t1)
+    if(len(flattened_sentences.split(" ")) >= 2000):
+        t1 = time.time()
+        num_chunks = math.ceil(len(flattened_sentences.split(" ")) / 2000)
+        chunks = split_string_into_chunks(flattened_sentences, num_chunks)
+        averaged_sentiment_score = 0
+        
+        for chunk in chunks:
+            tokens = tokenizer(chunk, truncation=False)
+            print("Number of tokens:", len(tokens['input_ids']))
+            sentiment = classifier(chunk, text_pair=entity)
+            sentiment_score = 0
+            if(sentiment[0]['label'] == 'Positive'):
+                sentiment_score = sentiment[0]['score']
+            elif(sentiment[0]['label'] == 'Negative'):
+                sentiment_score = (-1) * sentiment[0]['score']
+            averaged_sentiment_score += sentiment_score 
+        
+        averaged_sentiment_score = averaged_sentiment_score / num_chunks 
+        t2 = time.time() 
+        print('getting sentiment of the entity ', entity, ' with ', num_chunks, ' chunks took ', t2 - t1)
+    else:
+        tokens = tokenizer(flattened_sentences, truncation=False)
+        print("Number of tokens:", len(tokens['input_ids']))
+        t1 = time.time()
+        sentiment = classifier(flattened_sentences, text_pair=entity)
+        t2 = time.time()
+    print('getting sentiment of the entity ', entity, ' with 1 chunk took ', t2 - t1)
     # sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
     # label = 'Positive', 'Neutral', or 'Negative' 
     # score = value in range [0, 1]
@@ -611,13 +641,13 @@ def get_readability_metrics(posts):
             num_posts_over_100_words += 1
             r = Readability(post.description)
             flesch_kincaid = r.flesch_kincaid()
-            dale_chall = r.dale_chall()
+            #dale_chall = r.dale_chall()
             readability_metrics["flesch_grade_level"] = float(flesch_kincaid.grade_level) + float(readability_metrics.get("flesh_grade_level", 0))
             #readability_metrics["dale_chall_grade_level"] = float(dale_chall.grade_levels) + float(readability_metrics.get("dale_chall_grade_level", 0))
     avg_num_words_title = total_num_words_title / len(posts) if len(posts) != 0 else None
     avg_num_words_description = total_num_words_description / len(posts) if len(posts) != 0 else None
-    avg_flesh_grade_level =  readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else None
-    #avg_dale_chall_grade_level = readability_metrics.get("dale_chall_score", 0) / num_posts_over_50_words if num_posts_over_50_words != 0 else None
+    avg_flesh_grade_level =  readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
+    #avg_dale_chall_grade_level = readability_metrics.get("dale_chall_score", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
     return {
              "avg_num_words_title": avg_num_words_title,
              "avg_num_words_description": avg_num_words_description,
@@ -678,12 +708,18 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     posts_list = [post for post in posts_list if post is not None]
 
+     # Find out how many words we're analyzing in total 
+    total_words = 0
+    for post in posts_list:
+        total_words += len(post.title.split()) + len(post.description.split()) + sum([len(comment.split()) for comment in post.comments])
+    print('total_words: ', total_words)
+
     # Save post to file (uncomment to use)
     # await print_to_json(posts_list, "posts.txt")
 
     sorted_slice_to_posts = slice_posts_list(posts_list, subreddit_query.time_filter)
     print('Finished getting sorted_slice_to_posts')
-
+    
     readability_metrics = get_readability_metrics(posts_list)
     print('Finished getting readability_metrics')
     print(readability_metrics)
@@ -703,35 +739,21 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     print(top_named_entities_embeddings)
     t2 = time.time()
     print('getting 2d embeddings took: ', t2 - t1)
-    toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores, all_toxicity_grades = await get_toxicity_metrics(subreddit_query.name)
-    positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores, all_positive_content_grades = await get_positive_content_metrics(subreddit_query.name)
+    # toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores, all_toxicity_grades = await get_toxicity_metrics(subreddit_query.name)
+    # positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores, all_positive_content_grades = await get_positive_content_metrics(subreddit_query.name)
     print('generating wordcloud: ')
     top_named_entities_wordcloud = generate_word_cloud(top_named_entities)
     print("wordcloud generated")
     
     analysis = SubredditAnalysis(
+        timestamp = int(time.time()),
+        num_words = total_words,
         subreddit = subreddit_query.name,
-
         top_n_grams = top_n_grams,
         top_named_entities = top_named_entities,
         top_named_entities_embeddings = top_named_entities_embeddings,
         top_named_entities_wordcloud = top_named_entities_wordcloud,
-        
-        readability_metrics =  readability_metrics,  
-
-        # toxicity metrics 
-        toxicity_score = toxicity_score,
-        toxicity_grade = toxicity_grade,
-        toxicity_percentile = toxicity_percentile,
-        all_toxicity_scores = all_toxicity_scores,
-        all_toxicity_grades = all_toxicity_grades,
-        # positive content metrics 
-        positive_content_score = positive_content_score,
-        positive_content_grade = positive_content_grade,
-        positive_content_percentile = positive_content_percentile,
-        all_positive_content_scores = all_positive_content_scores,
-        all_positive_content_grades = all_positive_content_grades       
+        readability_metrics =  readability_metrics,   
     )
 
     return analysis
-
