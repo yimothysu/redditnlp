@@ -21,6 +21,8 @@ export interface SubredditQuery {
 }
 
 export interface SubredditAnalysis {
+    timestamp: number;
+    num_words: number; 
     subreddit: string;
 
     top_n_grams: Record<string, NGram[]>;

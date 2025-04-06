@@ -1550,7 +1550,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             </h1>
                             <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words  
                                 <span className="italic"> (For reference: that's equivalent to a standard novel with ~ {Math.round(analysis.num_words / 300)} pages) </span> </h1>
-                            <h1>text taken from this {timeFilter}'s r/{analysis.subreddit}'s <span className="bg-orange-200 font-bold p-1 rounded-sm">top {time_filter_to_num_posts[timeFilter]}</span> posts</h1>
+                            <h1>text taken from this {timeFilter}'s r/{analysis.subreddit}'s <span className="bg-orange-200 font-bold p-1 rounded-sm">top {time_filter_to_num_posts[timeFilter as keyof typeof time_filter_to_num_posts]}</span> posts</h1>
                         </div>
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {timeFilter == "all_time" && renderComparativeAnalysis()}
