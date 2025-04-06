@@ -1,10 +1,5 @@
 from scipy.stats import percentileofscore
-import asyncio
-import os 
-import asyncpraw
 from dotenv import load_dotenv
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
-from detoxify import Detoxify
 
 load_dotenv()
 
@@ -16,19 +11,6 @@ async def get_post_title_and_description(post):
     except:
         print('could not get post title and description')
 
-def composite_toxicity(text):
-    weights = {
-        'toxicity': 1.0,
-        'severe_toxicity': 1.5,  
-        'obscene': 0.8,
-        'threat': 1.5,  
-        'insult': 1.0,
-        'identity_attack': 1.2
-    }
-    scores = Detoxify('original').predict(text)
-    total_weight = sum(weights.values())
-    composite_toxicity_score = round(sum(scores[k] * weights[k] for k in scores) / total_weight, 6)
-    return composite_toxicity_score
 
 def get_percentile(values, target_value):
     # gets the percentile of target_value in values distribution 
@@ -71,34 +53,3 @@ async def get_toxicity_metrics(sub_name):
                 get_percentile(all_toxicity_scores, toxicity_score), 
                 all_toxicity_scores, 
                 all_toxicity_grades)
-    else:
-        reddit = asyncpraw.Reddit(
-        client_id=os.environ["REDDIT_CLIENT_ID"],
-        client_secret=os.environ["REDDIT_CLIENT_SECRET"],
-        user_agent="reddit_api"
-        )
-        try:
-            subreddit_instance = await reddit.subreddit(sub_name)
-            posts = [post async for post in subreddit_instance.top(
-                limit=400,
-                time_filter="all"
-            )]
-            posts = await asyncio.gather(*(get_post_title_and_description(post) for post in posts))
-            posts = [post for post in posts if post is not None]
-
-            all_flattened_post_text = "\n".join([flattened_post_text for flattened_post_text, _ in posts])
-            composite_toxicity_score = composite_toxicity(all_flattened_post_text)
-            await reddit.close() 
-            
-            f = open("top_subreddits_toxicity_score.txt", "a", encoding="utf-8")
-            f.write(sub_name + " " + str(composite_toxicity_score) + "\n")
-            print('wrote toxicity score for r/', sub_name, ' to top_subreddits_toxicity_score.txt')
-            all_toxicity_scores.append(composite_toxicity_score)
-            all_toxicity_grades.append(get_toxicity_grade(composite_toxicity_score))
-            return (composite_toxicity_score, 
-                    get_toxicity_grade(composite_toxicity_score), 
-                    get_percentile(all_toxicity_scores, composite_toxicity_score), 
-                    all_toxicity_scores,
-                    all_toxicity_grades)
-        except Exception as e:
-            print('couldnt get posts to calculate toxicity score because ', e)

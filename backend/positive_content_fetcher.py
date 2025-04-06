@@ -1,19 +1,7 @@
 from scipy.stats import percentileofscore
-import os 
-import asyncio
-import asyncpraw
 from dotenv import load_dotenv
-from nltk.sentiment.vader import SentimentIntensityAnalyzer
 
 load_dotenv()
-
-async def get_post_title_and_description(post):
-    try:
-        flattened_post_text = str(post.title) + "\n" + str(post.selftext)
-        upvotes = post.score
-        return (flattened_post_text, upvotes)
-    except:
-        print('could not get post title and description')
 
 def get_percentile(values, target_value):
     # gets the percentile of target_value in values distribution 
@@ -58,42 +46,3 @@ async def get_positive_content_metrics(sub_name):
                 get_percentile(all_positive_content_scores_normalized, positive_content_score_normalized), 
                 all_positive_content_scores_normalized,
                 all_positive_content_grades)
-    else:
-        reddit = asyncpraw.Reddit(
-        client_id=os.environ["REDDIT_CLIENT_ID"],
-        client_secret=os.environ["REDDIT_CLIENT_SECRET"],
-        user_agent="reddit_api"
-        )
-        analyzer = SentimentIntensityAnalyzer()
-
-        try:
-            subreddit_instance = await reddit.subreddit(sub_name)
-            posts = [post async for post in subreddit_instance.top(
-                limit=400,
-                time_filter="all"
-            )]
-            posts = await asyncio.gather(*(get_post_title_and_description(post) for post in posts))
-            posts = [post for post in posts if post is not None]
-
-            weighted_sentiment_sum = 0
-            total_upvotes = 0
-            for flattened_post_text, upvotes in posts:
-                score = analyzer.polarity_scores(flattened_post_text)
-                weighted_sentiment_sum += score['compound'] * upvotes
-                total_upvotes += upvotes
-            positive_content_score = weighted_sentiment_sum / total_upvotes
-            positive_content_score_normalized = (positive_content_score + 1) / 2
-            await reddit.close() 
-
-            f = open("top_subreddits_positive_content_score.txt", "a", encoding="utf-8")
-            f.write(sub_name + " " + str(positive_content_score) + "\n")
-            print('wrote positive content score for r/', sub_name, ' to top_subreddits_positive_content_score.txt')
-            all_positive_content_scores_normalized.append(positive_content_score_normalized)
-            all_positive_content_grades.append(get_positive_content_grade(positive_content_score_normalized))
-            return (positive_content_score_normalized, 
-                    get_positive_content_grade(positive_content_score_normalized), 
-                    get_percentile(all_positive_content_scores_normalized, positive_content_score_normalized), 
-                    all_positive_content_scores_normalized,
-                    all_positive_content_grades)
-        except Exception as e:
-            print('couldnt get posts to calculate positive content score because ', e)
