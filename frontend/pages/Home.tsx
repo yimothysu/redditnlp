@@ -40,15 +40,14 @@ function SubredditsCached() {
         />
         <link rel="canonical" href="https://redditnlp.com" />
         <script type="application/ld+json">
-          {`
-            {
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              "name": "Reddit NLP",
-              "url": "https://redditnlp.com",
-              "description": "Reddit NLP helps you explore natural language trends in Reddit communities."
-            }
-        `}
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebSite",
+            name: "Reddit NLP",
+            url: "https://redditnlp.com",
+            description:
+              "Reddit NLP helps you explore natural language trends in Reddit communities.",
+          })}
         </script>
       </Helmet>
       <div className="bg-gray-100 p-7">

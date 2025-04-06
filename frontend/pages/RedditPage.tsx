@@ -78,23 +78,33 @@ export default function RedditPage() {
   return (
     <>
       <Helmet>
-        <title>Reddit NLP</title>
-        <meta name="description" content="Explore NLP for Reddit communities" />
+        <title>{`r/${name} | Reddit NLP`}</title>
+        <meta
+          name="description"
+          content={`Explore natural language trends in r/${name}${
+            subreddit ? ` and compare with r/${subreddit}` : ""
+          }.`}
+        />
         <meta
           name="keywords"
           content="Reddit, NLP, Natural Language Processing"
         />
-        <link rel="canonical" href="https://redditnlp.com/subreddit" />
+        <link
+          rel="canonical"
+          href={`https://redditnlp.com/subreddit/r/${encodeURIComponent(
+            name || ""
+          )}`}
+        />
         <script type="application/ld+json">
-          {`
-            {
-              "@context": "https://schema.org",
-              "@type": "WebSite",
-              "name": "Reddit NLP | subreddit",
-              "url": "https://redditnlp.com/subreddit",
-              "description": "Reddit NLP helps you explore natural language trends in Reddit communities."
-            }
-        `}
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "WebPage",
+            name: `Reddit NLP - r/${name}`,
+            url: `https://redditnlp.com/subreddit/r/${name}`,
+            description: `Explore NLP trends in r/${name}${
+              subreddit ? ` and compare with r/${subreddit}` : ""
+            }.`,
+          })}
         </script>
       </Helmet>
       <Template>
