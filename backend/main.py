@@ -23,7 +23,8 @@ from db import (
     fetch_subreddit_analysis,
 )
 
-from subreddit_nlp_analysis import get_toxicity_metrics, get_positive_content_metrics
+from toxicity_fetcher import get_toxicity_metrics 
+from positive_content_fetcher import get_positive_content_metrics
 
 # Constants
 
