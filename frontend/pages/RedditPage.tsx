@@ -31,6 +31,7 @@ const subreddits = [
 export default function RedditPage() {
   const { name } = useParams();
   const [subreddit, setSubreddit] = useState("");
+  const [inComparisonMode, setInComparisonMode] = useState("false")
 
   const handleSubredditChange = (e: ChangeEvent<HTMLSelectElement>) => {
     setSubreddit(e.target.value);
@@ -60,7 +61,11 @@ export default function RedditPage() {
 
   let displayFull = !subreddit ? "w-full" : "w-full md:w-1/2";
 
-  const Analysis = ({inComparisonMode}) => {
+  const Analysis = () => {
+    if (subreddit != "" && subreddit != "Select Subreddit") {
+      setInComparisonMode("true")
+    }
+
     return (
       <div className="flex w-full">
         <div className={displayFull}>
@@ -132,7 +137,7 @@ export default function RedditPage() {
         </div>
         }     
       </div> */}
-        <Analysis inComparisonMode={subreddit}></Analysis>
+        <Analysis></Analysis>
       </Template>
     </>
   );

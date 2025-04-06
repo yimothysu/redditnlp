@@ -118,6 +118,11 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         }
     };
 
+     // Call loadSubredditAnalysis only once when the component is mounted
+     useEffect(() => {
+        loadSubredditAnalysis();
+    }, []); // Empty dependency array ensures it's called only once on mount
+    
     const renderReadabilityMetrics = () => {
         if (!analysis) return null;
         console.log(analysis.readability_metrics)
@@ -1431,7 +1436,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                 >
                                     Analyze
                                 </button>
-                                {isBusy && <div className={`absolute ${spinnerStyle} top-8 right-[-40px]`}></div>}
+                                {isBusy && !analysis && <div className={`absolute ${spinnerStyle} top-8 right-[-40px]`}></div>}
                             </div>
                         </div>
                     </div>
@@ -1454,8 +1459,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         <div className="m-4 pl-4 text-[15px]">
                             <h1 className="mb-4 text-orange-600 font-semibold text-center">WARNING: this analysis may be outdated</h1>
-                            <h1 className="mb-4">analysis generated on: 
-                                <span className="bg-orange-200 font-bold p-1 rounded-sm">{new Date(analysis.timestamp * 1000).toLocaleString()}</span>
+                            <h1 className="mb-4">analysis generated on: <span className="bg-orange-200 font-bold p-1 rounded-sm">{new Date(analysis.timestamp * 1000).toLocaleString()}</span>
                             </h1>
                             <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words  
                                 <span className="italic"> (For reference: that's equivalent to a standard novel with ~ {Math.round(analysis.num_words / 300)} pages) </span> </h1>
