@@ -1,6 +1,7 @@
 from http.client import BAD_REQUEST
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List
 
@@ -72,6 +73,10 @@ class Comment(BaseModel):
 #     name: str 
 #     count: int 
 #     sentiment_score: float
+
+class SubredditRequest(BaseModel):
+    subreddit: str
+    email: str
 
 
 # Methods
@@ -164,6 +169,15 @@ async def fetch_subreddit_analysis_from_db(
     analysis["all_positive_content_grades"] = all_positive_content_grades 
     
     return analysis
+
+@app.post("/request_subreddit/", status_code=status.HTTP_204_NO_CONTENT)
+async def request_subreddit(
+    subreddit_request: SubredditRequest,
+):
+    # TODO: Implement
+    print(f"Subreddit Request from {subreddit_request.email} for the subreddit r/{subreddit_request.subreddit}")
+    
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 """

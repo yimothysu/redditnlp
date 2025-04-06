@@ -20,15 +20,15 @@ export interface SubredditQuery {
 
 export interface SubredditAnalysis {
     timestamp: number;
-    num_words: number; 
+    num_words: number;
     subreddit: string;
 
     top_n_grams: Record<string, NGram[]>;
     top_named_entities: Record<string, NamedEntity[]>;
     top_named_entities_embeddings: Record<string, [number, number]>;
     top_named_entities_wordcloud: string;
-    readability_metrics:  Record<string, number>;
-    
+    readability_metrics: Record<string, number>;
+
     // For subreddit ranking
     toxicity_score: number; // [0, 1] --> 0 = not toxic at all, 1 = all toxic
     toxicity_grade: string; // A+ to F
@@ -50,6 +50,11 @@ export interface Subreddit {
 
 export interface PopularSubredditsResponse {
     reddits: Subreddit[];
+}
+
+export interface SubredditRequest {
+    subreddit: string;
+    email: string;
 }
 
 // TODO: Update doc
@@ -95,4 +100,17 @@ export async function fetchPopularSubreddits(): Promise<PopularSubredditsRespons
     }
 
     return await response.json();
+}
+
+export async function requestSubreddit(subreddit: string, email: string) {
+    return fetch(`${API_BASE_URL}/request_subreddit/`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            subreddit: subreddit,
+            email: email,
+        }),
+    });
 }
