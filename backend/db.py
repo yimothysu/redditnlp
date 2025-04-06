@@ -19,6 +19,12 @@ month = db["month_analyses"]
 year = db["year_analyses"] 
 all_time = db["all_time_analyses"]
 
+# defining 'subreddit' as the key for each collection 
+week.create_index("subreddit", unique=True)
+month.create_index("subreddit", unique=True)
+year.create_index("subreddit", unique=True)
+all_time.create_index("subreddit", unique=True)
+
 COLLECTIONS = {
     "week": week,
     "month": month,

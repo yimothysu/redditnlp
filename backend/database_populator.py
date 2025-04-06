@@ -4,6 +4,7 @@
 import requests
 from db import COLLECTIONS
 import asyncio
+import time 
 
 from subreddit_classes import (
     SubredditQuery,
@@ -29,12 +30,11 @@ async def fetch_subreddit_data(subreddit):
     )
 
     analysis = await perform_subreddit_analysis(subreddit_query)
-
     collection = COLLECTIONS[subreddit_query.time_filter]
     collection.update_one(
-        {"name": subreddit_query.name},
+        {"id_": subreddit_query.name},
         {"$set": analysis.model_dump()},
-        upsert=True
+        upsert=True # insert if no match
     )
 
     """
