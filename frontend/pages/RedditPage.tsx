@@ -38,6 +38,7 @@ export default function RedditPage() {
   };
 
   const renderSelectReddit = () => {
+    console.log('subreddit: ', subreddit)
     return (
       <div className="flex items-center mr-5">
         <p className="text-black font-medium mr-2">Compare r/{name} to: </p>
@@ -64,6 +65,9 @@ export default function RedditPage() {
   const Analysis = () => {
     if (subreddit != "" && subreddit != "Select Subreddit") {
       setInComparisonMode("true")
+    }
+    else {
+      setInComparisonMode("false")
     }
 
     return (
