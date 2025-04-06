@@ -23,16 +23,6 @@ import {
     Cell,
 } from "recharts";
 
-/*
-const spinnerStyle = {
-    border: "4px solid #f3f3f3",
-    borderTop: "4px solid #3498db",
-    borderRadius: "50%",
-    width: "20px",
-    height: "20px",
-    animation: "spin 1s linear infinite",
-};
-*/
 
 const months: Record<string, string> = {
     "01": "January",
@@ -1381,7 +1371,14 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         );
     };
 
-    // <div className="spinner" style={spinnerStyle}></div>
+    const time_filter_to_num_posts = {
+        week: 50,
+        month: 100,
+        year: 200,
+        all_time: 350
+    };
+
+    const spinnerStyle = "animate-spin h-6 w-6 border-t-4 border-blue-500 border-solid rounded-full";
 
     return (
         <div>
@@ -1425,14 +1422,17 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                     </option>
                                 </select>
                             </div>
-                            <button
-                                onClick={() => {
-                                    loadSubredditAnalysis();
-                                }}
-                                className="block self-end px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                            >
-                                Analyze
-                            </button>
+                            <div className="relative flex gap-4">
+                                <button
+                                    onClick={() => {
+                                        loadSubredditAnalysis();
+                                    }}
+                                    className="block self-end px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                                >
+                                    Analyze
+                                </button>
+                                {isBusy && <div className={`absolute ${spinnerStyle} top-8 right-[-40px]`}></div>}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1452,8 +1452,18 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 {!error && analysis && (
                     <div className="mt-4">
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
-                        {renderComparativeAnalysis()}
+                        <div className="m-4 pl-4 text-[15px]">
+                            <h1 className="mb-4 text-orange-600 font-semibold text-center">WARNING: this analysis may be outdated</h1>
+                            <h1 className="mb-4">analysis generated on: 
+                                <span className="bg-orange-200 font-bold p-1 rounded-sm">{new Date(analysis.timestamp * 1000).toLocaleString()}</span>
+                            </h1>
+                            <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words  
+                                <span className="italic"> (For reference: that's equivalent to a standard novel with ~ {Math.round(analysis.num_words / 300)} pages) </span> </h1>
+                            <h1>text taken from this {timeFilter}'s r/{analysis.subreddit}'s <span className="bg-orange-200 font-bold p-1 rounded-sm">top {time_filter_to_num_posts[timeFilter]}</span> posts</h1>
+                        </div>
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
+                        {timeFilter == "all_time" && renderComparativeAnalysis()}
+                        {timeFilter == "all_time" && (<hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />)}
                         {renderNGrams()}
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {renderNamedEntities()}

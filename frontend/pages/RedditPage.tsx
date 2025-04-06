@@ -60,15 +60,15 @@ export default function RedditPage() {
 
   let displayFull = !subreddit ? "w-full" : "w-full md:w-1/2";
 
-  const Analysis = () => {
+  const Analysis = ({inComparisonMode}) => {
     return (
       <div className="flex w-full">
         <div className={displayFull}>
-          <RedditAnalysisDisplay name={name} inComparisonMode="true" />
+          <RedditAnalysisDisplay name={name} inComparisonMode={inComparisonMode} />
         </div>
         {subreddit && (
           <div className="w-1/2 hidden md:block">
-            {<RedditAnalysisDisplay name={subreddit} inComparisonMode="true" />}
+            {<RedditAnalysisDisplay name={subreddit} inComparisonMode={inComparisonMode} />}
           </div>
         )}
       </div>
@@ -132,7 +132,7 @@ export default function RedditPage() {
         </div>
         }     
       </div> */}
-        <Analysis></Analysis>
+        <Analysis inComparisonMode={subreddit}></Analysis>
       </Template>
     </>
   );
