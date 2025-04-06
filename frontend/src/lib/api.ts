@@ -1,6 +1,4 @@
-//import { WordCloud } from "react-d3-cloud";
-// TODO: move to environment variable
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000"; // Backend FastAPI server URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 export interface NGram {
     0: string; // n-gram text
@@ -44,14 +42,6 @@ export interface SubredditAnalysis {
     all_positive_content_scores: [number]; // for generating a positive content scores distribution graph on the UI
     all_positive_content_grades: [string]; // for generating a positive content grades distribution graph on the UI
 }
-
-/*
-export interface SubredditAnalysisResponse {
-  analysis_status: string;
-  analysis_progress: number;
-  analysis: SubredditAnalysis;
-}
-  */
 
 export interface Subreddit {
     name: string;
