@@ -122,7 +122,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
      useEffect(() => {
         loadSubredditAnalysis();
     }, []); // Empty dependency array ensures it's called only once on mount
-    
+
     const renderReadabilityMetrics = () => {
         if (!analysis) return null;
         console.log(analysis.readability_metrics)
@@ -147,19 +147,62 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         const wordCloud = new Image();
         wordCloud.src = `data:image/png;base64, ${analysis.top_named_entities_wordcloud}`;
 
-        return (
-            <div>
-            <h1 className="font-bold text-xl text-center mt-5 p-1">Word Cloud</h1>
-            <div className="mt-2 p-2 pl-6 pr-6 pb-6 bg-white shadow rounded max-w-3xl mx-auto">
-                <p className="text-gray-500 p-3">
-                    A word cloud is a visual representation of the most popular
-                    words in the subreddit. The size of the word corresponds to
-                    its frequency in the subreddit.
-                </p>
+        const WordCloudPopoverButton = () => {
+            return (
+                <PopupState variant="popover" popupId="demo-popup-popover">
+                    {(popupState) => (
+                        <div>
+                            <Button
+                                sx={{
+                                    backgroundColor: "#4f46e5",
+                                    mb: 0,
+                                    fontSize: "14px",
+                                    transition:
+                                        "background-color 0.2s ease-in-out",
+                                    "&:hover": { backgroundColor: "#4338ca" },
+                                }}
+                                variant="contained"
+                                {...bindTrigger(popupState)}
+                            >
+                                What's a Word Cloud?
+                            </Button>
+                            <Popover
+                                {...bindPopover(popupState)}
+                                anchorOrigin={{
+                                    vertical: "bottom",
+                                    horizontal: "center",
+                                }}
+                                transformOrigin={{
+                                    vertical: "top",
+                                    horizontal: "center",
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        p: 2,
+                                        maxWidth: 500,
+                                        fontSize: "14px",
+                                    }}
+                                >
+                                     A word cloud is a visual representation of the most popular
+                                    words in the subreddit. The size of the word corresponds to
+                                    its frequency in the subreddit.
+                                </Typography>
+                            </Popover>
+                        </div>
+                    )}
+                </PopupState>
+            );
+        };
 
+        return (
+            <div className="flex flex-col items-center">
+            <h1 className="font-bold text-xl text-center mt-4 mb-4 p-1">Word Cloud</h1>
+            <WordCloudPopoverButton></WordCloudPopoverButton>
+            <div className="mt-4 p-2 pl-6 pr-6 pb-6 bg-white w-full mx-auto">
                 {analysis?.top_named_entities_wordcloud ? (
                     <img
-                        className="mx-auto w-fit"
+                        className="mx-auto w-[50%] h-auto"
                         src={wordCloud.src}
                         alt="Word Cloud"
                     />
@@ -186,17 +229,61 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 x: x * 5,
                 y: y * 5,
             }));
+        
+            const WordEmbeddingsPopoverButton = () => {
+                return (
+                    <PopupState variant="popover" popupId="demo-popup-popover">
+                        {(popupState) => (
+                            <div>
+                                <Button
+                                    sx={{
+                                        backgroundColor: "#4f46e5",
+                                        mb: 0,
+                                        fontSize: "14px",
+                                        transition:
+                                            "background-color 0.2s ease-in-out",
+                                        "&:hover": { backgroundColor: "#4338ca" },
+                                    }}
+                                    variant="contained"
+                                    {...bindTrigger(popupState)}
+                                >
+                                    What are Word Embeddings?
+                                </Button>
+                                <Popover
+                                    {...bindPopover(popupState)}
+                                    anchorOrigin={{
+                                        vertical: "bottom",
+                                        horizontal: "center",
+                                    }}
+                                    transformOrigin={{
+                                        vertical: "top",
+                                        horizontal: "center",
+                                    }}
+                                >
+                                    <Typography
+                                        sx={{
+                                            p: 2,
+                                            maxWidth: 500,
+                                            fontSize: "14px",
+                                        }}
+                                    >
+                                        Word embeddings are vector representations of words in
+                                        high-dimensional space, offering insights into meaning and
+                                        context. Below is a 2D projection of the most popular words
+                                        in the subreddit (reduced via PCA).
+                                    </Typography>
+                                </Popover>
+                            </div>
+                        )}
+                    </PopupState>
+                );
+            };
 
         return (
-            <div>
-            <h1 className="font-bold text-xl mt-5 text-center p-1">Word Embeddings</h1>
-            <div className="mt-2 p-2 pl-6 pr-6 pb-6 bg-white shadow rounded max-w-3xl mx-auto">
-                <p className="text-gray-500 p-3">
-                    Word embeddings are vector representations of words in
-                    high-dimensional space, offering insights into meaning and
-                    context. Below is a 2D projection of the most popular words
-                    in the subreddit (reduced via PCA).
-                </p>
+            <div className="flex flex-col items-center">
+            <h1 className="font-bold text-xl mt-4 text-center p-1 mb-4">Word Embeddings</h1>
+            <WordEmbeddingsPopoverButton></WordEmbeddingsPopoverButton>
+            <div className="mt-4 p-2 pl-6 pr-6 pb-6 bg-white max-w-3xl mx-auto">
                 <div className="bg-gray-100 rounded">
                     {embeddingsDisplay && embeddingsDisplay.length > 0 ? (
                         <WordEmbeddingsGraph embeddings={embeddingsDisplay} />
