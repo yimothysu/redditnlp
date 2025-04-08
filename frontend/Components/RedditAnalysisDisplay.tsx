@@ -609,7 +609,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             values={analysis.all_toxicity_scores}
                             xaxis_label="Toxicity Score"
                         ></Histogram>
-                        {/* <h1 className="mt-3 text-[15px] text-center text-red-500">Red bar is where r/{name} lies in the distribution</h1> */}
                     </div>
                     <div className="w-1/2">
                     <div className="w-[1px] bg-gray-400"></div>
@@ -670,7 +669,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             values={analysis.all_positive_content_scores}
                             xaxis_label="Positive Content Score"
                         ></Histogram>
-                        {/* <h1 className="mt-3 text-[15px] text-center text-red-500">Red bar is where r/{name} lies in the distribution</h1> */}
                     </div>
                 </div>
                 </div>
@@ -809,18 +807,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             </div>
         );
     };
-
-    // const renderNamedEntitiesExpandAllToggle = () => {
-    //     return (
-    //         <label className='autoSaverSwitch relative inline-flex cursor-pointer select-none items-center'>
-    //                 <input type='checkbox' name='autoSaver' className='sr-only' checked={namedEntitiesExpandAllIsChecked} onChange={handleNamedEntitiesToggleChange}/>
-    //                 <span className={`slider mr-3 flex h-[26px] w-[50px] items-center rounded-full p-1 duration-200 ${namedEntitiesExpandAllIsChecked ? 'bg-[#5a33ff]' : 'bg-[#CCCCCE]'}`}>
-    //                     <span className={`dot h-[18px] w-[18px] rounded-full bg-white duration-200 ${namedEntitiesExpandAllIsChecked ? 'translate-x-6' : ''}`}></span>
-    //                 </span>
-    //                 <span className='label flex items-center text-sm font-medium text-black'> Expand All </span>
-    //         </label>
-    //     );
-    // };
 
     const renderNamedEntities = () => {
         if (!analysis) return null;
@@ -973,10 +959,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                                     summary={entity[3]}
                                                 ></SummarizedSentimentBulletPoints>
                                             </div>
-                                            {/* {index !==
-                                                props.entities.length - 1 && (
-                                                <hr className="bg-black mt-3 mb-2"></hr>
-                                            )} */}
                                         </div>
                                     </div>
                                 );
@@ -987,101 +969,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             );
         };
 
-        /* DEPRECATED: Carousel */
-
-        // const incrementCurrNamedEntityCarouselIndex = () => {
-        //     setCurrNamedEntityCarouselIndex(currNamedEntityCarouselIndex + 1);
-        // };
-
-        // const decrementCurrNamedEntityCarouselIndex = () => {
-        //     setCurrNamedEntityCarouselIndex(currNamedEntityCarouselIndex - 1);
-        // };
-
-        // const renderLeftCarouselButton = () => {
-        //     return (
-        //         <div style={{ position: "absolute", left: "0" }}>
-        //             {currNamedEntityCarouselIndex != 0 && (
-        //                 <button
-        //                     onClick={decrementCurrNamedEntityCarouselIndex}
-        //                     className="p-1 rounded-full text-black mr-30 border-2 border-black transition hover:bg-gray-200"
-        //                 >
-        //                     <ChevronLeft size={28} />
-        //                 </button>
-        //             )}
-        //         </div>
-        //     );
-        // };
-
-        // const renderRightCarouselButton = () => {
-        //     const topNamedEntitiesLength = Object.keys(
-        //         analysis.top_named_entities
-        //     ).length;
-        //     return (
-        //         <div style={{ position: "absolute", right: "0" }}>
-        //             {currNamedEntityCarouselIndex <
-        //                 topNamedEntitiesLength - 3 && (
-        //                 <button
-        //                     onClick={incrementCurrNamedEntityCarouselIndex}
-        //                     className="p-1 rounded-full text-black ml-30 border-2 border-black transition hover:bg-gray-200"
-        //                 >
-        //                     <ChevronRight size={28} />
-        //                 </button>
-        //             )}
-        //         </div>
-        //     );
-        // };
-
-        const SummaryPopoverButton = () => {
-            return (
-                <PopupState variant="popover" popupId="demo-popup-popover">
-                    {(popupState) => (
-                        <div>
-                            <Button
-                                sx={{
-                                    backgroundColor: "#4f46e5",
-                                    mt: 3,
-                                    mb: 0,
-                                    fontSize: "13px",
-                                    maxWidth: "210px",
-                                    transition:
-                                        "background-color 0.2s ease-in-out",
-                                    "&:hover": { backgroundColor: "#4338ca" },
-                                }}
-                                variant="contained"
-                                {...bindTrigger(popupState)}
-                            >
-                                How is "Key Points" computed?
-                            </Button>
-                            <Popover
-                                {...bindPopover(popupState)}
-                                anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "center",
-                                }}
-                                transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "center",
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        p: 2,
-                                        maxWidth: 500,
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    The summarization ML model{" "}
-                                    <strong>"facebook/bart-large-cnn"</strong>{" "}
-                                    processes all of the sentences where a named
-                                    entity is directly mentioned and creates a
-                                    short summary.
-                                </Typography>
-                            </Popover>
-                        </div>
-                    )}
-                </PopupState>
-            );
-        };
 
         return (
             <div className="mt-2">
@@ -1130,8 +1017,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                         </ButtonPopover>
                     
                     </div>
-                    {/* <RenderConsistentlyMentionedNamedEntities></RenderConsistentlyMentionedNamedEntities> */}
-                    {/* <div className="ml-auto mr-8">{renderNamedEntitiesExpandAllToggle()}</div> */}
                 </div>
                 <div
                     style={{
@@ -1144,7 +1029,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                         position: "relative",
                     }}
                 >
-                    {/* {renderLeftCarouselButton()} */}
                     <div className="flex justify-center border-1">
                         <ColorCodeBox
                             backgroundColor="#AFE1AF"
@@ -1167,23 +1051,12 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             label="Very Negative Consensus"
                         ></ColorCodeBox>
                     </div>
-                    {/* {renderRightCarouselButton()} */}
                 </div>
                 <div className="overflow-hidden w-full">
-                    {/* <div
-                        className="flex transition-transform duration-600 ease-in-out"
-                        style={{
-                            transform: `translateX(-${
-                                currNamedEntityCarouselIndex * (100 / numNamedEntityCardsAtOnce)
-                            }%)`,
-                        }}
-                    > */}
                         {Object.entries(analysis.top_named_entities).map(
                             ([date, entities]) => (
                                 <div
                                     key={date}
-                                    // className="flex flex-shrink-0"
-                                    // style={{ width: `${100 / numNamedEntityCardsAtOnce}%` }}
                                 >
                                     <TopNamedEntitiesForDate
                                         date={date}
@@ -1287,7 +1160,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             <h1 className="mb-4">analysis generated on: <span className="bg-orange-200 font-bold p-1 rounded-sm">{new Date(analysis.timestamp * 1000).toLocaleString()}</span>
                             </h1>
                             <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words  
-                                {/* <span className="italic"> (For reference: that's equivalent to a standard novel with ~ {Math.round(analysis.num_words / 300)} pages) </span> */} from r/{analysis.subreddit}'s <span className="bg-orange-200 font-bold p-1 rounded-sm">top {time_filter_to_num_posts[timeFilter as keyof typeof time_filter_to_num_posts]}</span> posts of the {timeFilter}</h1>
                         </div>
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {timeFilter == "all_time" && renderComparativeAnalysis()}

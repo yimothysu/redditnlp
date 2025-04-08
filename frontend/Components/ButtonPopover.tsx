@@ -3,6 +3,8 @@ import Button from "@mui/material/Button";
 import { Typography } from "@mui/material";
 import Popover from "@mui/material/Popover";
 
+// This component creates a button with a specified title and places the content between the ButtonPopover tags in the content
+// of the popover that displays when the button is pressed
 export default function ButtonPopover({ title, children }) {
             return (
                 <PopupState variant="popover" popupId="demo-popup-popover">
