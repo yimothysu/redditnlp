@@ -85,7 +85,7 @@ export default function RedditPage() {
         <link
           rel="canonical"
           href={`https://redditnlp.com/subreddit/r/${encodeURIComponent(
-            name || ""
+            subredditName || ""
           )}`}
         />
         <script type="application/ld+json">

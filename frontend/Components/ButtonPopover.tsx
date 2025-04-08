@@ -2,10 +2,17 @@ import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import Button from "@mui/material/Button";
 import { Typography } from "@mui/material";
 import Popover from "@mui/material/Popover";
+import React from "react";
+
+
+interface Props {
+    title: string,
+    children: React.ReactNode
+}
 
 // This component creates a button with a specified title and places the content between the ButtonPopover tags in the content
 // of the popover that displays when the button is pressed
-export default function ButtonPopover({ title, children }) {
+export default function ButtonPopover({ title, children } : Props) {
             return (
                 <PopupState variant="popover" popupId="demo-popup-popover">
                     {(popupState) => (

@@ -1071,13 +1071,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         );
     };
 
-    const time_filter_to_num_posts = {
-        week: 50,
-        month: 100,
-        year: 200,
-        all_time: 350
-    };
-
     const spinnerStyle = "animate-spin h-6 w-6 border-t-4 border-blue-500 border-solid rounded-full";
 
     return (

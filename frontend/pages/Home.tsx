@@ -169,7 +169,6 @@ export default function Home() {
                 />
             </div>
             <div className="w-full h-4"></div>
-            {/* <hr className="border-gray-200"></hr> */}
         </Template>
     );
 }
