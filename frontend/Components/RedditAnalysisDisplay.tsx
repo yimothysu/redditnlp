@@ -127,14 +127,66 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     }, []); // Empty dependency array ensures it's called only once on mount
 
     const renderReadabilityMetrics = () => {
+
+        const ReadabilityPopover = () => {
+            return (
+                <PopupState variant="popover" popupId="demo-popup-popover">
+                    {(popupState) => (
+                        <div>
+                            <Button
+                                sx={{
+                                    backgroundColor: "#4f46e5",
+                                    mb: 0,
+                                    fontSize: "14px",
+                                    transition:
+                                        "background-color 0.2s ease-in-out",
+                                    "&:hover": { backgroundColor: "#4338ca" },
+                                }}
+                                variant="contained"
+                                {...bindTrigger(popupState)}
+                            >
+                                What are Readability Metrics?
+                            </Button>
+                            <Popover
+                                {...bindPopover(popupState)}
+                                anchorOrigin={{
+                                    vertical: "bottom",
+                                    horizontal: "center",
+                                }}
+                                transformOrigin={{
+                                    vertical: "top",
+                                    horizontal: "center",
+                                }}
+                            >
+                                <Typography
+                                    sx={{
+                                        p: 2,
+                                        maxWidth: 500,
+                                        fontSize: "14px",
+                                    }}
+                                >
+                                    Readability metrics evaluate how easy a body text is to read. This includes expected grade level of education required to understand a text.
+                                </Typography>
+                            </Popover>
+                        </div>
+                    )}
+                </PopupState>
+            );
+        };
+
         if (!analysis) return null;
         console.log(analysis.readability_metrics)
         return (
             <div>
                 <h1 className="font-bold text-xl text-center mt-5 p-1">Readability Metrics</h1>
-                <p className="text-center"><b>Average Number of Words Per Post Title: </b>{analysis.readability_metrics["avg_num_words_title"]}</p>
-                <p className="text-center"><b>Average Number of Words Per Post Description: </b>{analysis.readability_metrics["avg_num_words_description"]}</p>
-                <p className="text-center"><b>Average Grade Level of Text (Flesh Score): </b>{analysis.readability_metrics["avg_flesh_grade_level"].toFixed(2)}</p>
+                <br/>
+                <div className="text-center">
+                    <ReadabilityPopover/>
+                </div>
+                <br/>
+                <p className="text-center text-gray-800"><b>Average Number of Words Per Post Title: </b>{analysis.readability_metrics["avg_num_words_title"]}</p>
+                <p className="text-center text-gray-800"><b>Average Number of Words Per Post Description: </b>{analysis.readability_metrics["avg_num_words_description"]}</p>
+                <p className="text-center text-gray-800"><b>Average Grade Level of Text (Flesch Score): </b>{analysis.readability_metrics["avg_flesh_grade_level"].toFixed(2)}</p>
                 {/* <p className="text-center"><b>Average Grade Level of Text (Dale Chall Score): </b>{analysis.readability_metrics["avg_dale_chall_grade_level"]}</p> */}
             </div>);
     }
