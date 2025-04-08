@@ -25,6 +25,11 @@ class RedditPost(BaseModel):
     def to_dict(self):
         return self.model_dump()
 
+class Comment(BaseModel):
+    text: str
+    score: int 
+
+
 # Time filter to post limit mapping
 time_filter_to_post_limit = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
 
@@ -73,6 +78,7 @@ def get_subreddit_topics(sorted_slice_to_posts, num_topics=10):
     
     return subreddit_topics
 
+
 async def fetch_post_data(post):
     """Fetch data from a Reddit post including its comments"""
     try:
@@ -86,7 +92,23 @@ async def fetch_post_data(post):
                 post_comments.append(comment.body)
             if hasattr(comment, "score"):
                 comment_scores.append(comment.score)
+
+        comment_objects = []
+        for i in range(len(post_comments)):
+            comment_objects.append(Comment(text=post_comments[i], score=comment_scores[i]))
+        # sort the comments by their score 
+        comment_objects.sort(key=lambda comment: comment.score)
         
+        # sampling comments with the highest score if there's a large # of comments 
+        if len(post_comments) > 30 and len(post_comments) <= 60:
+            comment_objects = comment_objects[-25:] # most highly scored 25 comments 
+        if len(post_comments) > 60 and len(post_comments) <= 100:
+            comment_objects = comment_objects[-50:] # most highly scored 50 comments 
+        if len(post_comments) > 100:
+            comment_objects = comment_objects[-75:] # most highly scored 75 comments 
+
+        post_comments = [comment_object.text for comment_object in comment_objects]
+        comment_scores = [comment_object.score for comment_object in comment_objects]
         return RedditPost(
             title=post.title,
             description=post.selftext,
