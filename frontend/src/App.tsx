@@ -10,7 +10,7 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />}></Route>
-      <Route path="/subreddit/:name" element={<RedditPage />}></Route>
+      <Route path="/subreddit/:subredditName" element={<RedditPage />}></Route>
     </Routes>
   );
 }
