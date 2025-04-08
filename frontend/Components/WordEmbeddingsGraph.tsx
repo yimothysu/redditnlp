@@ -6,7 +6,7 @@ import annotationPlugin from 'chartjs-plugin-annotation';
 
 Chart.register(PointElement, LinearScale, annotationPlugin);
 
-function WordEmbeddingsGraph({ embeddings }: { embeddings: { word: string; x: number; y: number }[] }) {
+function WordEmbeddingsGraph({ embeddings, isComparisonMode }: { embeddings: { word: string; x: number; y: number }[], isComparisonMode: string }) {
        const annotations: { [param: number]: any } = {};
 
        embeddings.map(({ x, y, word }, index) => {
@@ -24,26 +24,31 @@ function WordEmbeddingsGraph({ embeddings }: { embeddings: { word: string; x: nu
             content: [word], color: 'black',
             padding: 10,
             textAlign: 'center',
-            font: { size: 10 },
-            backgroundColor: 'rgba(255, 255, 255, 0.7)'
+            font: { size: 12, weight: '600'},
+            backgroundColor: 'rgba(255, 255, 255, 1)'
         }; });
         return (
+        <div style={{ width: isComparisonMode === 'true' ? '40vw' :'90vw',  height: 'auto'}}>
         <Scatter data={{
             datasets: [{
                 data: embeddings, pointRadius: 3
             }
         ] }}
-        
         options={{
+            layout: {
+                padding: 10
+            },
+
             scales: { 
                 y: { min: -4, max: 4 }, x: { min: -4, max: 4 }
             }, 
             plugins: {
                 annotation: { annotations },
                 legend: { display: false }
-            }
+            },
+            //maintainAspectRatio: false
         }}
-    />); 
+    /></div>); 
 }
     
 export default WordEmbeddingsGraph;
