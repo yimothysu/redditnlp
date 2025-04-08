@@ -73,6 +73,8 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const [currNGramsCarouselIndex, setCurrNGramsCarouselIndex] = useState(0);
     const [numNGramCardsAtOnce, setNumNGramCardsAtOnce] = useState(5);
     const [numNamedEntityCardsAtOnce, setNumNamedEntityCardsAtOnce] = useState(3);
+    const [consistentlyMentionedNamedEntities, setConsistentlyMentionedNamedEntities] = useState([])
+
     // const [namedEntitiesExpandAllIsChecked, setNamedEntitiesExpandAllIsChecked] = useState(false)
     // const handleNamedEntitiesToggleChange = () => {
     //     setNamedEntitiesExpandAllIsChecked(!namedEntitiesExpandAllIsChecked)
@@ -280,13 +282,13 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             };
 
         return (
-            <div className="flex flex-col items-center">
+            <div className="flex flex-col items-center" style={{ width: '100%', height: 'auto'}}>
             <h1 className="font-bold text-xl mt-4 text-center p-1 mb-4">Word Embeddings</h1>
             <WordEmbeddingsPopoverButton></WordEmbeddingsPopoverButton>
-            <div className="mt-4 p-2 pl-6 pr-6 pb-6 bg-white max-w-3xl mx-auto">
+            <div className="mt-4 p-2 pl-6 pr-6 pb-6 bg-white">
                 <div className="bg-gray-100 rounded">
                     {embeddingsDisplay && embeddingsDisplay.length > 0 ? (
-                        <WordEmbeddingsGraph embeddings={embeddingsDisplay} />
+                        <WordEmbeddingsGraph embeddings={embeddingsDisplay} isComparisonMode={inComparisonMode}/>
                     ) : (
                         <p className="text-gray-400 p-4">No Embeddings</p>
                     )}
@@ -1001,6 +1003,24 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const renderNamedEntities = () => {
         if (!analysis) return null;
 
+        const RenderConsistentlyMentionedNamedEntities = () => {
+            if (!analysis) return null;
+            const entities = analysis.top_named_entities
+            const all_entities: string[] = Object.values(entities).flatMap((entityArray) => entityArray.map((entity) => entity[0]));
+            const frequencyMap: Record<string, number> = {};
+            all_entities.forEach((text) => {frequencyMap[text] = (frequencyMap[text] || 0) + 1;});
+            const consistently_mentioned_entities: string[] = Object.keys(frequencyMap)
+                .filter((text) => frequencyMap[text] >= 3);
+            return (
+                <div className="self-start w-auto border border-1 shadow rounded mt-10 ml-4 text-left">
+                    <h1 className="font-semibold text-[16px] p-2 pl-6 pr-6">r/{name} consistently talked about these entities</h1>
+                    <div className="mt-3 mb-3">
+                        {consistently_mentioned_entities.map((entity, idx) => (<h1 className="mb-2 ml-6" key={idx}>{entity}</h1>))}
+                    </div>
+                </div>
+            );
+        };
+
         const ColorCodeBox = (props: any) => {
             return (
                 <div
@@ -1055,7 +1075,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     >
                         {formatDate(props.date, timeFilter)}
                     </h3>
-                    <ul className="list-none pl-0 pt-3">
+                    <div className="grid grid-cols-3 pl-0">
                         {props.entities.map(
                             (entity: NamedEntity, index: number) => {
                                 const backgroundColor =
@@ -1071,7 +1091,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                         ? "#ffb9b9"
                                         : "bg-gray-100";
                                 return (
-                                    <li key={index}>
+                                    <div key={index} className="border border-gray-300 p-4 shadow-sm bg-white">
                                         <div className="flex justify-center">
                                             <div
                                                 className="inline-block justify-center items-center text-center mb-2 font-[14.5px] font-semibold pl-3 pr-3 pt-1 pb-1"
@@ -1118,7 +1138,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                                     marginBottom: "5px",
                                                 }}
                                             >
-                                                Summarized Sentiment:{" "}
+                                                Key Points:{" "}
                                             </div>
                                             <div
                                                 style={{
@@ -1130,16 +1150,16 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                                     summary={entity[3]}
                                                 ></SummarizedSentimentBulletPoints>
                                             </div>
-                                            {index !==
+                                            {/* {index !==
                                                 props.entities.length - 1 && (
                                                 <hr className="bg-black mt-3 mb-2"></hr>
-                                            )}
+                                            )} */}
                                         </div>
-                                    </li>
+                                    </div>
                                 );
                             }
                         )}
-                    </ul>
+                    </div>
                 </div>
             );
         };
@@ -1196,7 +1216,8 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 0,
-                                    fontSize: "10px",
+                                    maxWidth: "150px",
+                                    fontSize: "13px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -1245,7 +1266,8 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 0,
-                                    fontSize: "10px",
+                                    maxWidth: "200px",
+                                    fontSize: "13px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -1341,7 +1363,8 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                     backgroundColor: "#4f46e5",
                                     mt: 3,
                                     mb: 0,
-                                    fontSize: "10px",
+                                    fontSize: "13px",
+                                    maxWidth: "210px",
                                     transition:
                                         "background-color 0.2s ease-in-out",
                                     "&:hover": { backgroundColor: "#4338ca" },
@@ -1349,7 +1372,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                 variant="contained"
                                 {...bindTrigger(popupState)}
                             >
-                                How is Summarized Sentiment computed?
+                                How is "Key Points" computed?
                             </Button>
                             <Popover
                                 {...bindPopover(popupState)}
@@ -1383,7 +1406,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         };
 
         return (
-            <div className="mt-7">
+            <div className="mt-2">
                 <div className="flex flex-col items-center">
                     <h2
                         className="text-xl font-bold text-center"
@@ -1396,6 +1419,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                         <SentimentScorePopoverButton></SentimentScorePopoverButton>
                         <SummaryPopoverButton></SummaryPopoverButton>
                     </div>
+                    {/* <RenderConsistentlyMentionedNamedEntities></RenderConsistentlyMentionedNamedEntities> */}
                     {/* <div className="ml-auto mr-8">{renderNamedEntitiesExpandAllToggle()}</div> */}
                 </div>
                 <div
@@ -1409,7 +1433,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                         position: "relative",
                     }}
                 >
-                    {renderLeftCarouselButton()}
+                    {/* {renderLeftCarouselButton()} */}
                     <div className="flex justify-center border-1">
                         <ColorCodeBox
                             backgroundColor="#AFE1AF"
@@ -1432,23 +1456,23 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             label="Very Negative Consensus"
                         ></ColorCodeBox>
                     </div>
-                    {renderRightCarouselButton()}
+                    {/* {renderRightCarouselButton()} */}
                 </div>
                 <div className="overflow-hidden w-full">
-                    <div
+                    {/* <div
                         className="flex transition-transform duration-600 ease-in-out"
                         style={{
                             transform: `translateX(-${
                                 currNamedEntityCarouselIndex * (100 / numNamedEntityCardsAtOnce)
                             }%)`,
                         }}
-                    >
+                    > */}
                         {Object.entries(analysis.top_named_entities).map(
                             ([date, entities]) => (
                                 <div
                                     key={date}
-                                    className="flex flex-shrink-0"
-                                    style={{ width: `${100 / numNamedEntityCardsAtOnce}%` }}
+                                    // className="flex flex-shrink-0"
+                                    // style={{ width: `${100 / numNamedEntityCardsAtOnce}%` }}
                                 >
                                     <TopNamedEntitiesForDate
                                         date={date}
@@ -1458,7 +1482,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             )
                         )}
                     </div>
-                </div>
+                {/* </div> */}
             </div>
         );
     };
@@ -1545,12 +1569,14 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     <div className="mt-4">
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         <div className="m-4 pl-4 text-[15px]">
-                            <h1 className="mb-4 text-orange-600 font-semibold text-center">WARNING: this analysis may be outdated</h1>
+                            <div className="flex gap-2 justify-center">
+                                <h1 className="text-white bg-orange-500 font-bold w-7 h-7 rounded-full text-center text-[18px]">!</h1>
+                                <h1 className="mb-4 mt-1 text-orange-600 font-semibold text-center">This analysis may be outdated</h1>
+                            </div>
                             <h1 className="mb-4">analysis generated on: <span className="bg-orange-200 font-bold p-1 rounded-sm">{new Date(analysis.timestamp * 1000).toLocaleString()}</span>
                             </h1>
                             <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words  
-                                <span className="italic"> (For reference: that's equivalent to a standard novel with ~ {Math.round(analysis.num_words / 300)} pages) </span> </h1>
-                            <h1>text taken from this {timeFilter}'s r/{analysis.subreddit}'s <span className="bg-orange-200 font-bold p-1 rounded-sm">top {time_filter_to_num_posts[timeFilter as keyof typeof time_filter_to_num_posts]}</span> posts</h1>
+                                {/* <span className="italic"> (For reference: that's equivalent to a standard novel with ~ {Math.round(analysis.num_words / 300)} pages) </span> */} from r/{analysis.subreddit}'s <span className="bg-orange-200 font-bold p-1 rounded-sm">top {time_filter_to_num_posts[timeFilter as keyof typeof time_filter_to_num_posts]}</span> posts of the {timeFilter}</h1>
                         </div>
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {timeFilter == "all_time" && renderComparativeAnalysis()}
