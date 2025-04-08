@@ -59,7 +59,7 @@ function formatDate(date: string, time_filter: string) {
 
 type Props = {
     name?: string;
-    inComparisonMode?: string; 
+    inComparisonMode: string; 
 };
 
 export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props) {
@@ -68,12 +68,13 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const [isBusy, setIsBusy] = useState(false);
     const [timeFilter, setTimeFilter] = useState("week");
     const [sortBy, setSortBy] = useState("top");
-    const [currNamedEntityCarouselIndex, setCurrNamedEntityCarouselIndex] =
-        useState(0);
     const [currNGramsCarouselIndex, setCurrNGramsCarouselIndex] = useState(0);
     const [numNGramCardsAtOnce, setNumNGramCardsAtOnce] = useState(5);
-    const [numNamedEntityCardsAtOnce, setNumNamedEntityCardsAtOnce] = useState(3);
-    const [consistentlyMentionedNamedEntities, setConsistentlyMentionedNamedEntities] = useState([])
+    
+    /* CAROUSEL FOR NAMED ENTITIES DEPRACATED */
+    // const [numNamedEntityCardsAtOnce, setNumNamedEntityCardsAtOnce] = useState(3);
+    // const [currNamedEntityCarouselIndex, setCurrNamedEntityCarouselIndex] =
+    // useState(0);
 
     // const [namedEntitiesExpandAllIsChecked, setNamedEntitiesExpandAllIsChecked] = useState(false)
     // const handleNamedEntitiesToggleChange = () => {
@@ -85,7 +86,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     useEffect(() => {
         if (inComparisonMode === "true") {
             setNumNGramCardsAtOnce(2);
-            setNumNamedEntityCardsAtOnce(1);
+            // setNumNamedEntityCardsAtOnce(1);
             //console.log("hiii numNGramCardsAtOnce: ", numNGramCardsAtOnce)
         }
     }, [inComparisonMode]);
@@ -1003,23 +1004,24 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const renderNamedEntities = () => {
         if (!analysis) return null;
 
-        const RenderConsistentlyMentionedNamedEntities = () => {
-            if (!analysis) return null;
-            const entities = analysis.top_named_entities
-            const all_entities: string[] = Object.values(entities).flatMap((entityArray) => entityArray.map((entity) => entity[0]));
-            const frequencyMap: Record<string, number> = {};
-            all_entities.forEach((text) => {frequencyMap[text] = (frequencyMap[text] || 0) + 1;});
-            const consistently_mentioned_entities: string[] = Object.keys(frequencyMap)
-                .filter((text) => frequencyMap[text] >= 3);
-            return (
-                <div className="self-start w-auto border border-1 shadow rounded mt-10 ml-4 text-left">
-                    <h1 className="font-semibold text-[16px] p-2 pl-6 pr-6">r/{name} consistently talked about these entities</h1>
-                    <div className="mt-3 mb-3">
-                        {consistently_mentioned_entities.map((entity, idx) => (<h1 className="mb-2 ml-6" key={idx}>{entity}</h1>))}
-                    </div>
-                </div>
-            );
-        };
+        /* STILL A WORK IN PROGRESS */
+        // const RenderConsistentlyMentionedNamedEntities = () => {
+        //     if (!analysis) return null;
+        //     const entities = analysis.top_named_entities
+        //     const all_entities: string[] = Object.values(entities).flatMap((entityArray) => entityArray.map((entity) => entity[0]));
+        //     const frequencyMap: Record<string, number> = {};
+        //     all_entities.forEach((text) => {frequencyMap[text] = (frequencyMap[text] || 0) + 1;});
+        //     const consistently_mentioned_entities: string[] = Object.keys(frequencyMap)
+        //         .filter((text) => frequencyMap[text] >= 3);
+        //     return (
+        //         <div className="self-start w-auto border border-1 shadow rounded mt-10 ml-4 text-left">
+        //             <h1 className="font-semibold text-[16px] p-2 pl-6 pr-6">r/{name} consistently talked about these entities</h1>
+        //             <div className="mt-3 mb-3">
+        //                 {consistently_mentioned_entities.map((entity, idx) => (<h1 className="mb-2 ml-6" key={idx}>{entity}</h1>))}
+        //             </div>
+        //         </div>
+        //     );
+        // };
 
         const ColorCodeBox = (props: any) => {
             return (
@@ -1164,47 +1166,49 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             );
         };
 
-        const incrementCurrNamedEntityCarouselIndex = () => {
-            setCurrNamedEntityCarouselIndex(currNamedEntityCarouselIndex + 1);
-        };
+        /* DEPRECATED: Carousel */
 
-        const decrementCurrNamedEntityCarouselIndex = () => {
-            setCurrNamedEntityCarouselIndex(currNamedEntityCarouselIndex - 1);
-        };
+        // const incrementCurrNamedEntityCarouselIndex = () => {
+        //     setCurrNamedEntityCarouselIndex(currNamedEntityCarouselIndex + 1);
+        // };
 
-        const renderLeftCarouselButton = () => {
-            return (
-                <div style={{ position: "absolute", left: "0" }}>
-                    {currNamedEntityCarouselIndex != 0 && (
-                        <button
-                            onClick={decrementCurrNamedEntityCarouselIndex}
-                            className="p-1 rounded-full text-black mr-30 border-2 border-black transition hover:bg-gray-200"
-                        >
-                            <ChevronLeft size={28} />
-                        </button>
-                    )}
-                </div>
-            );
-        };
+        // const decrementCurrNamedEntityCarouselIndex = () => {
+        //     setCurrNamedEntityCarouselIndex(currNamedEntityCarouselIndex - 1);
+        // };
 
-        const renderRightCarouselButton = () => {
-            const topNamedEntitiesLength = Object.keys(
-                analysis.top_named_entities
-            ).length;
-            return (
-                <div style={{ position: "absolute", right: "0" }}>
-                    {currNamedEntityCarouselIndex <
-                        topNamedEntitiesLength - 3 && (
-                        <button
-                            onClick={incrementCurrNamedEntityCarouselIndex}
-                            className="p-1 rounded-full text-black ml-30 border-2 border-black transition hover:bg-gray-200"
-                        >
-                            <ChevronRight size={28} />
-                        </button>
-                    )}
-                </div>
-            );
-        };
+        // const renderLeftCarouselButton = () => {
+        //     return (
+        //         <div style={{ position: "absolute", left: "0" }}>
+        //             {currNamedEntityCarouselIndex != 0 && (
+        //                 <button
+        //                     onClick={decrementCurrNamedEntityCarouselIndex}
+        //                     className="p-1 rounded-full text-black mr-30 border-2 border-black transition hover:bg-gray-200"
+        //                 >
+        //                     <ChevronLeft size={28} />
+        //                 </button>
+        //             )}
+        //         </div>
+        //     );
+        // };
+
+        // const renderRightCarouselButton = () => {
+        //     const topNamedEntitiesLength = Object.keys(
+        //         analysis.top_named_entities
+        //     ).length;
+        //     return (
+        //         <div style={{ position: "absolute", right: "0" }}>
+        //             {currNamedEntityCarouselIndex <
+        //                 topNamedEntitiesLength - 3 && (
+        //                 <button
+        //                     onClick={incrementCurrNamedEntityCarouselIndex}
+        //                     className="p-1 rounded-full text-black ml-30 border-2 border-black transition hover:bg-gray-200"
+        //                 >
+        //                     <ChevronRight size={28} />
+        //                 </button>
+        //             )}
+        //         </div>
+        //     );
+        // };
 
         const NamedEntitiesDefinitionPopoverButton = () => {
             return (
