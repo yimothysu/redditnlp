@@ -1159,7 +1159,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             </div>
                             <h1 className="mb-4">analysis generated on: <span className="bg-orange-200 font-bold p-1 rounded-sm">{new Date(analysis.timestamp * 1000).toLocaleString()}</span>
                             </h1>
-                            <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words  
+                            <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words</h1>  
                         </div>
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {timeFilter == "all_time" && renderComparativeAnalysis()}

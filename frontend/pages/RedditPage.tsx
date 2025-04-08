@@ -4,30 +4,7 @@ import { useParams } from "react-router-dom";
 import RedditAnalysisDisplay from "../Components/RedditAnalysisDisplay.tsx";
 import Template from "../pages/Template.tsx";
 import { Helmet } from "react-helmet";
-
-// Cached Subreddits
-const subreddits = [
-  "AskReddit",
-  "politics",
-  "AskOldPeople",
-  "gaming",
-  "science",
-  "popculturechat",
-  "worldnews",
-  "technology",
-  "100YearsAgo",
-  "Feminism",
-  "unpopularopinion",
-  "philosophy",
-  "mentalhealth",
-  "teenagers",
-  "AskMen",
-  "AskWomen",
-  "personalfinance",
-  "changemyview",
-  "LateStageCapitalism",
-  "UpliftingNews",
-];
+import {subreddits} from '../subreddits.tsx';
 
 // RedditPage is the page that displays when /subreddit/{name} is visited
 export default function RedditPage() {
@@ -82,7 +59,7 @@ export default function RedditPage() {
         <div className={displayFull}>
           <RedditAnalysisDisplay name={subredditName} inComparisonMode={inComparisonMode} />
         </div>
-        {subreddit && (
+        {compareSubredditName && (
           <div className="w-1/2 hidden md:block">
             {<RedditAnalysisDisplay name={compareSubredditName} inComparisonMode={inComparisonMode} />}
           </div>
@@ -129,7 +106,7 @@ export default function RedditPage() {
             <div className="ml-auto">{renderSelectReddit()}</div>
           </div>
         </div>
-        {subreddit && (
+        {compareSubredditName && (
           <div className="hidden md:block bg-white w-[80%] mx-auto p-3 mt-4 rounded-sm shadow-sm">
             <h1 className="text-center text-2xl">
               r/{subredditName} vs. r/{compareSubredditName}
