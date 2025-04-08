@@ -5,6 +5,7 @@ import RedditAnalysisDisplay from "../Components/RedditAnalysisDisplay.tsx";
 import Template from "../pages/Template.tsx";
 import { Helmet } from "react-helmet";
 
+// Cached Subreddits
 const subreddits = [
   "AskReddit",
   "politics",
@@ -28,24 +29,28 @@ const subreddits = [
   "UpliftingNews",
 ];
 
+// RedditPage is the page that displays when /subreddit/{name} is visited
 export default function RedditPage() {
-  const { name } = useParams();
-  const [subreddit, setSubreddit] = useState("");
+
+  const { subredditName } = useParams();
+  const [compareSubredditName, setCompareSubredditName] = useState("");
   const [inComparisonMode, setInComparisonMode] = useState("false")
 
+  // When the user selects a subreddit to compare to, update state to reflect that
   const handleSubredditChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSubreddit(e.target.value);
+    setCompareSubredditName(e.target.value);
   };
 
+  // Select subreddit dropdown menu
   const renderSelectReddit = () => {
-    console.log('subreddit: ', subreddit)
+    console.log('subreddit: ', compareSubredditName)
     return (
       <div className="flex items-center mr-5">
-        <p className="text-black font-medium mr-2">Compare r/{name} to: </p>
+        <p className="text-black font-medium mr-2">Compare r/{subredditName} to: </p>
         <select
           className="ml-2 bg-white border-2 border-black rounded-lg p-2 shadow-sm"
           onChange={handleSubredditChange}
-          value={subreddit}
+          value={compareSubredditName}
         >
           <option key="" value="">
             Select Subreddit
@@ -60,10 +65,12 @@ export default function RedditPage() {
     );
   };
 
-  let displayFull = !subreddit ? "w-full" : "w-full md:w-1/2";
+  // Depending on whether a compare subreddit is selected, adjust size of reddit analyses component
+  let displayFull = !compareSubredditName ? "w-full" : "w-full md:w-1/2";
 
+  // Displays side by side analysis of subreddits
   const Analysis = () => {
-    if (subreddit != "" && subreddit != "Select Subreddit") {
+    if (compareSubredditName != "" && compareSubredditName != "Select Subreddit") {
       setInComparisonMode("true")
     }
     else {
@@ -73,11 +80,11 @@ export default function RedditPage() {
     return (
       <div className="flex w-full">
         <div className={displayFull}>
-          <RedditAnalysisDisplay name={name} inComparisonMode={inComparisonMode} />
+          <RedditAnalysisDisplay name={subredditName} inComparisonMode={inComparisonMode} />
         </div>
         {subreddit && (
           <div className="w-1/2 hidden md:block">
-            {<RedditAnalysisDisplay name={subreddit} inComparisonMode={inComparisonMode} />}
+            {<RedditAnalysisDisplay name={compareSubredditName} inComparisonMode={inComparisonMode} />}
           </div>
         )}
       </div>
@@ -87,11 +94,11 @@ export default function RedditPage() {
   return (
     <>
       <Helmet>
-        <title>{`r/${name} | Reddit NLP`}</title>
+        <title>{`r/${subredditName} | Reddit NLP`}</title>
         <meta
           name="description"
-          content={`Explore natural language trends in r/${name}${
-            subreddit ? ` and compare with r/${subreddit}` : ""
+          content={`Explore natural language trends in r/${subredditName}${
+            compareSubredditName ? ` and compare with r/${compareSubredditName}` : ""
           }.`}
         />
         <meta
@@ -108,10 +115,10 @@ export default function RedditPage() {
           {JSON.stringify({
             "@context": "https://schema.org",
             "@type": "WebPage",
-            name: `Reddit NLP - r/${name}`,
-            url: `https://redditnlp.com/subreddit/r/${name}`,
-            description: `Explore NLP trends in r/${name}${
-              subreddit ? ` and compare with r/${subreddit}` : ""
+            name: `Reddit NLP - r/${subredditName}`,
+            url: `https://redditnlp.com/subreddit/r/${subredditName}`,
+            description: `Explore NLP trends in r/${subredditName}${
+              compareSubredditName ? ` and compare with r/${compareSubredditName}` : ""
             }.`,
           })}
         </script>
@@ -125,22 +132,13 @@ export default function RedditPage() {
         {subreddit && (
           <div className="hidden md:block bg-white w-[80%] mx-auto p-3 mt-4 rounded-sm shadow-sm">
             <h1 className="text-center text-2xl">
-              r/{name} vs. r/{subreddit}
+              r/{subredditName} vs. r/{compareSubredditName}
             </h1>
             <p className="text-center text-gray-500">
-              Below is an in-depth analysis comparing r/{name} and r/{subreddit}
+              Below is an in-depth analysis comparing r/{subredditName} and r/{compareSubredditName}
             </p>
           </div>
         )}
-        {/* <div className="flex w-full">
-        <div className={displayFull}>
-          <RedditAnalysisDisplay name={name}/>
-        </div>
-        {subreddit && <div className="w-1/2 hidden md:block">
-          {<RedditAnalysisDisplay name={subreddit}/>}
-        </div>
-        }     
-      </div> */}
         <Analysis></Analysis>
       </Template>
     </>
