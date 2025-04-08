@@ -57,15 +57,24 @@ nltk.download('wordnet')
 nltk.download('vader_lexicon')
 
 # Load the ABSA (Aspect Based Sentiment Analysis) model and tokenizer
-model_name = "yangheng/deberta-v3-base-absa-v1.1"
-model = AutoModelForSequenceClassification.from_pretrained(model_name)
-tokenizer = AutoTokenizer.from_pretrained(model_name)
-classifier = pipeline("text-classification", model=model, tokenizer=tokenizer)
+absa_model_name = "yangheng/deberta-v3-base-absa-v1.1"
+absa_model = AutoModelForSequenceClassification.from_pretrained(absa_model_name)
+absa_tokenizer = AutoTokenizer.from_pretrained(absa_model_name)
+classifier = pipeline("text-classification", model=absa_model, tokenizer=absa_tokenizer)
+# Load the Summarizer model and tokenizer 
 summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
+summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
 
-TIME_FILTER_TO_POST_LIMIT = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
+# TIME_FILTER_TO_POST_LIMIT = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
+# Strategy: First query a bunch of posts up to the limit defined by TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT. 
+# Then throw away the posts which have an empty description (means OP posted a link or a photo.) 
+# Then with the remaining posts, query the comments of posts up to the limit defined by TIME_FILTER_TO_POST_LIMIT 
+TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'month': 500, 'week': 200}
+TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'month': 100, 'week': 50}
 
 load_dotenv()
+
+TIME_FILTER = "week"
 
 # Perhaps naive filtering of named entities
 # Returns true iff name is a valid named entity name
@@ -87,7 +96,7 @@ def filter_named_entity(name: str) -> bool:
 # Get embedding for named entity by averaging embeddings over all words
 def get_entity_embedding(entity):
     words = entity.split()
-    vectors = [model[word] for word in words if word in model]
+    vectors = [absa_model[word] for word in words if word in absa_model]
     if vectors:
         return np.mean(vectors, axis=0)
     return None
@@ -161,26 +170,6 @@ async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called 
     top_named_entities = dict()
     for date, doc in zip(dates, nlp.pipe(texts, batch_size=50)):
         top_named_entities[date] = doc
-    # for i in range(len(texts)):
-    #     text = texts[i]
-    #     date = dates[i]
-    #     if len(text) >= 1000000:
-    #          text_chunks = [text[i:i + 800000] for i in range(0, len(text), 800000)]
-    #          print("num text chunks: ", len(text_chunks))
-    #          all_docs = []
-    #          for text_chunk in text_chunks:
-    #              doc = nlp.pipe(text_chunk, batch_size=50)
-    #              all_docs.extend(list(doc))
-    #          all_docs = [doc for doc in all_docs if doc is not None]
-    #          if all_docs is not None:
-    #             combined_doc = Doc.from_docs(all_docs)
-    #             # Convert back to generator
-    #             combined_doc_gen = (doc for doc in combined_doc)
-    #             top_named_entities[date] = combined_doc_gen
-    #     else:
-    #         print("num text chunks: 1")
-    #         doc = nlp.pipe(text, batch_size=50)
-    #         top_named_entities[date] = doc
     t4 = time.time()
     print('getting top named entities using nlp took: ', t4 - t3)
 
@@ -205,7 +194,7 @@ async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called 
     
     return top_n_grams, top_named_entities
 
-# async def postprocess_named_entities(date, doc, idx, set_progress):
+
 async def postprocess_named_entities(date, doc, set_progress):
     t1 = time.time()
     named_entities = Counter([ent.text for ent in doc.ents])
@@ -263,10 +252,13 @@ async def get_sentiments_of_entities(top_ten_entity_names, doc):
     entity_to_sentences = dict()
     entity_to_flattened_sentences = dict()
     entity_to_summary = dict() 
-    for ent in set(doc.ents):
-        if ent.text in top_ten_entity_names:
-            if ent.text not in entity_to_sentences: entity_to_sentences[ent.text] = set()
-            entity_to_sentences[ent.text].add(ent.sent.text)
+    for ent in doc.ents:
+        ent_text = ent.text 
+        if ent_text in top_ten_entity_names:
+            sent_text = ent.sent.text 
+            if ent_text not in entity_to_sentences: 
+                entity_to_sentences[ent_text] = set()
+            entity_to_sentences[ent_text].add(sent_text)
     
     for entity, sentences in entity_to_sentences.items():
         flattened_sentences = "Comments regarding the entity \"" + entity + "\": \n"
@@ -279,6 +271,7 @@ async def get_sentiments_of_entities(top_ten_entity_names, doc):
     
     tasks = [asyncio.to_thread(get_sentiment_of_entity, entity, entity_to_flattened_sentences[entity]) for entity in entity_to_sentences]
     sentiment_results = await asyncio.gather(*tasks)
+    sentiment_results = [sentiment_result for sentiment_result in sentiment_results if sentiment_result is not None]
     for entity, sentiment_score in sentiment_results:
         entity_to_sentiment[entity] = sentiment_score
     
@@ -296,7 +289,8 @@ def split_string_into_chunks(text, num_chunks):
     return [chunk for chunk in chunks if chunk]
 
 def get_sentiment_of_entity(entity, flattened_sentences):
-    tokens = tokenizer(flattened_sentences, truncation=False)
+    absa_tokenizer = AutoTokenizer.from_pretrained(absa_model_name)
+    tokens = absa_tokenizer(flattened_sentences, truncation=False)
     if(len(tokens['input_ids']) >= 2000):
         t1 = time.time()
         num_chunks = math.ceil(len(tokens['input_ids']) / 2000)
@@ -304,9 +298,14 @@ def get_sentiment_of_entity(entity, flattened_sentences):
         averaged_sentiment_score = 0
         
         for chunk in chunks:
-            tokens = tokenizer(chunk, truncation=False)
+            tokens = absa_tokenizer(chunk, truncation=False)
             print("Number of tokens:", len(tokens['input_ids']))
-            sentiment = classifier(chunk, text_pair=entity)
+            try:
+                sentiment = classifier(chunk, text_pair=entity)
+            except:
+                print('couldnt get the sentiment score of ', entity) 
+                return None 
+
             sentiment_score = 0
             if(sentiment[0]['label'] == 'Positive'):
                 sentiment_score = sentiment[0]['score']
@@ -318,10 +317,14 @@ def get_sentiment_of_entity(entity, flattened_sentences):
         t2 = time.time() 
         print('getting sentiment of the entity ', entity, ' with ', num_chunks, ' chunks took ', t2 - t1)
     else:
-        tokens = tokenizer(flattened_sentences, truncation=False)
+        tokens = absa_tokenizer(flattened_sentences, truncation=False)
         print("Number of tokens:", len(tokens['input_ids']))
         t1 = time.time()
-        sentiment = classifier(flattened_sentences, text_pair=entity)
+        try:
+            sentiment = classifier(flattened_sentences, text_pair=entity)
+        except:
+            print('couldnt get the sentiment score of ', entity) 
+            return None 
         t2 = time.time()
     print('getting sentiment of the entity ', entity, ' with 1 chunk took ', t2 - t1)
     # sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
@@ -335,38 +338,67 @@ def get_sentiment_of_entity(entity, flattened_sentences):
     return (entity, sentiment_score)
 
 
-def split_text(text, chunk_size=3000):
+def split_text(text, chunk_size=2500):
     return [text[i:i + chunk_size] for i in range(0, len(text), chunk_size)]
 
 
 def summarize_comments(entity, flattened_comments):
     #print('# characters in text: ', len(text))
-    if len(flattened_comments) > 3000:
+    summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
+    time_filter_to_key_points_limit = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
+    key_points_limit = time_filter_to_key_points_limit[TIME_FILTER]
+    complete_summary = ""
+    if len(flattened_comments) > 2500:
         t1 = time.time()
         # will probably exceed the token limit of 1024, so analyze each 3000 character chunk seperately
         chunks = split_text(flattened_comments)
-        complete_summary = ""
+        sentences_summary = []
         for chunk in chunks:
-            tokenized = tokenizer.encode(chunk, truncation=True, max_length=1024)
-            truncated_chunk = tokenizer.decode(tokenized)
+            tokenized = summarizer_tokenizer.encode(chunk, truncation=True, max_length=1024)
+            truncated_chunk = summarizer_tokenizer.decode(tokenized)
+            print('truncated_chunk # tokens: ', len(summarizer_tokenizer.encode(truncated_chunk)))
             summary = summarizer(truncated_chunk, max_length=100, min_length=20, do_sample=False)
             summary_text = summary[0]['summary_text']
-            complete_summary += summary_text + "\n --- \n"
+            
+            sentences = nltk.sent_tokenize(summary_text)
+            # Only keep the sentences in summary_text which mention the entity 
+            relevant_sentences = [sentence for sentence in sentences if entity in sentence]
+            sentences_summary.extend(relevant_sentences)
+        
+        if len(sentences_summary) > key_points_limit and len(sentences_summary) <= key_points_limit + 5:
+            key_points = random.sample(sentences_summary, key_points_limit)
+            complete_summary = "\n --- \n".join(key_points)
+        elif len(sentences_summary) > key_points_limit + 5: # happens for an entity that is mentioned in A LOT of comments 
+            print("computing a summary of summary")
+            _, summary_of_summary = summarize_comments(entity, "\n".join(sentences_summary))
+            complete_summary = summary_of_summary
+        else:
+            complete_summary = "\n --- \n".join(sentences_summary)
+
         t2 = time.time()
         print('getting summarized sentiment of entity (len(flattened_comments) > 3000)', entity, ' took ', t2 - t1)
         return (entity, complete_summary)
     else:
         t1 = time.time()
-        tokenized = tokenizer.encode(flattened_comments, truncation=True, max_length=1024)
-        truncated_flattened_comments = tokenizer.decode(tokenized) 
+        tokenized = summarizer_tokenizer.encode(flattened_comments, truncation=True, max_length=1024)
+        truncated_flattened_comments = summarizer_tokenizer.decode(tokenized) 
+        print('truncated_flattened_comments # tokens: ', len(summarizer_tokenizer.encode(truncated_flattened_comments)))
         num_tokens = len(tokenized)
         max_length = min(100, num_tokens)
         summary = summarizer(truncated_flattened_comments, max_length=max_length, min_length=5, do_sample=False)
         summary_text = summary[0]['summary_text']
-        #print(summary_text)
+
+        sentences = nltk.sent_tokenize(summary_text)
+        # Only keep the sentences in summary_text which mention the entity 
+        sentences_summary = [sentence for sentence in sentences if entity in sentence]
+        if len(sentences_summary) > key_points_limit:
+            key_points = random.sample(sentences_summary, key_points_limit)
+            complete_summary = "\n --- \n".join(key_points)
+        else:
+            complete_summary = "\n --- \n".join(sentences_summary)
         t2 = time.time()
         print('getting summarized sentiment of entity ', entity, ' took ', t2 - t1)
-        return (entity, summary_text)
+        return (entity, complete_summary)
 
 
 def preprocess_text_for_n_grams(post_content):
@@ -552,6 +584,8 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     # Lol
     def set_progress(_bruh_):
         pass
+    
+    TIME_FILTER = subreddit_query.time_filter
 
     reddit = asyncpraw.Reddit(
         client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -559,19 +593,53 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
         user_agent="reddit sampler",
     )
 
-    post_limit = TIME_FILTER_TO_POST_LIMIT[subreddit_query.time_filter]
+    initial_post_query_limit = TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT[subreddit_query.time_filter]
 
     subreddit_instance = await reddit.subreddit(subreddit_query.name)
     posts = [post async for post in subreddit_instance.top(
-        limit=post_limit,
+        limit=initial_post_query_limit,
         time_filter=subreddit_query.time_filter
     )]
+    print("initially queried ", len(posts), posts)
 
-    # Fetch post data concurrently
-    posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
-    posts_list = [post for post in posts_list if post is not None]
+    # Get only the posts with a text description (throwing away the posts where the description is a link or photo)
+    # high_text_posts = [post for post in posts if len(post.selftext) > 0]
+    # print("len(high_text_posts): ", len(high_text_posts))
+    if(len(posts) > TIME_FILTER_TO_POST_LIMIT[subreddit_query.time_filter]):
+        # Get the posts with the most amount of description text 
+        posts.sort(key=lambda post: len(post.selftext) + len(post.title))
+        posts = posts[-TIME_FILTER_TO_POST_LIMIT[subreddit_query.time_filter]:]
 
-     # Find out how many words we're analyzing in total 
+    # if the number of posts is >= 200 and <= 300, then divide the posts list in half and wait a minute in between 
+    # querying the comments for the 1st batch and the 2nd batch (to avoid going over asyncpraw's api limit)
+    # if the number of posts is >= 300, then divide the posts list into thirds and wait a minute in between 
+    # querying the comments for the 1st batch, 2nd batch, and 3rd batch (to avoid going over asyncpraw's api limit)
+    post_batches = posts
+    if len(posts) >= 200 and len(posts) <= 300:
+        mid = len(posts) // 2
+        post_batches = []
+        post_batches.append(posts[:mid])
+        post_batches.append(posts[mid:])
+    elif len(posts) > 300:
+        third = len(posts) // 3
+        post_batches = []
+        post_batches.append(posts[:third])
+        post_batches.append(posts[third:2*third])
+        post_batches.append(posts[2*third:])
+
+
+    posts_list = []
+    for post_batch in post_batches:
+        # Fetch post data concurrently
+        posts_with_comments = await asyncio.gather(*(fetch_post_data(post) for post in post_batch))
+        posts_with_comments = [post for post in posts_with_comments if post is not None]
+        posts_list.extend(posts_with_comments)
+        print("got the comments for ", len(posts_with_comments), "/", len(post_batch), " of the posts") 
+        time.sleep(65)  # Wait for 65 seconds...
+    
+    print("# of posts after fetching comments: ", len(posts_list))
+
+    # Find out how many words we're analyzing in total 
     total_words = 0
     for post in posts_list:
         total_words += len(post.title.split()) + len(post.description.split()) + sum([len(comment.split()) for comment in post.comments])
@@ -582,6 +650,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
 
     sorted_slice_to_posts = slice_posts_list(posts_list, subreddit_query.time_filter)
     print('Finished getting sorted_slice_to_posts')
+    print('got posts from the slices: ', sorted_slice_to_posts.keys())
     
     readability_metrics = get_readability_metrics(posts_list)
     print('Finished getting readability_metrics')
