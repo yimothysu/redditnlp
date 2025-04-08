@@ -22,7 +22,7 @@ import {
     ResponsiveContainer,
     Cell,
 } from "recharts";
-
+import ButtonPopover from "./ButtonPopover.tsx";
 
 const months: Record<string, string> = {
     "01": "January",
@@ -63,6 +63,7 @@ type Props = {
 };
 
 export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props) {
+
     const [error, setError] = useState<string | null>(null);
     const [analysis, setAnalysis] = useState<SubredditAnalysis | null>(null);
     const [isBusy, setIsBusy] = useState(false);
@@ -71,23 +72,12 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const [currNGramsCarouselIndex, setCurrNGramsCarouselIndex] = useState(0);
     const [numNGramCardsAtOnce, setNumNGramCardsAtOnce] = useState(5);
     
-    /* CAROUSEL FOR NAMED ENTITIES DEPRACATED */
-    // const [numNamedEntityCardsAtOnce, setNumNamedEntityCardsAtOnce] = useState(3);
-    // const [currNamedEntityCarouselIndex, setCurrNamedEntityCarouselIndex] =
-    // useState(0);
-
-    // const [namedEntitiesExpandAllIsChecked, setNamedEntitiesExpandAllIsChecked] = useState(false)
-    // const handleNamedEntitiesToggleChange = () => {
-    //     setNamedEntitiesExpandAllIsChecked(!namedEntitiesExpandAllIsChecked)
-    // }
 
     const isMounted = useRef(true);
     
     useEffect(() => {
         if (inComparisonMode === "true") {
             setNumNGramCardsAtOnce(2);
-            // setNumNamedEntityCardsAtOnce(1);
-            //console.log("hiii numNGramCardsAtOnce: ", numNGramCardsAtOnce)
         }
     }, [inComparisonMode]);
 
@@ -128,52 +118,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
     const renderReadabilityMetrics = () => {
 
-        const ReadabilityPopover = () => {
-            return (
-                <PopupState variant="popover" popupId="demo-popup-popover">
-                    {(popupState) => (
-                        <div>
-                            <Button
-                                sx={{
-                                    backgroundColor: "#4f46e5",
-                                    mb: 0,
-                                    fontSize: "14px",
-                                    transition:
-                                        "background-color 0.2s ease-in-out",
-                                    "&:hover": { backgroundColor: "#4338ca" },
-                                }}
-                                variant="contained"
-                                {...bindTrigger(popupState)}
-                            >
-                                What are Readability Metrics?
-                            </Button>
-                            <Popover
-                                {...bindPopover(popupState)}
-                                anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "center",
-                                }}
-                                transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "center",
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        p: 2,
-                                        maxWidth: 500,
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    Readability metrics evaluate how easy a body text is to read. This includes expected grade level of education required to understand a text.
-                                </Typography>
-                            </Popover>
-                        </div>
-                    )}
-                </PopupState>
-            );
-        };
-
         if (!analysis) return null;
         console.log(analysis.readability_metrics)
         return (
@@ -181,7 +125,9 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 <h1 className="font-bold text-xl text-center mt-5 p-1">Readability Metrics</h1>
                 <br/>
                 <div className="text-center">
-                    <ReadabilityPopover/>
+                    <ButtonPopover title="What are readability metrics">
+                        Readability metrics evaluate how easy a body text is to read. This includes expected grade level of education required to understand a text.
+                    </ButtonPopover>
                 </div>
                 <br/>
                 <p className="text-center text-gray-800"><b>Average Number of Words Per Post Title: </b>{analysis.readability_metrics["avg_num_words_title"]}</p>
@@ -194,66 +140,15 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const renderWordCloud = () => {
         if (!analysis) return null;
 
-        // console.log(
-        //     "top_named_entities_wordcloud: ",
-        //     analysis?.top_named_entities_wordcloud
-        // );
-
         const wordCloud = new Image();
         wordCloud.src = `data:image/png;base64, ${analysis.top_named_entities_wordcloud}`;
-
-        const WordCloudPopoverButton = () => {
-            return (
-                <PopupState variant="popover" popupId="demo-popup-popover">
-                    {(popupState) => (
-                        <div>
-                            <Button
-                                sx={{
-                                    backgroundColor: "#4f46e5",
-                                    mb: 0,
-                                    fontSize: "14px",
-                                    transition:
-                                        "background-color 0.2s ease-in-out",
-                                    "&:hover": { backgroundColor: "#4338ca" },
-                                }}
-                                variant="contained"
-                                {...bindTrigger(popupState)}
-                            >
-                                What's a Word Cloud?
-                            </Button>
-                            <Popover
-                                {...bindPopover(popupState)}
-                                anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "center",
-                                }}
-                                transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "center",
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        p: 2,
-                                        maxWidth: 500,
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                     A word cloud is a visual representation of the most popular
-                                    words in the subreddit. The size of the word corresponds to
-                                    its frequency in the subreddit.
-                                </Typography>
-                            </Popover>
-                        </div>
-                    )}
-                </PopupState>
-            );
-        };
 
         return (
             <div className="flex flex-col items-center">
             <h1 className="font-bold text-xl text-center mt-4 mb-4 p-1">Word Cloud</h1>
-            <WordCloudPopoverButton></WordCloudPopoverButton>
+            <ButtonPopover title="What's a Word Cloud?'">
+                A word cloud is a visual representation of the most popular words in the subreddit. The size of the word corresponds to its frequency in the subreddit.
+            </ButtonPopover>
             <div className="mt-4 p-2 pl-6 pr-6 pb-6 bg-white w-full mx-auto">
                 {analysis?.top_named_entities_wordcloud ? (
                     <img
@@ -284,60 +179,17 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 x: x * 5,
                 y: y * 5,
             }));
-        
-            const WordEmbeddingsPopoverButton = () => {
-                return (
-                    <PopupState variant="popover" popupId="demo-popup-popover">
-                        {(popupState) => (
-                            <div>
-                                <Button
-                                    sx={{
-                                        backgroundColor: "#4f46e5",
-                                        mb: 0,
-                                        fontSize: "14px",
-                                        transition:
-                                            "background-color 0.2s ease-in-out",
-                                        "&:hover": { backgroundColor: "#4338ca" },
-                                    }}
-                                    variant="contained"
-                                    {...bindTrigger(popupState)}
-                                >
-                                    What are Word Embeddings?
-                                </Button>
-                                <Popover
-                                    {...bindPopover(popupState)}
-                                    anchorOrigin={{
-                                        vertical: "bottom",
-                                        horizontal: "center",
-                                    }}
-                                    transformOrigin={{
-                                        vertical: "top",
-                                        horizontal: "center",
-                                    }}
-                                >
-                                    <Typography
-                                        sx={{
-                                            p: 2,
-                                            maxWidth: 500,
-                                            fontSize: "14px",
-                                        }}
-                                    >
-                                        Word embeddings are vector representations of words in
-                                        high-dimensional space, offering insights into meaning and
-                                        context. Below is a 2D projection of the most popular words
-                                        in the subreddit (reduced via PCA).
-                                    </Typography>
-                                </Popover>
-                            </div>
-                        )}
-                    </PopupState>
-                );
-            };
+
 
         return (
             <div className="flex flex-col items-center" style={{ width: '100%', height: 'auto'}}>
             <h1 className="font-bold text-xl mt-4 text-center p-1 mb-4">Word Embeddings</h1>
-            <WordEmbeddingsPopoverButton></WordEmbeddingsPopoverButton>
+            <ButtonPopover title="What are word embeddings?">
+                Word embeddings are vector representations of words in
+                high-dimensional space, offering insights into meaning and
+                context. Below is a 2D projection of the most popular words
+                in the subreddit (reduced via PCA).
+            </ButtonPopover>
             <div className="mt-4 p-2 pl-6 pr-6 pb-6 bg-white">
                 <div className="bg-gray-100 rounded">
                     {embeddingsDisplay && embeddingsDisplay.length > 0 ? (
@@ -380,105 +232,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
     const renderComparativeAnalysis = () => {
         if (!analysis) return null;
-
-        const ToxicityPopoverButton = () => {
-            return (
-                <PopupState variant="popover" popupId="demo-popup-popover">
-                    {(popupState) => (
-                        <div>
-                            <Button
-                                sx={{
-                                    backgroundColor: "#4f46e5",
-                                    mt: 3,
-                                    mb: 3,
-                                    fontSize: "12px",
-                                    transition:
-                                        "background-color 0.2s ease-in-out",
-                                    "&:hover": { backgroundColor: "#4338ca" },
-                                }}
-                                variant="contained"
-                                {...bindTrigger(popupState)}
-                            >
-                                What is Toxicity Score?
-                            </Button>
-                            <Popover
-                                {...bindPopover(popupState)}
-                                anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "center",
-                                }}
-                                transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "center",
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        p: 2,
-                                        maxWidth: 500,
-                                        fontWeight: "bold",
-                                        fontSize: "18px",
-                                        textAlign: "center",
-                                        color: "#FF0000",
-                                    }}
-                                >
-                                    {" "}
-                                    Toxicity Score is a float in the range [0,
-                                    1].
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        p: 1,
-                                        maxWidth: 500,
-                                        fontWeight: "bold",
-                                        fontSize: "12px",
-                                        textAlign: "center",
-                                        color: "#FF0000",
-                                    }}
-                                >
-                                    0 = no toxic content, 1 = all toxic content
-                                </Typography>
-                                <hr className="border-t-3 border-gray-300 my-4 ml-5 mr-5"></hr>
-                                <Typography
-                                    sx={{
-                                        p: 1,
-                                        maxWidth: 500,
-                                        textAlign: "center",
-                                        fontWeight: "bold",
-                                    }}
-                                >
-                                    How is Toxicity Score calculated?
-                                </Typography>
-                                <Typography sx={{ p: 1, maxWidth: 500 }}>
-                                    400 top posts of all time from r/{name} are
-                                    sampled. Only the TITLE and DESCRIPTION of
-                                    the posts are analyzed.
-                                </Typography>
-                                <Typography sx={{ p: 1, maxWidth: 500 }}>
-                                    The python library 'Detoxify' analyzes all
-                                    the post text and scores the text on 6
-                                    metrics: toxicity, severe_toxicity, obscene,
-                                    threat, insult, identify attack. A weighted
-                                    average of these 6 metrics is taken to get
-                                    an overall toxicity score.
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        p: 1,
-                                        maxWidth: 500,
-                                        fontWeight: "bold",
-                                    }}
-                                >
-                                    NOTE: 'Detoxify' analyzes text LITERALLY. It
-                                    cannot grasp humor or sarcasm (so dark jokes
-                                    will have a high toxic score)
-                                </Typography>
-                            </Popover>
-                        </div>
-                    )}
-                </PopupState>
-            );
-        };
 
         const PositiveContentPopoverButton = () => {
             return (
@@ -670,8 +423,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         const GradeBarGraph: React.FC<{ all_scores: string[] }> = ({
             all_scores,
         }) => {
-            // console.log('inside GradeDistributionPopoverButton')
-            // console.log('all_scores: ', all_scores)
 
             const grade_to_count = all_scores.reduce(
                 (acc: Record<string, number>, grade: string) => {
@@ -754,7 +505,69 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             <h1 className="text-l font-bold">
                                 Ranking Toxicity Score
                             </h1>
-                            <ToxicityPopoverButton></ToxicityPopoverButton>
+                            <ButtonPopover title="What's Toxicity Score?">
+                            <Typography
+                                    sx={{
+                                        p: 2,
+                                        maxWidth: 500,
+                                        fontWeight: "bold",
+                                        fontSize: "18px",
+                                        textAlign: "center",
+                                        color: "#FF0000",
+                                    }}
+                                >
+                                    {" "}
+                                    Toxicity Score is a float in the range [0,
+                                    1].
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        p: 1,
+                                        maxWidth: 500,
+                                        fontWeight: "bold",
+                                        fontSize: "12px",
+                                        textAlign: "center",
+                                        color: "#FF0000",
+                                    }}
+                                >
+                                    0 = no toxic content, 1 = all toxic content
+                                </Typography>
+                                <hr className="border-t-3 border-gray-300 my-4 ml-5 mr-5"></hr>
+                                <Typography
+                                    sx={{
+                                        p: 1,
+                                        maxWidth: 500,
+                                        textAlign: "center",
+                                        fontWeight: "bold",
+                                    }}
+                                >
+                                    How is Toxicity Score calculated?
+                                </Typography>
+                                <Typography sx={{ p: 1, maxWidth: 500 }}>
+                                    400 top posts of all time from r/{name} are
+                                    sampled. Only the TITLE and DESCRIPTION of
+                                    the posts are analyzed.
+                                </Typography>
+                                <Typography sx={{ p: 1, maxWidth: 500 }}>
+                                    The python library 'Detoxify' analyzes all
+                                    the post text and scores the text on 6
+                                    metrics: toxicity, severe_toxicity, obscene,
+                                    threat, insult, identify attack. A weighted
+                                    average of these 6 metrics is taken to get
+                                    an overall toxicity score.
+                                </Typography>
+                                <Typography
+                                    sx={{
+                                        p: 1,
+                                        maxWidth: 500,
+                                        fontWeight: "bold",
+                                    }}
+                                >
+                                    NOTE: 'Detoxify' analyzes text LITERALLY. It
+                                    cannot grasp humor or sarcasm (so dark jokes
+                                    will have a high toxic score)
+                                </Typography>
+                            </ButtonPopover>
                         </div>
                         <ul className="list-disc">
                             <li>
@@ -938,55 +751,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             );
         };
 
-        const BiGramsPopoverButton = () => {
-            return (
-                <PopupState variant="popover" popupId="demo-popup-popover">
-                    {(popupState) => (
-                        <div>
-                            <Button
-                                sx={{
-                                    backgroundColor: "#4f46e5",
-                                    mt: 3,
-                                    mb: 0,
-                                    fontSize: "14px",
-                                    transition:
-                                        "background-color 0.2s ease-in-out",
-                                    "&:hover": { backgroundColor: "#4338ca" },
-                                }}
-                                variant="contained"
-                                {...bindTrigger(popupState)}
-                            >
-                                What's a Bi-Gram?
-                            </Button>
-                            <Popover
-                                {...bindPopover(popupState)}
-                                anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "center",
-                                }}
-                                transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "center",
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        p: 2,
-                                        maxWidth: 500,
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    A Bi-Gram is 2 consecutive words in a text.
-                                    For example, the sentence "I love pizza" has
-                                    2 bigrams: "I love" and "love pizza".
-                                </Typography>
-                            </Popover>
-                        </div>
-                    )}
-                </PopupState>
-            );
-        };
-
         console.log("# of n-gram cards at once: ", numNGramCardsAtOnce)
 
         return (
@@ -995,7 +759,12 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     <h2 className="text-xl text-center font-bold">
                         Most Mentioned Bi-Grams
                     </h2>
-                    <BiGramsPopoverButton></BiGramsPopoverButton>
+                    <br/>
+                    <ButtonPopover title="What's a Bi-Gram?">
+                        A Bi-Gram is 2 consecutive words in a text.
+                        For example, the sentence "I love pizza" has
+                        2 bigrams: "I love" and "love pizza".
+                    </ButtonPopover>
                 </div>
                 <div
                     style={{
@@ -1262,153 +1031,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         //     );
         // };
 
-        const NamedEntitiesDefinitionPopoverButton = () => {
-            return (
-                <PopupState variant="popover" popupId="demo-popup-popover">
-                    {(popupState) => (
-                        <div>
-                            <Button
-                                sx={{
-                                    backgroundColor: "#4f46e5",
-                                    mt: 3,
-                                    mb: 0,
-                                    maxWidth: "150px",
-                                    fontSize: "13px",
-                                    transition:
-                                        "background-color 0.2s ease-in-out",
-                                    "&:hover": { backgroundColor: "#4338ca" },
-                                }}
-                                variant="contained"
-                                {...bindTrigger(popupState)}
-                            >
-                                What's a Named Entity?
-                            </Button>
-                            <Popover
-                                {...bindPopover(popupState)}
-                                anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "center",
-                                }}
-                                transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "center",
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        p: 2,
-                                        maxWidth: 500,
-                                        fontSize: "10px",
-                                    }}
-                                >
-                                    A Named Entity is a key subject in a piece
-                                    of text (include names of people,
-                                    organizations, locations, and dates)
-                                </Typography>
-                            </Popover>
-                        </div>
-                    )}
-                </PopupState>
-            );
-        };
-
-        const SentimentScorePopoverButton = () => {
-            return (
-                <PopupState variant="popover" popupId="demo-popup-popover">
-                    {(popupState) => (
-                        <div>
-                            <Button
-                                sx={{
-                                    backgroundColor: "#4f46e5",
-                                    mt: 3,
-                                    mb: 0,
-                                    maxWidth: "200px",
-                                    fontSize: "13px",
-                                    transition:
-                                        "background-color 0.2s ease-in-out",
-                                    "&:hover": { backgroundColor: "#4338ca" },
-                                }}
-                                variant="contained"
-                                {...bindTrigger(popupState)}
-                            >
-                                How is Sentiment Score computed?
-                            </Button>
-                            <Popover
-                                {...bindPopover(popupState)}
-                                anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "center",
-                                }}
-                                transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "center",
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        p: 2,
-                                        maxWidth: 500,
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    The aspect-based sentiment analysis model{" "}
-                                    <strong>
-                                        "yangheng/deberta-v3-base-absa-v1.1"
-                                    </strong>{" "}
-                                    is used to generate a sentiment score from
-                                    -1 (most negative) to 1 (most positive).
-                                    This sentiment score represents how the
-                                    writer feels TOWARD the named entity (and is
-                                    independent of the sentence's overall tone &
-                                    sentiment).
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        p: 1,
-                                        maxWidth: 500,
-                                        fontSize: "16px",
-                                        textAlign: "center",
-                                        fontWeight: "bold",
-                                    }}
-                                >
-                                    Example:
-                                </Typography>
-                                <Typography
-                                    className="italic"
-                                    sx={{
-                                        p: 1,
-                                        maxWidth: 500,
-                                        fontSize: "14px",
-                                        textAlign: "center",
-                                    }}
-                                >
-                                    "It's so unfair that Taylor Swift didn't get
-                                    nominated for a grammy this year - she got
-                                    cheated"
-                                </Typography>
-                                <Typography
-                                    sx={{
-                                        p: 2,
-                                        maxWidth: 500,
-                                        fontSize: "14px",
-                                    }}
-                                >
-                                    The overall tone/sentiment of this sentence
-                                    is frustrated/angry, but the writer feels
-                                    <strong style={{ color: "green" }}>
-                                        {" "}
-                                        POSITIVELY
-                                    </strong>{" "}
-                                    toward Taylor Swift because they believe she
-                                    is deserving of a grammy.
-                                </Typography>
-                            </Popover>
-                        </div>
-                    )}
-                </PopupState>
-            );
-        };
-
         const SummaryPopoverButton = () => {
             return (
                 <PopupState variant="popover" popupId="demo-popup-popover">
@@ -1470,10 +1092,43 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     >
                         Most Mentioned Named Entities
                     </h2>
+                    <br/>
                     <div className="flex gap-3">
-                        <NamedEntitiesDefinitionPopoverButton></NamedEntitiesDefinitionPopoverButton>
-                        <SentimentScorePopoverButton></SentimentScorePopoverButton>
-                        <SummaryPopoverButton></SummaryPopoverButton>
+                        <ButtonPopover title="What is a named entity?">
+                            A Named Entity is a key subject in a piece
+                            of text (include names of people,
+                            organizations, locations, and dates)
+                        </ButtonPopover>
+                        <ButtonPopover title="How is sentiment score computed?">
+                                The aspect-based sentiment analysis model
+                                <strong>
+                                    "yangheng/deberta-v3-base-absa-v1.1"
+                                </strong>
+                                is used to generate a sentiment score from
+                                -1 (most negative) to 1 (most positive).
+                                This sentiment score represents how the
+                                writer feels TOWARD the named entity (and is
+                                independent of the sentence's overall tone &
+                                sentiment).
+                                <br/>
+                                <hr/>
+                                <br/>
+                                Example:
+                                <i>
+                                    "It's so unfair that Taylor Swift didn't get
+                                    nominated for a grammy this year - she got
+                                    cheated"
+                                </i>
+                                    The overall tone/sentiment of this sentence
+                                    is frustrated/angry, but the writer feels <strong style={{ color: "green" }}> POSITIVELY </strong> 
+                                    toward Taylor Swift because they believe she
+                                    is deserving of a grammy.
+                        </ButtonPopover>
+                        <ButtonPopover title='How are "Key Points" computed?'>
+                            The summarization ML model "facebook/bart-large-cnn" processes all of the sentences where a 
+                            named entity is directly mentioned and creates a short summary.
+                        </ButtonPopover>
+                    
                     </div>
                     {/* <RenderConsistentlyMentionedNamedEntities></RenderConsistentlyMentionedNamedEntities> */}
                     {/* <div className="ml-auto mr-8">{renderNamedEntitiesExpandAllToggle()}</div> */}
