@@ -54,6 +54,9 @@ function formatDate(date: string, time_filter: string) {
         // Ex: 03-24 --> May 2024
         return months[date.slice(0, 2)] + " 20" + date.slice(3, 5);
     }
+    else if (time_filter == "all") {
+        return "20" + date;
+    }
     return date;
 }
 
@@ -81,6 +84,11 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         }
     }, [inComparisonMode]);
 
+    useEffect(() => {
+        setAnalysis(null); // reset when timeFilter changes
+        loadSubredditAnalysis();
+    }, [timeFilter]);
+    
 
     useEffect(() => {
         isMounted.current = true;
@@ -99,6 +107,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 time_filter: timeFilter,
                 sort_by: sortBy,
             });
+            setError(null)
             setAnalysis(analysis);
         } catch (error) {
             setError(
@@ -789,7 +798,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                         }}
                     >
                         {Object.entries(analysis.top_n_grams).map(
-                            ([date, ngrams]) => (
+                            ([date, ngrams]) => ngrams.length > 0 && (
                                 <div
                                     key={date}
                                     className="flex flex-shrink-0"
@@ -1054,7 +1063,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 </div>
                 <div className="overflow-hidden w-full">
                         {Object.entries(analysis.top_named_entities).map(
-                            ([date, entities]) => (
+                            ([date, entities]) => entities.length > 0 && (
                                 <div
                                     key={date}
                                 >
@@ -1080,53 +1089,29 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     <SubredditAvatar subredditName={name ?? ""} />
                     <h1 className="text-lg font-bold">r/{name}</h1>
                 </div>
-                <div className="flex gap-50 justify-center">
-                    <div className="mb-4 ml-30 flex items-center justify-center">
-                        <div className="flex gap-4 mb-2">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Time Filter
-                                </label>
-                                <select
-                                    value={timeFilter}
-                                    onChange={(e) =>
-                                        setTimeFilter(e.target.value)
-                                    }
-                                    className="mt-1 block w-full px-1 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                                >
-                                    <option value="all">All Time</option>
-                                    <option value="year">Year</option>
-                                    <option value="month">Month</option>
-                                    <option value="week">Week</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700">
-                                    Sort By
-                                </label>
-                                <select
-                                    value={sortBy}
-                                    onChange={(e) => setSortBy(e.target.value)}
-                                    className="mt-1 block w-full px-1 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
-                                >
-                                    <option value="top">Top</option>
-                                    <option value="controversial">
-                                        Controversial
-                                    </option>
-                                </select>
-                            </div>
-                            <div className="relative flex gap-4">
-                                <button
-                                    onClick={() => {
-                                        loadSubredditAnalysis();
-                                    }}
-                                    className="block self-end px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                >
-                                    Analyze
-                                </button>
-                                {isBusy && !analysis && <div className={`absolute ${spinnerStyle} top-8 right-[-40px]`}></div>}
-                            </div>
-                        </div>
+                <div className="flex justify-center items-center gap-4 mb-2">
+                    <div>
+                        <label className="block text-sm text-center font-medium text-gray-700"> Time Filter </label>
+                        <select
+                            value={timeFilter} onChange={(e) => { setTimeFilter(e.target.value); }}
+                            className="mt-1 block w-full px-1 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                            <option value="all">All Time</option>
+                            <option value="year">Year</option>
+                            <option value="week">Week</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="block text-sm text-center font-medium text-gray-700"> Sort By </label>
+                        <select
+                            value={sortBy} onChange={(e) => setSortBy(e.target.value)}
+                            className="mt-1 block w-full px-1 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                            <option value="top">Top Posts</option>          
+                        </select>
+                    </div>
+                    <div className="relative flex gap-4">
+                        {isBusy && !analysis && <div className={`absolute ${spinnerStyle} right-[-40px]`}></div>}
                     </div>
                 </div>
 
