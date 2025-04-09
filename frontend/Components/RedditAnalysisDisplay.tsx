@@ -247,21 +247,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 <PopupState variant="popover" popupId="demo-popup-popover">
                     {(popupState) => (
                         <div>
-                            <Button
-                                sx={{
-                                    backgroundColor: "#4f46e5",
-                                    mt: 3,
-                                    mb: 3,
-                                    fontSize: "12px",
-                                    transition:
-                                        "background-color 0.2s ease-in-out",
-                                    "&:hover": { backgroundColor: "#4338ca" },
-                                }}
-                                variant="contained"
-                                {...bindTrigger(popupState)}
-                            >
-                                What is Positive Content Score?
-                            </Button>
+                            <ButtonPopover title="What's Positive Content Score?"></ButtonPopover>
                             <Popover
                                 {...bindPopover(popupState)}
                                 anchorOrigin={{
@@ -514,6 +500,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             <h1 className="text-l font-bold">
                                 Ranking Toxicity Score
                             </h1>
+                            <br/>
                             <ButtonPopover title="What's Toxicity Score?">
                             <Typography
                                     sx={{
@@ -577,6 +564,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                     will have a high toxic score)
                                 </Typography>
                             </ButtonPopover>
+                            <br/>
                         </div>
                         <ul className="list-disc">
                             <li>
@@ -626,7 +614,9 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             <h1 className="text-l font-bold">
                                 Ranking Positive Content Score
                             </h1>
+                            <br/>
                             <PositiveContentPopoverButton></PositiveContentPopoverButton>
+                            <br/>
                         </div>
                         <ul className="list-disc">
                             <li>
@@ -1140,8 +1130,8 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words</h1>  
                         </div>
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
-                        {timeFilter == "all_time" && renderComparativeAnalysis()}
-                        {timeFilter == "all_time" && (<hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />)}
+                        {timeFilter == "all" && renderComparativeAnalysis()}
+                        {timeFilter == "all" && (<hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />)}
                         {renderNGrams()}
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         {renderNamedEntities()}
