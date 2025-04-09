@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
 import {
     NamedEntity,
     NGram,
@@ -9,10 +8,7 @@ import {
 import { SubredditAvatar } from "../src/components/SubredditAvatar.tsx";
 
 import WordEmbeddingsGraph from "./WordEmbeddingsGraph.tsx";
-import Button from "@mui/material/Button";
-import Popover from "@mui/material/Popover";
 import { Typography } from "@mui/material";
-import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
 import {
     BarChart,
     Bar,
@@ -69,21 +65,14 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
     const [error, setError] = useState<string | null>(null);
     const [analysis, setAnalysis] = useState<SubredditAnalysis | null>(null);
+    const [currentMenuItem, setCurrentMenuItem] = useState("Named Entities");
     const [isBusy, setIsBusy] = useState(false);
     const [timeFilter, setTimeFilter] = useState("week");
     const [sortBy, setSortBy] = useState("top");
-    const [currNGramsCarouselIndex, setCurrNGramsCarouselIndex] = useState(0);
-    const [numNGramCardsAtOnce, setNumNGramCardsAtOnce] = useState(5);
     
 
     const isMounted = useRef(true);
     
-    useEffect(() => {
-        if (inComparisonMode === "true") {
-            setNumNGramCardsAtOnce(2);
-        }
-    }, [inComparisonMode]);
-
     useEffect(() => {
         setAnalysis(null); // reset when timeFilter changes
         loadSubredditAnalysis();
@@ -244,21 +233,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
         const PositiveContentPopoverButton = () => {
             return (
-                <PopupState variant="popover" popupId="demo-popup-popover">
-                    {(popupState) => (
-                        <div>
-                            <ButtonPopover title="What's Positive Content Score?"></ButtonPopover>
-                            <Popover
-                                {...bindPopover(popupState)}
-                                anchorOrigin={{
-                                    vertical: "bottom",
-                                    horizontal: "center",
-                                }}
-                                transformOrigin={{
-                                    vertical: "top",
-                                    horizontal: "center",
-                                }}
-                            >
+                            <ButtonPopover title="What's Positive Content Score?">
                                 <Typography
                                     sx={{
                                         p: 2,
@@ -317,10 +292,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                     (i.e. the positive content score is a
                                     weighted average)
                                 </Typography>
-                            </Popover>
-                        </div>
-                    )}
-                </PopupState>
+                            </ButtonPopover>
             );
         };
 
@@ -461,7 +433,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             }
 
             return (
-                <div className="mt-2 mr-10 mb-4 h-50 w-[90%] bg-white shadow-md rounded-xl">
+                <div className="mt-2 mr-10 mb-8 h-50 w-[90%] bg-white shadow-md rounded-xl">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={gradeData}>
                             <XAxis
@@ -493,11 +465,11 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         };
 
         return (
-            <div >
-                <div className="flex">
+            <div className="mt-15 ml-8">
+                <div className="flex flex-col items-center justify-center">
                     <div className="w-1/2">
                         <div className="text-center">
-                            <h1 className="text-l font-bold">
+                            <h1 className="text-[18px] font-bold">
                                 Ranking Toxicity Score
                             </h1>
                             <br/>
@@ -607,11 +579,15 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             xaxis_label="Toxicity Score"
                         ></Histogram>
                     </div>
+                    <br></br>
+                    <br></br>
+                    <hr className="bg-gray-400 border-2 w-full"></hr>
+                    <br></br>
                     <div className="w-1/2">
                     <div className="w-[1px] bg-gray-400"></div>
                     <div className="items-center">
                         <div className="text-center">
-                            <h1 className="text-l font-bold">
+                            <h1 className="text-[18px] font-bold">
                                 Ranking Positive Content Score
                             </h1>
                             <br/>
@@ -709,47 +685,6 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             );
         };
 
-        const incrementCurrNGramsCarouselIndex = () => {
-            setCurrNGramsCarouselIndex(currNGramsCarouselIndex + 1);
-        };
-
-        const decrementCurrNGramsCarouselIndex = () => {
-            setCurrNGramsCarouselIndex(currNGramsCarouselIndex - 1);
-        };
-
-        const renderLeftCarouselButton = () => {
-            return (
-                <div style={{ position: "absolute", left: "0" }}>
-                    {currNGramsCarouselIndex != 0 && (
-                        <button
-                            onClick={decrementCurrNGramsCarouselIndex}
-                            className="p-1 rounded-full text-black mr-30 bg-white border-2 border-black transition hover:bg-gray-200"
-                        >
-                            <ChevronLeft size={28} />
-                        </button>
-                    )}
-                </div>
-            );
-        };
-
-        const renderRightCarouselButton = () => {
-            const topNGramsLength = Object.keys(analysis.top_n_grams).length;
-            return (
-                <div style={{ position: "absolute", right: "0" }}>
-                    {currNGramsCarouselIndex < topNGramsLength - 5 && (
-                        <button
-                            onClick={incrementCurrNGramsCarouselIndex}
-                            className="p-1 rounded-full text-black ml-30 bg-white transition border-2 border-black hover:bg-gray-200"
-                        >
-                            <ChevronRight size={28} />
-                        </button>
-                    )}
-                </div>
-            );
-        };
-
-        console.log("# of n-gram cards at once: ", numNGramCardsAtOnce)
-
         return (
             <div className="mt-7">
                 <div className="flex flex-col items-center">
@@ -775,24 +710,25 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                         position: "relative",
                     }}
                 >
-                    {renderLeftCarouselButton()}
-                    {renderRightCarouselButton()}
+                    {/* {renderLeftCarouselButton()}
+                    {renderRightCarouselButton()} */}
                 </div>
-                <div className="overflow-hidden w-full">
-                    <div
+                 <div className="grid grid-cols-4">
+                  {/*}  <div
                         className="flex transition-transform duration-600 ease-in-out"
                         style={{
                             transform: `translateX(-${
                                 currNGramsCarouselIndex * (100 / numNGramCardsAtOnce)
                             }%)`,
                         }}
-                    >
+                    > */}
                         {Object.entries(analysis.top_n_grams).map(
                             ([date, ngrams]) => ngrams.length > 0 && (
                                 <div
+                                    className="mb-4"
                                     key={date}
-                                    className="flex flex-shrink-0"
-                                    style={{width: `${100 / numNGramCardsAtOnce}%`}}
+                                    // className="flex flex-shrink-0"
+                                    // style={{width: `${100 / numNGramCardsAtOnce}%`}}
                                 >
                                     <NGramsForDate
                                         date={date}
@@ -802,8 +738,8 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             )
                         )}
                     </div>
-                </div>
-            </div>
+              </div>
+            // </div>
         );
     };
 
@@ -970,7 +906,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
 
         return (
-            <div className="mt-2">
+            <div className="mt-6">
                 <div className="flex flex-col items-center">
                     <h2
                         className="text-xl font-bold text-center"
@@ -1072,6 +1008,45 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
     const spinnerStyle = "animate-spin h-6 w-6 border-t-4 border-blue-500 border-solid rounded-full";
 
+    const Menu = () => {
+        return (
+            <div className="relative ml-7 inline-block text-left mb-60">
+              <button className="font-semibold bg-blue-500 text-white px-4 py-2 rounded">
+                Menu
+              </button>
+                <div className="absolute mt-2 w-45 bg-white border border-gray-200 rounded shadow-lg z-10">
+                  <ul className="py-1">
+                    {timeFilter == "all" && <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Ranking" ? "bg-blue-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Ranking")}>Ranking</li>}
+                    {timeFilter == "all" && <hr></hr>}
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Named Entities" ? "bg-blue-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Named Entities")}>Named Entities</li>
+                    <hr></hr>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Bi-Grams" ? "bg-blue-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Bi-Grams")}>Bi-Grams</li>
+                    <hr></hr>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Word Embeddings" ? "bg-blue-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Word Embeddings")}>Word Embeddings</li>
+                    <hr></hr>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Word Cloud" ? "bg-blue-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Word Cloud")}>Word Cloud</li>
+                    <hr></hr>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Readability Metrics" ? "bg-blue-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Readability Metrics")}>Readability Metrics</li>
+                  </ul>
+                </div>
+            </div>
+          );
+    };
+
+    const DisplayedAnalysis = () => {
+        console.log("currentMenuItem: ", currentMenuItem)
+        return (
+        <div>
+            {timeFilter == "all" && currentMenuItem == "Ranking" && renderComparativeAnalysis()}
+            {currentMenuItem == "Bi-Grams" && renderNGrams()}
+            {currentMenuItem == "Named Entities" && renderNamedEntities()}
+            {currentMenuItem == "Word Embeddings" && renderWordEmbeddings()}
+            {currentMenuItem == "Word Cloud" && renderWordCloud()}
+            {currentMenuItem == "Readability Metrics" && renderReadabilityMetrics()}
+        </div>
+        );
+    };
+
     return (
         <div>
             <div className="ml-2 mr-2 mt-4 mb-4 p-5 bg-white rounded-md shadow-sm">
@@ -1130,17 +1105,10 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words</h1>  
                         </div>
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
-                        {timeFilter == "all" && renderComparativeAnalysis()}
-                        {timeFilter == "all" && (<hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />)}
-                        {renderNGrams()}
-                        <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
-                        {renderNamedEntities()}
-                        <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
-                        {renderWordEmbeddings()}
-                        <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
-                        {renderWordCloud()}
-                        <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
-                        {renderReadabilityMetrics()}
+                        <div className="flex flex-col">
+                            <Menu></Menu>
+                            <DisplayedAnalysis></DisplayedAnalysis>
+                        </div>
                     </div>
                 )}
             </div>
