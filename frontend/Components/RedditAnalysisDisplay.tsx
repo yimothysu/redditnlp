@@ -716,7 +716,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     }}
                 >
                 </div>
-                 <div className="grid grid-cols-4">
+                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
                         {Object.entries(analysis.top_n_grams).map(
                             ([date, ngrams]) => ngrams.length > 0 && (
                                 <div
@@ -832,7 +832,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     >
                         {formatDate(props.date, timeFilter)}
                     </h3>
-                    <div className="grid grid-cols-3 pl-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pl-0">
                         {props.entities.map(
                             (entity: NamedEntity, index: number) => {
                                 const backgroundColor =
