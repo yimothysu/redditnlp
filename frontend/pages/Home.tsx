@@ -158,15 +158,16 @@ export default function Home() {
             </div>
             <SubredditsCached></SubredditsCached>
             <RequestAnalysisForSpecificSubreddit></RequestAnalysisForSpecificSubreddit>
-            <div className="flex gap-5 justify-end">
+            <div className="flex gap-5 justify-end mr-5">
                 <img
                     src={"github_logo.png"}
-                    className="rounded-full w-9 h-9 object-cover"
+                    className="rounded-full w-9 h-9 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
+                    onClick={() => window.open("https://github.com/yimothysu/redditnlp", "_blank")}
                 />
-                <img
+                {/* <img
                     src={"discord_logo.png"}
                     className="rounded-full w-9 h-9 mr-4 object-cover"
-                />
+                /> */}
             </div>
             <div className="w-full h-4"></div>
         </Template>
