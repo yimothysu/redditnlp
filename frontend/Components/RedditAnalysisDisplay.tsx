@@ -796,6 +796,23 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 );
             };
 
+            const LinksForEntity = ({entity}: { entity: NamedEntity}) => {
+                if(entity[4].length == 0) { return; }
+                return (
+                    <div className="mt-10 shadow rounded p-3 bg-gray-100">
+                        <h1 className="font-semibold mb-4 text-[14px]">Top Reddit Post discussing "{entity[0]}":</h1>
+                        {Object.entries(entity[4]).map(([_, link]) => (
+                            // <div key={link}>post: {link}</div>
+                            <img 
+                                src={"/link_icon.png"}
+                                className="rounded-full bg-indigo-200 p-2 w-11 h-11 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
+                                onClick={() => window.open(link, "_blank")}
+                            />
+                        ))}
+                    </div>
+                );
+            };
+
             return (
                 <div
                     key={props.date}
@@ -866,10 +883,11 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                                     # Mentions: {entity[1]}
                                                 </span>
                                             </div>
+
                                             <div
                                                 style={{
                                                     fontWeight: 600,
-                                                    fontSize: "13.5px",
+                                                    fontSize: "14px",
                                                     marginTop: "10px",
                                                     marginBottom: "5px",
                                                 }}
@@ -885,6 +903,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                                 <SummarizedSentimentBulletPoints
                                                     summary={entity[3]}
                                                 ></SummarizedSentimentBulletPoints>
+                                                 <LinksForEntity entity={entity}></LinksForEntity>
                                             </div>
                                         </div>
                                     </div>

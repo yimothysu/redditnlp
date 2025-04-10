@@ -10,6 +10,7 @@ export interface NamedEntity {
     1: number; // count
     2: number; // sentiment score from [-1, 1]
     3: string; // summarized sentiment
+    4: string[]; // links 
 }
 
 export interface SubredditQuery {
