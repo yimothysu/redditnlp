@@ -36,15 +36,14 @@ const months: Record<string, string> = {
 };
 
 function formatDate(date: string, time_filter: string) {
-    const currentYear = new Date().getFullYear();
+    //const currentYear = new Date().getFullYear();
     if (time_filter == "week") {
         // Ex: 03-13 --> May 13, 2025
         return (
             months[date.slice(0, 2)] +
             " " +
-            date.slice(3, 5) +
-            ", " +
-            currentYear
+            date.slice(3, 5) 
+            // + ", "  + currentYear
         );
     } else if (time_filter == "year") {
         // Ex: 03-24 --> May 2024
@@ -66,6 +65,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const [error, setError] = useState<string | null>(null);
     const [analysis, setAnalysis] = useState<SubredditAnalysis | null>(null);
     const [currentMenuItem, setCurrentMenuItem] = useState("Named Entities");
+    const [currentNamedEntityDate, setCurrentNamedEntityDate] = useState("");
     const [isBusy, setIsBusy] = useState(false);
     const [timeFilter, setTimeFilter] = useState("week");
     const [sortBy, setSortBy] = useState("top");
@@ -97,6 +97,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 sort_by: sortBy,
             });
             setError(null)
+            setCurrentNamedEntityDate(Object.keys(analysis.top_named_entities)[0])
             setAnalysis(analysis);
         } catch (error) {
             setError(
@@ -270,7 +271,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                         fontWeight: "bold",
                                     }}
                                 >
-                                    How is Positive Content Score calculated?
+                                    How's Positive Content Score calculated?
                                 </Typography>
                                 <Typography sx={{ p: 2, maxWidth: 500 }}>
                                     400 top posts of all time from r/{name} are
@@ -661,18 +662,18 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             return (
                 <div
                     key={date}
-                    className="flex-grow mb-3 mr-1 ml-1 border bg-white border-gray-200 rounded-l shadow-xl"
+                    className="flex flex-col h-full mb-3 mr-3 ml-3 border bg-white border-gray-200 rounded-l shadow-md"
                 >
-                    <h3 className="text-lg text-center p-1 font-semibold bg-gray-200">
+                    <h3 className="text-lg text-center p-1 font-semibold bg-gray-100">
                         {formatDate(date, timeFilter)}
                     </h3>
-                    <div className="flex font-semibold pt-1 pb-1 pr-5 pl-5 bg-blue-200 justify-between">
+                    <div className="flex font-semibold pt-1 pb-1 pr-5 pl-5 bg-indigo-200 justify-between">
                         <h2>Word</h2>
                         <h2>Count</h2>
                     </div>
                     <ul className="list-none pl-5 pr-5 pt-2">
                         {ngrams.map((ngram: NGram, index: number) => (
-                            <li key={index}>
+                            <li key={index} className="pb-1 pt-1">
                                 <div className="text-[14px] flex justify-between">
                                     <div>{ngram[0]}</div>
                                     <div>{ngram[1]}</div>
@@ -710,25 +711,13 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                         position: "relative",
                     }}
                 >
-                    {/* {renderLeftCarouselButton()}
-                    {renderRightCarouselButton()} */}
                 </div>
                  <div className="grid grid-cols-4">
-                  {/*}  <div
-                        className="flex transition-transform duration-600 ease-in-out"
-                        style={{
-                            transform: `translateX(-${
-                                currNGramsCarouselIndex * (100 / numNGramCardsAtOnce)
-                            }%)`,
-                        }}
-                    > */}
                         {Object.entries(analysis.top_n_grams).map(
                             ([date, ngrams]) => ngrams.length > 0 && (
                                 <div
                                     className="mb-4"
                                     key={date}
-                                    // className="flex flex-shrink-0"
-                                    // style={{width: `${100 / numNGramCardsAtOnce}%`}}
                                 >
                                     <NGramsForDate
                                         date={date}
@@ -768,13 +757,16 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
         const ColorCodeBox = (props: any) => {
             return (
                 <div
-                    className="w-[20%] h-[40px] font-medium border-1"
+                    className="w-auto font-medium border-1"
                     style={{
-                        fontSize: "65%",
+                        fontSize: "75%",
                         backgroundColor: props.backgroundColor,
                         textAlign: "center",
-                        padding: "5px",
-                        maxWidth: "80px", 
+                        paddingLeft: "10px",
+                        paddingRight: "10px",
+                        paddingBottom: "7px",
+                        paddingTop: "7px",
+                        maxWidth: "160px", 
                         borderTopLeftRadius: props.borderTopLeftRadius,
                         borderBottomLeftRadius: props.borderBottomLeftRadius,
                         borderTopRightRadius: props.borderTopRightRadius,
@@ -807,10 +799,10 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             return (
                 <div
                     key={props.date}
-                    className="flex-grow flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-l shadow-xl"
+                    className="flex-grow flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-l shadow-md"
                 >
                     <h3
-                        className="text-lg font-semibold bg-gray-200"
+                        className="text-lg font-semibold bg-gray-100"
                         style={{
                             fontSize: "20px",
                             textAlign: "center",
@@ -904,24 +896,82 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             );
         };
 
+        /* For switching between different dates quickly */
+        const NamedEntitiesMenu = ({dates}: { dates: string[]}) => {
+            return (
+                    <div className="flex mt-2 mb-6 w-auto bg-white border border-2 border-gray-300 shadow-lg z-10">
+                      {Object.entries(dates).map(
+                            ([idx, date]) => (
+                                <div
+                                    key={date}
+                                    className={Number(idx) !== 0 ? "border-l-2 border-gray-300" : ""}
+                                >
+                                   <div onClick={() => setCurrentNamedEntityDate(date)}  className={`px-4 py-2 cursor-pointer ${currentNamedEntityDate === date ? "bg-indigo-100 text-black" : ""}`}>{formatDate(date, timeFilter)}</div>
+                                </div>
+                            )
+                        )}
+                    </div>
+              );
+        };
+
+        const CurrentNamedEntity = () => {
+            if (!analysis) {
+                return;
+            }
+
+            if (currentNamedEntityDate == "") {
+                setCurrentNamedEntityDate(Object.keys(analysis.top_named_entities)[0])
+            }
+
+            return (
+                <TopNamedEntitiesForDate date={currentNamedEntityDate} entities={analysis.top_named_entities[currentNamedEntityDate]}></TopNamedEntitiesForDate>
+            );
+        };
 
         return (
             <div className="mt-6">
-                <div className="flex flex-col items-center">
-                    <h2
+                <h2
                         className="text-xl font-bold text-center"
                         style={{ textAlign: "center", fontSize: "20px" }}
                     >
                         Most Mentioned Named Entities
                     </h2>
+                <div className="flex relative items-center text-center justify-center">
                     <br/>
-                    <div className="flex gap-3">
-                        <ButtonPopover title="What is a named entity?">
-                            A Named Entity is a key subject in a piece
-                            of text (include names of people,
-                            organizations, locations, and dates)
-                        </ButtonPopover>
-                        <ButtonPopover title="How is sentiment score computed?">
+                    <div className="flex justify-center m-8">
+                        <ColorCodeBox
+                            backgroundColor="#AFE1AF"
+                            label="Very Positive Consensus"
+                        ></ColorCodeBox>
+                        <ColorCodeBox
+                            backgroundColor="#e2f4a5"
+                            label="Positive Consensus"
+                        ></ColorCodeBox>
+                        <ColorCodeBox
+                            backgroundColor="#FFFFC5"
+                            label="Neutral Consensus"
+                        ></ColorCodeBox>
+                        <ColorCodeBox
+                            backgroundColor="#FFD580"
+                            label="Negative Consensus"
+                        ></ColorCodeBox>
+                        <ColorCodeBox
+                            backgroundColor="#ffb9b9"
+                            label="Very Negative Consensus"
+                        ></ColorCodeBox>
+                    </div>
+                </div>
+                <div className="flex flex-col items-center justify-center">
+                    <NamedEntitiesMenu dates={Array.from(Object.keys(analysis.top_named_entities))}></NamedEntitiesMenu>
+                    <CurrentNamedEntity></CurrentNamedEntity>
+                </div>
+                <div className="flex gap-5 mb-5 mt-5 items-center justify-center">
+                            <ButtonPopover title="What's a named entity?">
+                                A Named Entity is a key subject in a piece
+                                of text (include names of people,
+                                organizations, locations, and dates)
+                            </ButtonPopover>
+                            <ButtonPopover title="How's sentiment score computed?">
                                 The aspect-based sentiment analysis model
                                 <strong>
                                     "yangheng/deberta-v3-base-absa-v1.1"
@@ -945,63 +995,12 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                     is frustrated/angry, but the writer feels <strong style={{ color: "green" }}> POSITIVELY </strong> 
                                     toward Taylor Swift because they believe she
                                     is deserving of a grammy.
-                        </ButtonPopover>
-                        <ButtonPopover title='How are "Key Points" computed?'>
-                            The summarization ML model "facebook/bart-large-cnn" processes all of the sentences where a 
-                            named entity is directly mentioned and creates a short summary.
-                        </ButtonPopover>
-                    
+                            </ButtonPopover>
+                            <ButtonPopover title='How are "Key Points" computed?'>
+                                The summarization ML model "facebook/bart-large-cnn" processes all of the sentences where a 
+                                named entity is directly mentioned and creates a short summary.
+                            </ButtonPopover>
                     </div>
-                </div>
-                <div
-                    style={{
-                        margin: "25px",
-                        marginBottom: "25px",
-                        marginTop: "35px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        position: "relative",
-                    }}
-                >
-                    <div className="flex justify-center border-1">
-                        <ColorCodeBox
-                            backgroundColor="#AFE1AF"
-                            label="Very Positive Consensus"
-                        ></ColorCodeBox>
-                        <ColorCodeBox
-                            backgroundColor="#e2f4a5"
-                            label="Positive Consensus"
-                        ></ColorCodeBox>
-                        <ColorCodeBox
-                            backgroundColor="#FFFFC5"
-                            label="Neutral Consensus"
-                        ></ColorCodeBox>
-                        <ColorCodeBox
-                            backgroundColor="#FFD580"
-                            label="Negative Consensus"
-                        ></ColorCodeBox>
-                        <ColorCodeBox
-                            backgroundColor="#ffb9b9"
-                            label="Very Negative Consensus"
-                        ></ColorCodeBox>
-                    </div>
-                </div>
-                <div className="overflow-hidden w-full">
-                        {Object.entries(analysis.top_named_entities).map(
-                            ([date, entities]) => entities.length > 0 && (
-                                <div
-                                    key={date}
-                                >
-                                    <TopNamedEntitiesForDate
-                                        date={date}
-                                        entities={entities}
-                                    />
-                                </div>
-                            )
-                        )}
-                    </div>
-                {/* </div> */}
             </div>
         );
     };
@@ -1011,22 +1010,22 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const Menu = () => {
         return (
             <div className="relative ml-7 inline-block text-left mb-60">
-              <button className="font-semibold bg-blue-500 text-white px-4 py-2 rounded">
+              <button className="font-semibold bg-indigo-600 text-white px-4 py-2 rounded">
                 Menu
               </button>
                 <div className="absolute mt-2 w-45 bg-white border border-gray-200 rounded shadow-lg z-10">
                   <ul className="py-1">
-                    {timeFilter == "all" && <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Ranking" ? "bg-blue-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Ranking")}>Ranking</li>}
+                    {timeFilter == "all" && <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Ranking" ? "bg-indigo-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Ranking")}>Ranking</li>}
                     {timeFilter == "all" && <hr></hr>}
-                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Named Entities" ? "bg-blue-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Named Entities")}>Named Entities</li>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Named Entities" ? "bg-indigo-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Named Entities")}>Named Entities</li>
                     <hr></hr>
-                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Bi-Grams" ? "bg-blue-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Bi-Grams")}>Bi-Grams</li>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Bi-Grams" ? "bg-indigo-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Bi-Grams")}>Bi-Grams</li>
                     <hr></hr>
-                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Word Embeddings" ? "bg-blue-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Word Embeddings")}>Word Embeddings</li>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Word Embeddings" ? "bg-indigo-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Word Embeddings")}>Word Embeddings</li>
                     <hr></hr>
-                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Word Cloud" ? "bg-blue-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Word Cloud")}>Word Cloud</li>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Word Cloud" ? "bg-indigo-100 text-black" : ""}`} onClick={() => setCurrentMenuItem("Word Cloud")}>Word Cloud</li>
                     <hr></hr>
-                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Readability Metrics" ? "bg-blue-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Readability Metrics")}>Readability Metrics</li>
+                    <li className={`px-4 py-2 cursor-pointer ${currentMenuItem === "Readability Metrics" ? "bg-indigo-100 text-black" : ""}`}  onClick={() => setCurrentMenuItem("Readability Metrics")}>Readability Metrics</li>
                   </ul>
                 </div>
             </div>
