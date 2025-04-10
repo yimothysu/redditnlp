@@ -129,6 +129,32 @@ def cluster_similar_entities(named_entities):
         entity_to_cluster[most_common_entity] = named_entities[most_common_entity]
     return entity_to_cluster
 
+# gets the top post urls for each named entity so users can reference the posts 
+def get_post_urls(date_to_posts, date_to_entities, time_filter):
+    t1 = time.time()
+    time_filter_to_post_url_limit = {'week': 1, 'year': 3, 'all': 3}
+    num_urls_max = time_filter_to_post_url_limit[time_filter]
+    new_date_to_entities = {}
+    for date, entities in date_to_entities.items():
+        for entity in entities:
+            entity_name = entity[0]
+            posts_that_mention_entity = [] # idxs of the posts 
+            for post in date_to_posts[date]:
+                post_content = ' '.join([post.title + ' ' + post.description + ' '.join(post.comments)])
+                if entity_name in post_content: 
+                    posts_that_mention_entity.append((post.url, post_content.count(entity_name), post.score))
+            # Time to pick which posts to feature 
+            # sort posts_that_mention_entity by post_content.count(entity_name) * score 
+            posts_that_mention_entity.sort(key=lambda post: post[1] * post[2])
+            post_urls_for_entity = [post[0] for post in posts_that_mention_entity[-num_urls_max:]]
+            if date not in new_date_to_entities:
+                new_date_to_entities[date] = []
+            new_date_to_entities[date].append((entity + (post_urls_for_entity,)))
+    t2 = time.time()
+    print('get_post_urls took: ', t2 - t1)
+    return new_date_to_entities
+
+
 async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called in main.py's FastAPI
     texts = []
     dates = []
@@ -144,7 +170,7 @@ async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called 
         texts.append(post_content)
         dates.append(date)
     
-    # Perform n-gram analysis - just only take ~ 1-2 seconds 
+    # Perform n-gram analysis 
     t1 = time.time()
     top_n_grams = dict() 
     for i in range(0, len(dates)):
@@ -161,7 +187,7 @@ async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called 
     t2 = time.time()
     print('finished n-gram analysis in: ', t2-t1)
 
-    # Perform NER analysis + sentiment analysis to EACH named entity 
+    # Perform NER analysis + sentiment analysis to EACH named entity + get top post urls for each named entity 
     nlp = spacy.load("en_core_web_sm", disable=["parser", "tagger"])
     nlp.add_pipe('sentencizer')
     t3 = time.time()
@@ -189,9 +215,10 @@ async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called 
     for date, entities in results:
         top_named_entities[date] = entities
 
+    top_named_entities = get_post_urls(sorted_slice_to_posts, top_named_entities, TIME_FILTER)
+
     t5 = time.time()
-    print('finished NER analysis in: ', t3-t2)
-    
+    print('finished NER analysis in: ', t5-t2)
     return top_n_grams, top_named_entities
 
 
@@ -233,6 +260,7 @@ async def postprocess_named_entities(date, doc, set_progress):
     #f = open("entity_to_sentences.txt", "w", encoding="utf-8")
     entity_to_sentiment, entity_to_sentences = await get_sentiments_of_entities(top_ten_entity_names, doc)
     t3 = time.time()
+
     print('getting sentiment + summary of named entities in ', date, ' took ', t3 - t2)
     #f.close()
 
@@ -614,29 +642,29 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     # querying the comments for the 1st batch and the 2nd batch (to avoid going over asyncpraw's api limit)
     # if the number of posts is >= 300, then divide the posts list into thirds and wait a minute in between 
     # querying the comments for the 1st batch, 2nd batch, and 3rd batch (to avoid going over asyncpraw's api limit)
-    post_batches = posts
+    post_batches = []
     if len(posts) >= 200 and len(posts) <= 300:
         mid = len(posts) // 2
-        post_batches = []
         post_batches.append(posts[:mid])
         post_batches.append(posts[mid:])
     elif len(posts) > 300:
         third = len(posts) // 3
-        post_batches = []
         post_batches.append(posts[:third])
         post_batches.append(posts[third:2*third])
         post_batches.append(posts[2*third:])
 
 
     posts_list = []
-    for post_batch in post_batches:
-        # Fetch post data concurrently
-        posts_with_comments = await asyncio.gather(*(fetch_post_data(post) for post in post_batch))
-        posts_with_comments = [post for post in posts_with_comments if post is not None]
-        posts_list.extend(posts_with_comments)
-        print("got the comments for ", len(posts_with_comments), "/", len(post_batch), " of the posts") 
-        time.sleep(65)  # Wait for 65 seconds...
-    
+    if len(post_batches) > 0:
+        for post_batch in post_batches:
+            # Fetch post data concurrently
+            posts_with_comments = await asyncio.gather(*(fetch_post_data(post) for post in post_batch))
+            posts_with_comments = [post for post in posts_with_comments if post is not None]
+            posts_list.extend(posts_with_comments)
+            print("got the comments for ", len(posts_with_comments), "/", len(post_batch), " of the posts") 
+            time.sleep(65)  # Wait for 65 seconds...
+    else:
+        posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
     print("# of posts after fetching comments: ", len(posts_list))
 
     # Find out how many words we're analyzing in total 

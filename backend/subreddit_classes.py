@@ -23,7 +23,8 @@ class SubredditAnalysis(BaseModel):
     #   2. named entity # occurrences
     #   3. named entity sentiment score
     #   4. summary of comments regarding named entity 
-    top_named_entities: Dict[str, List[Tuple[str, int, float, str]]]
+    #   5. urls of most relevant posts that mention the named entity 
+    top_named_entities: Dict[str, List[Tuple[str, int, float, str, List[str]]]]
     top_named_entities_embeddings: Dict[str, Tuple[float, float]]
     top_named_entities_wordcloud: str
     readability_metrics: Dict[str, float]
