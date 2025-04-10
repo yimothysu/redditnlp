@@ -131,8 +131,12 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 <br/>
                 <p className="text-center text-gray-800"><b>Average Number of Words Per Post Title: </b>{analysis.readability_metrics["avg_num_words_title"]}</p>
                 <p className="text-center text-gray-800"><b>Average Number of Words Per Post Description: </b>{analysis.readability_metrics["avg_num_words_description"]}</p>
-                <p className="text-center text-gray-800"><b>Average Grade Level of Text (Flesch Score): </b>{analysis.readability_metrics["avg_flesh_grade_level"].toFixed(2)}</p>
-                {/* <p className="text-center"><b>Average Grade Level of Text (Dale Chall Score): </b>{analysis.readability_metrics["avg_dale_chall_grade_level"]}</p> */}
+                <p className="text-center text-gray-800"><b>Average Grade Level of Text (Flesch Score): </b>
+                    {analysis.readability_metrics["avg_flesh_grade_level"] != -1 ? analysis.readability_metrics["avg_flesh_grade_level"].toFixed(2) : "Not enough data to provide"}
+                </p>
+                <p className="text-center"><b>Average Grade Level of Text (Dale Chall Score): </b>
+                    {analysis.readability_metrics["avg_dale_chall_grade_level"] != -1 ? analysis.readability_metrics["avg_dale_chall_grade_level"].toFixed(2) : "Not enough data to provide"}
+                </p>
             </div>);
     }
 

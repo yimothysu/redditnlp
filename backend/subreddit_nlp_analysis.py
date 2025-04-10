@@ -564,18 +564,18 @@ def get_readability_metrics(posts):
             num_posts_over_100_words += 1
             r = Readability(post.description)
             flesch_kincaid = r.flesch_kincaid()
-            #dale_chall = r.dale_chall()
-            readability_metrics["flesch_grade_level"] = float(flesch_kincaid.grade_level) + float(readability_metrics.get("flesh_grade_level", 0))
-            #readability_metrics["dale_chall_grade_level"] = float(dale_chall.grade_levels) + float(readability_metrics.get("dale_chall_grade_level", 0))
+            dale_chall = r.dale_chall()
+            readability_metrics["flesch_grade_level"] = float(flesch_kincaid.grade_level) + float(readability_metrics.get("flesch_grade_level", 0))
+            readability_metrics["dale_chall_grade_level"] = float(dale_chall.grade_levels) + float(readability_metrics.get("dale_chall_grade_level", 0))
     avg_num_words_title = total_num_words_title / len(posts) if len(posts) != 0 else None
     avg_num_words_description = total_num_words_description / len(posts) if len(posts) != 0 else None
-    avg_flesh_grade_level =  readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
-    #avg_dale_chall_grade_level = readability_metrics.get("dale_chall_score", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
+    avg_flesch_grade_level =  readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
+    avg_dale_chall_grade_level = readability_metrics.get("dale_chall_score", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
     return {
              "avg_num_words_title": avg_num_words_title,
              "avg_num_words_description": avg_num_words_description,
-             "avg_flesh_grade_level": avg_flesh_grade_level,
-             #"avg_dale_chall_grade_level": avg_dale_chall_grade_level
+             "avg_flesch_grade_level": avg_flesch_grade_level,
+             "avg_dale_chall_grade_level": avg_dale_chall_grade_level
             }
     
 # posts_list is a list of RedditPost objects
