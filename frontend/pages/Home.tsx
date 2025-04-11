@@ -6,7 +6,7 @@ import { SubredditCard } from "../src/components/SubredditCard.tsx";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
 import { requestSubreddit } from "../src/lib/api.ts";
-import {subreddits} from '../subreddits.tsx';
+import {subreddits} from '../src/constants/subreddits.ts';
 
 function SubredditsCached() {
 

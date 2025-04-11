@@ -4,7 +4,7 @@ import { useParams } from "react-router-dom";
 import RedditAnalysisDisplay from "../src/components/RedditAnalysisDisplay.tsx";
 import Template from "../pages/Template.tsx";
 import { Helmet } from "react-helmet";
-import { subreddits } from "../subreddits.tsx";
+import { subreddits } from "../src/constants/subreddits.ts";
 
 // RedditPage is the page that displays when /subreddit/{name} is visited
 export default function RedditPage() {
