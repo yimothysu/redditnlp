@@ -10,37 +10,6 @@ import { NGrams } from "./analysis/NGrams";
 import { ComparativeAnalysis } from "./analysis/ComparativeAnalysis";
 import { NamedEntities } from "./analysis/NamedEntities";
 
-const months: Record<string, string> = {
-  "01": "January",
-  "02": "February",
-  "03": "March",
-  "04": "April",
-  "05": "May",
-  "06": "June",
-  "07": "July",
-  "08": "August",
-  "09": "September",
-  "10": "October",
-  "11": "November",
-  "12": "December",
-};
-
-function formatDate(date: string, time_filter: string) {
-  //const currentYear = new Date().getFullYear();
-  if (time_filter == "week") {
-    // Ex: 03-13 --> May 13, 2025
-    return (
-      months[date.slice(0, 2)] + " " + date.slice(3, 5)
-      // + ", "  + currentYear
-    );
-  } else if (time_filter == "year") {
-    // Ex: 03-24 --> May 2024
-    return months[date.slice(0, 2)] + " 20" + date.slice(3, 5);
-  } else if (time_filter == "all") {
-    return "20" + date;
-  }
-  return date;
-}
 
 export default function RedditAnalysisDisplay({
   name,
