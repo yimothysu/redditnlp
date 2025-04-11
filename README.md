@@ -1,5 +1,7 @@
 # redditnlp
 
+![Screenshot](screenshot.png)
+
 ## Project Overview
 
 This project aims to provide meaningful insights into Reddit content by:
