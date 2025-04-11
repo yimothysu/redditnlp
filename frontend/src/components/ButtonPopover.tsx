@@ -1,5 +1,4 @@
-import PopupState, { bindTrigger, bindPopover } from "material-ui-popup-state";
-import Button from "@mui/material/Button";
+import PopupState, { bindPopover } from "material-ui-popup-state";
 import { Typography } from "@mui/material";
 import Popover from "@mui/material/Popover";
 import React from "react";
