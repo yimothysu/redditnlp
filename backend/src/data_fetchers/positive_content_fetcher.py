@@ -26,7 +26,7 @@ def get_positive_content_grade(positive_content_score):
 #   5. all_positive_content_grades: List[str] # for generating a positive content grades distribution graph on the UI 
 async def get_positive_content_metrics(sub_name):
     positive_content_dict = {}
-    with open("top_subreddits_positive_content_score.txt", "r", encoding="utf-8") as file:
+    with open("data/top_subreddits_positive_content_score.txt", "r", encoding="utf-8") as file:
         for line in file:
             parts = line.strip().split(" ") 
             if len(parts) == 2: 

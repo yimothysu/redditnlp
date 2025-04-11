@@ -1,15 +1,13 @@
 import os
 
+from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-from subreddit_classes import (
-    SubredditQuery,
-)
+from utils.subreddit_classes import SubredditQuery
 
-from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv("./config/.env")
 
 uri = os.environ["MONGODB_CONNECTION_STRING"]
 client = MongoClient(uri, server_api=ServerApi("1"))

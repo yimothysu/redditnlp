@@ -1,7 +1,5 @@
 from scipy.stats import percentileofscore
-from dotenv import load_dotenv
 
-load_dotenv()
 
 async def get_post_title_and_description(post):
     try:
@@ -16,6 +14,7 @@ def get_percentile(values, target_value):
     # gets the percentile of target_value in values distribution 
     percentile = percentileofscore(values, target_value, kind='rank')
     return round(percentile, 4)
+
 
 def get_toxicity_grade(toxicity):
     # A+ means extremely civil, respectful, and non-toxic subreddit.
@@ -36,7 +35,7 @@ def get_toxicity_grade(toxicity):
 #   5. all_toxicity_grades: List[str] # for generating a toxicity grades distribution graph on the UI 
 async def get_toxicity_metrics(sub_name):
     toxicity_dict = {}
-    with open("top_subreddits_toxicity_score.txt", "r", encoding="utf-8") as file:
+    with open("data/top_subreddits_toxicity_score.txt", "r", encoding="utf-8") as file:
         for line in file:
             parts = line.strip().split(" ") 
             if len(parts) == 2: 

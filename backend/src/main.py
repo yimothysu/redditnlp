@@ -15,17 +15,17 @@ import aiofiles
 import json
 import random
 
-from subreddit_classes import (
+from utils.subreddit_classes import (
     SubredditQuery,
     SubredditAnalysis,
 )
 
-from db import (
+from database.db import (
     fetch_subreddit_analysis,
 )
 
-from toxicity_fetcher import get_toxicity_metrics 
-from positive_content_fetcher import get_positive_content_metrics
+from data_fetchers.toxicity_fetcher import get_toxicity_metrics 
+from data_fetchers.positive_content_fetcher import get_positive_content_metrics
 
 # Constants
 
