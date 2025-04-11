@@ -26,7 +26,7 @@ export default function RedditPage() {
           Compare r/{subredditName} to:{" "}
         </p>
         <select
-          className="ml-2 bg-white border-2 border-black rounded-lg p-2 shadow-sm"
+          className="ml-2 bg-white rounded-lg p-2 shadow-sm"
           onChange={handleSubredditChange}
           value={compareSubredditName}
         >

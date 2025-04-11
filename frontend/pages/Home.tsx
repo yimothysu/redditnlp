@@ -38,11 +38,11 @@ function SubredditsCached() {
                 <h1 className="font-bold text-xl mb-1">
                     Explore NLP For Popular Communities
                 </h1>
-                <p>
+                <p className="pt-2">
                     Below are some of the most popular subreddit communities
                     right now. Explore NLP for them.
                 </p>
-                <div className="flex flex-wrap gap-3 md:gap-5 mt-4">
+                <div className="flex flex-wrap gap-3 md:gap-5 mt-8">
                     {subreddits.map((subreddit) => (
                         <SubredditCard
                             key={subreddit}
@@ -98,7 +98,7 @@ function RequestAnalysisForSpecificSubreddit() {
 
     return (
         <div className="p-7 flex flex-col justify-center items-center">
-            <h1 className="font-bold text-xl mb-1">Submit a Request</h1>
+            <h1 className="font-bold text-xl mt-8 mb-4">Submit a Request</h1>
             <h1 className="mb-4">
                 {" "}
                 Have a subreddit you want to analyze that's not on our website?
@@ -112,7 +112,7 @@ function RequestAnalysisForSpecificSubreddit() {
                 </div>
             )}
 
-            <div className="relative mb-4">
+            <div className="relative mb-1 mt-2">
                 <div className="absolute pl-4 flex items-center inset-y-0 text-xl">
                     r/
                 </div>
@@ -121,22 +121,20 @@ function RequestAnalysisForSpecificSubreddit() {
                     value={subreddit}
                     onChange={(e) => setSubreddit(e.target.value)}
                     placeholder="enter a community"
-                    className={`bg-white rounded-lg p-2 pl-8 w-70 shadow outline outline-2 outline-black`}
-                />
-            </div>
-            <div className="relative">
-                <input
-                    type="text"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="enter your email"
-                    className={`bg-white rounded-lg p-2 pl-8 w-70 shadow outline outline-2 outline-black`}
+                    className={`bg-white rounded-lg p-2 pl-8 w-70`}
                 />
             </div>
             <input
+                type="text"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="enter your email"
+                className="bg-white rounded-lg p-2 pl-8 w-70 mt-2"
+                />
+            <input
                 type="submit"
                 value="Submit"
-                className="rounded-xl bg-[#fa6f4d] py-2 px-7 mt-7 text-white font-bold shadow hover:cursor-pointer hover:bg-[#e36748]"
+                className="rounded-lg bg-[#fa6f4d] py-2 px-7 mt-4 text-white font-bold shadow hover:cursor-pointer hover:bg-[#e36748]"
                 onClick={submitRequest}
             />
         </div>
@@ -152,7 +150,7 @@ export default function Home() {
                 <div className="flex rounded-full bg-[#fa6f4d] text-white font-bold text-3xl h-24 w-24 justify-center items-center">
                     NLP
                 </div>
-                <h1 className="pt-2 pb-4 text-3xl">
+                <h1 className="pt-2 pb-8 text-3xl">
                     <b>Reddit</b>NLP
                 </h1>
             </div>
