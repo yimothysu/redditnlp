@@ -59,7 +59,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
   return (
     <div
       key={date}
-      className="flex-grow flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-l shadow-md"
+      className="flex-grow flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-lg overflow-hidden"
     >
       <h3
         className="text-lg font-semibold bg-gray-100"
@@ -88,7 +88,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
           return (
             <div
               key={index}
-              className="border border-gray-300 p-4 shadow-sm bg-white"
+              className="ml-[-1px] border-l border-t border-gray-300 p-4 bg-white"
             >
               <div className="flex justify-center">
                 <div className="inline-block justify-center items-center text-center font-[18px] font-bold pl-3 pr-3 pt-1 pb-1">
@@ -98,7 +98,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
               <div className="ml-5 mr-5 mt-3 mb-3">
                 <div className="flex flex-col items-center">
                   <span
-                    className="pl-3 pr-3 pt-1 pb-1"
+                    className="pl-3 pr-3 pt-1 pb-1 rounded-md"
                     style={{
                       fontWeight: 600,
                       fontSize: "15px",
@@ -171,15 +171,15 @@ const NamedEntitiesMenu: React.FC<{
   }
 
   return (
-    <div className="flex mt-2 mb-6 w-auto bg-white border border-2 border-gray-300 shadow-lg z-10">
+    <div className="flex mt-2 mb-6 w-auto bg-white border border-gray-300 z-10 rounded-md">
       {dates.map((date, idx) => (
         <div
           key={date}
-          className={idx !== 0 ? "border-l-2 border-gray-300" : ""}
+          className={idx !== 0 ? "border-l border-gray-300" : ""}
         >
           <div
             onClick={() => setCurrentDate(date)}
-            className={`px-4 py-2 cursor-pointer ${
+            className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 ${
               currentDate === date ? "bg-indigo-100 text-black" : ""
             }`}
           >

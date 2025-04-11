@@ -9,15 +9,10 @@ const ColorCodeBox: React.FC<ColorCodeBoxProps> = ({
 }) => {
   return (
     <div
-      className="w-auto font-medium border-1"
+      className="flex items-center justify-center w-auto font-medium px-3 py-2 text-sm"
       style={{
-        fontSize: "75%",
         backgroundColor,
         textAlign: "center",
-        paddingLeft: "10px",
-        paddingRight: "10px",
-        paddingBottom: "7px",
-        paddingTop: "7px",
         maxWidth: "160px",
       }}
     >
@@ -45,7 +40,7 @@ export const ColorKey: React.FC = () => {
   }
 
   return (
-    <div className="flex justify-center m-8">
+    <div className="flex justify-center m-8 rounded-md overflow-hidden">
       <ColorCodeBox backgroundColor="#AFE1AF" label="Very Positive Consensus" />
       <ColorCodeBox backgroundColor="#e2f4a5" label="Positive Consensus" />
       <ColorCodeBox backgroundColor="#FFFFC5" label="Neutral Consensus" />
