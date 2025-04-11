@@ -911,7 +911,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             value={currentNamedEntityDate} onChange={(e) => {setCurrentNamedEntityDate(e.target.value); }}
                             className="mt-1 block w-full px-1 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
                         >
-                            {Object.entries(dates).map(([_, date]) => (<option value={formatDate(date, timeFilter)}>{formatDate(date, timeFilter)}</option>))}
+                            {Object.entries(dates).map(([_, date]) => (<option value={date}>{formatDate(date, timeFilter)}</option>))}
                         </select>
                     </div>
                 );
