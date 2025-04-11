@@ -19,6 +19,7 @@ import {
     Cell,
 } from "recharts";
 import ButtonPopover from "./ButtonPopover.tsx";
+import { ChevronRight } from 'lucide-react';
 
 const months: Record<string, string> = {
     "01": "January",
@@ -118,7 +119,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
     const renderReadabilityMetrics = () => {
 
         if (!analysis) return null;
-        console.log(analysis.readability_metrics)
+        console.log('analysis.readability_metrics: ', analysis.readability_metrics)
         return (
             <div>
                 <h1 className="font-bold text-xl text-center mt-5 p-1">Readability Metrics</h1>
@@ -803,15 +804,20 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             const LinksForEntity = ({entity}: { entity: NamedEntity}) => {
                 if(entity[4].length == 0) { return; }
                 return (
-                    <div className="mt-10 shadow rounded p-3 bg-gray-100">
-                        <h1 className="font-semibold mb-4 text-[14px]">Top Reddit Post discussing "{entity[0]}":</h1>
-                        {Object.entries(entity[4]).map(([_, link]) => (
+                    <div className="mt-7">
+                        {/* <h1 className="font-semibold mb-4 text-[14px]">Top Reddit Post(s) discussing "{entity[0]}":</h1> */}
+                        {Object.entries(entity[4]).map(([idx, link]) => (
                             // <div key={link}>post: {link}</div>
-                            <img 
-                                src={"/link_icon.png"}
-                                className="rounded-full bg-indigo-200 p-2 w-11 h-11 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
-                                onClick={() => window.open(link, "_blank")}
-                            />
+                            // <img 
+                            //     src={"/link_icon.png"}
+                            //     className="rounded-full bg-indigo-200 p-2 w-11 h-11 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
+                            //     onClick={() => window.open(link, "_blank")}
+                            // />
+                            <div onClick={() => window.open(link, "_blank")} 
+                            className="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 p-2 text-[14px] font-semibold items-center justify-center shadow rounded text-black text-center flex w-70">
+                                Top Post discussing "{entity[0]}"
+                                <ChevronRight className="w-6 h-6 ml-5 text-black" />
+                            </div>
                         ))}
                     </div>
                 );
@@ -832,7 +838,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     >
                         {formatDate(props.date, timeFilter)}
                     </h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 pl-0">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 pl-0">
                         {props.entities.map(
                             (entity: NamedEntity, index: number) => {
                                 const backgroundColor =
@@ -888,7 +894,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                                 </span>
                                             </div>
 
-                                            <div
+                                            {entity[3] != "" && <div
                                                 style={{
                                                     fontWeight: 600,
                                                     fontSize: "14px",
@@ -897,7 +903,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                                 }}
                                             >
                                                 Key Points:{" "}
-                                            </div>
+                                            </div>}
                                             <div
                                                 style={{
                                                     fontSize: "13.5px",
@@ -1117,14 +1123,16 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 {!error && analysis && (
                     <div className="mt-4">
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
-                        <div className="m-4 pl-4 text-[15px]">
+                        <div className="flex items-center justify-center">
+                        <div className="flex flex-col m-2 text-[15px] items-center justify-center text-center">
                             <div className="flex gap-2 justify-center">
                                 <h1 className="text-white bg-orange-500 font-bold w-7 h-7 rounded-full text-center text-[18px]">!</h1>
                                 <h1 className="mb-4 mt-1 text-orange-600 font-semibold text-center">This analysis may be outdated</h1>
                             </div>
-                            <h1 className="mb-4">analysis generated on: <span className="bg-orange-200 font-bold p-1 rounded-sm">{new Date(analysis.timestamp * 1000).toLocaleString()}</span>
+                            <h1 className="mb-4">analysis generated on<span className=" font-bold p-1 rounded-sm">{new Date(analysis.timestamp * 1000).toLocaleString()}</span>
                             </h1>
-                            <h1 className="mb-4">analysis analyzed <span className="bg-orange-200 font-bold p-1 rounded-sm">{analysis.num_words}</span> words</h1>  
+                            <h1>analysis analyzed<span className="font-bold p-1 rounded-sm">{analysis.num_words}</span>words</h1>  
+                        </div>
                         </div>
                         <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
                         <div className="flex flex-col">
