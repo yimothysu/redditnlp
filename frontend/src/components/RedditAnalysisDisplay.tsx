@@ -146,11 +146,11 @@ export default function RedditAnalysisDisplay({
             <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
             <div className="flex items-center justify-center">
               <div className="flex flex-col m-2 text-[15px] items-center justify-center text-center">
-                <div className="flex gap-2 justify-center">
-                  <h1 className="text-white bg-orange-500 font-bold w-7 h-7 rounded-full text-center text-[18px]">
+                <div className="flex gap-2 justify-center items-center mb-4">
+                  <h1 className="text-white bg-[#fa6f4d] font-bold w-7 h-7 rounded-full text-center text-[18px]">
                     !
                   </h1>
-                  <h1 className="mb-4 mt-1 text-orange-600 font-semibold text-center">
+                  <h1 className="text-[#fa6f4d] font-semibold text-center">
                     This analysis may be outdated
                   </h1>
                 </div>
