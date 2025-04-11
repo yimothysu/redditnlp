@@ -9,7 +9,7 @@ export function SubredditCard({ subredditName }: SubredditCardProps) {
     return (
       <a
         href={`/subreddit/${subredditName}`}
-        className="mb-2 md:mb-0 bg-white rounded-md p-2 w-27 h-25 md:w-40 md:h-40 flex justify-center flex-col items-center text-center hover:cursor-pointer text-black! text-[10px] md:text-[12.5px] border border-gray-300 hover:border-gray-400"
+        className="mb-2 md:mb-0 bg-white rounded-md p-2 w-40 h-40 flex justify-center flex-col items-center text-center hover:cursor-pointer text-black! text-[10px] md:text-[12.5px] border border-gray-300 hover:border-gray-400"
       >
         <div className="mb-4 flex justify-center items-center">
           <DefaultSubredditAvatar />
@@ -21,7 +21,7 @@ export function SubredditCard({ subredditName }: SubredditCardProps) {
   return (
     <a
       href={`/subreddit/${subredditName}`}
-      className="mb-2 md:mb-0 bg-white rounded-md p-2 w-27 h-25 md:w-40 md:h-40 flex justify-center flex-col items-center text-center hover:cursor-pointer text-black! text-[10px] md:text-[12.5px] border border-gray-300 hover:border-gray-400"
+      className="mb-2 md:mb-0 bg-white rounded-md p-2 w-40 h-40 flex justify-center flex-col items-center text-center hover:cursor-pointer text-black! text-[10px] md:text-[12.5px] border border-gray-300 hover:border-gray-400"
     >
       <div className="mb-4 flex justify-center items-center">
         <SubredditAvatar subredditName={subredditName} />
