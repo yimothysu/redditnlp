@@ -805,14 +805,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 if(entity[4].length == 0) { return; }
                 return (
                     <div className="mt-7">
-                        {/* <h1 className="font-semibold mb-4 text-[14px]">Top Reddit Post(s) discussing "{entity[0]}":</h1> */}
-                        {Object.entries(entity[4]).map(([idx, link]) => (
-                            // <div key={link}>post: {link}</div>
-                            // <img 
-                            //     src={"/link_icon.png"}
-                            //     className="rounded-full bg-indigo-200 p-2 w-11 h-11 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
-                            //     onClick={() => window.open(link, "_blank")}
-                            // />
+                        {Object.entries(entity[4]).map(([_, link]) => (
                             <div onClick={() => window.open(link, "_blank")} 
                             className="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 p-2 text-[14px] font-semibold items-center justify-center shadow rounded text-black text-center flex w-70">
                                 Top Post discussing "{entity[0]}"
