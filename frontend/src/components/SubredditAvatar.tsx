@@ -1,23 +1,11 @@
-//import { hashColor } from "../lib/hashColor";
-
 interface SubredditAvatarProps {
   subredditName: string;
 }
 
 export function SubredditAvatar({ subredditName }: SubredditAvatarProps) {
-  // const color = hashColor(subredditName);
-
-  // return (
-  //   <div
-  //     className="flex items-center justify-center rounded-full w-20 h-20 font-bold text-white"
-  //     style={{ backgroundColor: color }}
-  //   >
-  //     {subredditName[0].toUpperCase()}
-  //   </div>
-  // );
-  const image_src = "/subreddit_pics/" + subredditName + ".png"
+  const image_src = "/subreddit_pics/" + subredditName + ".png";
   return (
-    <img 
+    <img
       src={image_src}
       className="rounded-full w-12 h-12 md:w-15 md:h-15 object-cover"
     />
@@ -25,7 +13,7 @@ export function SubredditAvatar({ subredditName }: SubredditAvatarProps) {
 }
 
 export function DefaultSubredditAvatar() {
-  const color = '#4268e8'
+  const color = "#4268e8";
 
   return (
     <div

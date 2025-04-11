@@ -1,6 +1,3 @@
-import "./App.css";
-//import axios from 'axios';
-
 import Home from "../pages/Home.tsx";
 import RedditPage from "../pages/RedditPage.tsx";
 

@@ -10,7 +10,6 @@ import { NGrams } from "./analysis/NGrams";
 import { ComparativeAnalysis } from "./analysis/ComparativeAnalysis";
 import { NamedEntities } from "./analysis/NamedEntities";
 
-
 export default function RedditAnalysisDisplay({
   name,
   inComparisonMode,
@@ -65,13 +64,20 @@ export default function RedditAnalysisDisplay({
 
     switch (currentMenuItem) {
       case "Ranking":
-        return timeFilter === "all" ? <ComparativeAnalysis analysis={analysis} /> : null;
+        return timeFilter === "all" ? (
+          <ComparativeAnalysis analysis={analysis} />
+        ) : null;
       case "Bi-Grams":
         return <NGrams analysis={analysis} timeFilter={timeFilter} />;
       case "Named Entities":
         return <NamedEntities analysis={analysis} timeFilter={timeFilter} />;
       case "Word Embeddings":
-        return <WordEmbeddings analysis={analysis} inComparisonMode={inComparisonMode} />;
+        return (
+          <WordEmbeddings
+            analysis={analysis}
+            inComparisonMode={inComparisonMode}
+          />
+        );
       case "Word Cloud":
         return <WordCloud analysis={analysis} />;
       case "Readability Metrics":
@@ -81,7 +87,8 @@ export default function RedditAnalysisDisplay({
     }
   };
 
-  const spinnerStyle = "animate-spin h-6 w-6 border-t-4 border-blue-500 border-solid rounded-full";
+  const spinnerStyle =
+    "animate-spin h-6 w-6 border-t-4 border-blue-500 border-solid rounded-full";
 
   return (
     <div>
