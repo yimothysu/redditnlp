@@ -16,19 +16,12 @@ export default function ButtonPopover({ title, children }: Props) {
     <PopupState variant="popover" popupId="demo-popup-popover">
       {(popupState) => (
         <div>
-          <Button
-            sx={{
-              backgroundColor: "#4f46e5",
-              mb: 0,
-              fontSize: "14px",
-              transition: "background-color 0.2s ease-in-out",
-              "&:hover": { backgroundColor: "#4338ca" },
-            }}
-            variant="contained"
-            {...bindTrigger(popupState)}
+          <button
+            className="bg-[#fa6f4d] font-medium text-sm transition-colors duration-200 hover:bg-[#e36748] px-4 py-2 rounded-md text-white hover:cursor-pointer"
+            onClick={() => popupState.open()}
           >
             {title}
-          </Button>
+          </button>
           <Popover
             {...bindPopover(popupState)}
             anchorOrigin={{
