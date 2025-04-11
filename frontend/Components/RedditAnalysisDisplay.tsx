@@ -156,7 +156,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
             <div className="mt-4 p-2 pl-6 pr-6 pb-6 bg-white w-full mx-auto">
                 {analysis?.top_named_entities_wordcloud ? (
                     <img
-                        className="mx-auto w-[50%] h-auto"
+                        className="mx-auto w-[100%] md:w-[50%] h-auto"
                         src={wordCloud.src}
                         alt="Word Cloud"
                     />
@@ -659,7 +659,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
     const renderNGrams = () => {
         if (!analysis) return null;
-
+        
         const NGramsForDate: React.FC<{ date: string; ngrams: NGram[] }> = ({
             date,
             ngrams,
@@ -807,7 +807,7 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                     <div className="mt-7">
                         {Object.entries(entity[4]).map(([_, link]) => (
                             <div onClick={() => window.open(link, "_blank")} 
-                            className="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 p-2 text-[14px] font-semibold items-center justify-center shadow rounded text-black text-center flex w-70">
+                            className="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 p-2 text-[14px] font-semibold items-center justify-center shadow rounded text-black text-center flex">
                                 Top Post discussing "{entity[0]}"
                                 <ChevronRight className="w-6 h-6 ml-5 text-black" />
                             </div>
@@ -850,40 +850,23 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                     <div key={index} className="border border-gray-300 p-4 shadow-sm bg-white">
                                         <div className="flex justify-center">
                                             <div
-                                                className="inline-block justify-center items-center text-center mb-2 font-[14.5px] font-semibold pl-3 pr-3 pt-1 pb-1"
-                                                style={{
-                                                    backgroundColor:
-                                                        backgroundColor,
-                                                }}
+                                                className="inline-block justify-center items-center text-center font-[18px] font-bold pl-3 pr-3 pt-1 pb-1"
                                             >
                                                 {entity[0]}
                                             </div>
                                         </div>
                                         <div className="ml-5 mr-5 mt-3 mb-3">
-                                            <div
-                                                style={{
-                                                    display: "flex",
-                                                    justifyContent:
-                                                        "space-between",
-                                                    alignItems: "center",
-                                                }}
-                                            >
-                                                <span
+                                            <div className="flex flex-col items-center">
+                                                <span className="pl-3 pr-3 pt-1 pb-1"
                                                     style={{
                                                         fontWeight: 600,
-                                                        fontSize: "14px",
+                                                        fontSize: "15px",
+                                                        backgroundColor: backgroundColor,
+                                                        width: "fit-content",
                                                     }}
                                                 >
-                                                    Sentiment Score [-1, 1]:{" "}
+                                                Sentiment Score {"  "} = {"  "}
                                                     {entity[2]}
-                                                </span>
-                                                <span
-                                                    style={{
-                                                        fontWeight: 600,
-                                                        fontSize: "14px",
-                                                    }}
-                                                >
-                                                    # Mentions: {entity[1]}
                                                 </span>
                                             </div>
 
@@ -891,11 +874,11 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                                                 style={{
                                                     fontWeight: 600,
                                                     fontSize: "14px",
-                                                    marginTop: "10px",
+                                                    marginTop: "20px",
                                                     marginBottom: "5px",
                                                 }}
                                             >
-                                                Key Points:{" "}
+                                                Key Points
                                             </div>}
                                             <div
                                                 style={{
@@ -920,6 +903,20 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
 
         /* For switching between different dates quickly */
         const NamedEntitiesMenu = ({dates}: { dates: string[]}) => {
+            if(window.innerWidth < 500) {
+                return (
+                    <div className="pb-4">
+                        <label className="block text-sm text-center font-medium text-gray-700"> Date </label>
+                        <select
+                            value={currentNamedEntityDate} onChange={(e) => {setCurrentNamedEntityDate(e.target.value); }}
+                            className="mt-1 block w-full px-1 py-2 text-base border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+                        >
+                            {Object.entries(dates).map(([_, date]) => (<option value={formatDate(date, timeFilter)}>{formatDate(date, timeFilter)}</option>))}
+                        </select>
+                    </div>
+                );
+            }
+
             return (
                     <div className="flex mt-2 mb-6 w-auto bg-white border border-2 border-gray-300 shadow-lg z-10">
                       {Object.entries(dates).map(
@@ -949,18 +946,26 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                 <TopNamedEntitiesForDate date={currentNamedEntityDate} entities={analysis.top_named_entities[currentNamedEntityDate]}></TopNamedEntitiesForDate>
             );
         };
+        // flex-col md:flex-row lg:flex-row xl:flex-row
 
-        return (
-            <div className="mt-6">
-                <h2
-                        className="text-xl font-bold text-center"
-                        style={{ textAlign: "center", fontSize: "20px" }}
-                    >
-                        Most Mentioned Named Entities
-                    </h2>
-                <div className="flex relative items-center text-center justify-center">
-                    <br/>
-                    <div className="flex justify-center m-8">
+        const ColorKey = () => {
+            if(window.innerWidth < 500) {
+                return (
+                <div className="mt-8 mb-8">
+                   <div className=" flex border-1 border">
+                        <div className="bg-[#AFE1AF] h-5 w-18"></div>
+                        <div className="bg-[#e2f4a5] h-5 w-18"></div>
+                        <div className="bg-[#FFFFC5] h-5 w-18"></div>
+                        <div className="bg-[#FFD580] h-5 w-18"></div>
+                        <div className="bg-[#ffb9b9] h-5 w-18"></div>
+                   </div>
+                   <p className="text-sm text-center">left = positive consensus, right = negative consensus</p>
+                </div>
+                );
+            }
+
+            return (
+                <div className="flex justify-center m-8">
                         <ColorCodeBox
                             backgroundColor="#AFE1AF"
                             label="Very Positive Consensus"
@@ -981,13 +986,27 @@ export default function RedditAnalysisDisplay({ name, inComparisonMode }: Props)
                             backgroundColor="#ffb9b9"
                             label="Very Negative Consensus"
                         ></ColorCodeBox>
-                    </div>
+                </div>
+            );
+        };
+
+        return (
+            <div className="mt-6">
+                <h2
+                        className="text-xl font-bold text-center"
+                        style={{ textAlign: "center", fontSize: "20px" }}
+                    >
+                        Most Mentioned Named Entities
+                    </h2>
+                <div className="flex relative items-center text-center justify-center">
+                    <br/>
+                    <ColorKey></ColorKey>
                 </div>
                 <div className="flex flex-col items-center justify-center">
                     <NamedEntitiesMenu dates={Array.from(Object.keys(analysis.top_named_entities))}></NamedEntitiesMenu>
                     <CurrentNamedEntity></CurrentNamedEntity>
                 </div>
-                <div className="flex gap-5 mb-5 mt-5 items-center justify-center">
+                <div className="flex flex-col md:flex-row gap-5 mb-5 mt-5 items-center justify-center">
                             <ButtonPopover title="What's a named entity?">
                                 A Named Entity is a key subject in a piece
                                 of text (include names of people,

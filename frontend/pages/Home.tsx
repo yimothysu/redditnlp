@@ -34,7 +34,7 @@ function SubredditsCached() {
                     })}
                 </script>
             </Helmet>
-            <div className="bg-gray-100 p-7">
+            <div className="bg-gray-100 p-4 md:p-7">
                 <h1 className="font-bold text-xl mb-1">
                     Explore NLP For Popular Communities
                 </h1>
@@ -42,7 +42,7 @@ function SubredditsCached() {
                     Below are some of the most popular subreddit communities
                     right now. Explore NLP for them.
                 </p>
-                <div className="flex flex-wrap gap-5 mt-4">
+                <div className="flex flex-wrap gap-3 md:gap-5 mt-4">
                     {subreddits.map((subreddit) => (
                         <SubredditCard
                             key={subreddit}

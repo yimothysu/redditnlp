@@ -19,7 +19,7 @@ export function SubredditAvatar({ subredditName }: SubredditAvatarProps) {
   return (
     <img 
       src={image_src}
-      className="rounded-full w-15 h-15 object-cover"
+      className="rounded-full w-12 h-12 md:w-15 md:h-15 object-cover"
     />
   );
 }
@@ -29,7 +29,7 @@ export function DefaultSubredditAvatar() {
 
   return (
     <div
-      className="flex items-center justify-center rounded-full w-15 h-15 font-semibold text-[30px]"
+      className="flex items-center justify-center rounded-full w-12 h-12 md:w-15 md:h-15 font-semibold text-[30px]"
       style={{ backgroundColor: color }}
     >
       r/
