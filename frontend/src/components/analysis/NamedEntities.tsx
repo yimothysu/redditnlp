@@ -37,14 +37,14 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
     return null;
   }
   return (
-    <div className="mt-7">
+    <div className="mt-4">
       {Object.entries(entity[4]).map(([_, link]) => (
         <div
           onClick={() => window.open(link, "_blank")}
-          className="bg-gray-100 hover:bg-gray-200 active:bg-gray-300 p-2 text-[14px] font-semibold items-center justify-center shadow rounded text-black text-center flex"
+          className="bg-gray-50 hover:bg-gray-100 transition-colors duration-200 p-3 text-sm font-medium rounded-lg text-gray-700 text-center flex items-center justify-center cursor-pointer border border-gray-100"
         >
           Top Post discussing "{entity[0]}"
-          <ChevronRight className="w-6 h-6 ml-5 text-black" />
+          <ChevronRight className="w-5 h-5 ml-2 text-gray-500" />
         </div>
       ))}
     </div>
@@ -59,19 +59,18 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
   return (
     <div
       key={date}
-      className="flex-grow flex-1 mb-6 mr-1 ml-1 border bg-white border-gray-300 rounded-lg overflow-hidden"
+      className="flex-grow flex-1 mb-6 mr-1 ml-1 bg-white rounded-xl overflow-hidden border border-gray-200"
     >
       <h3
-        className="text-lg font-semibold bg-gray-100"
+        className="text-xl font-semibold bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200"
         style={{
-          fontSize: "20px",
+          padding: "12px",
           textAlign: "center",
-          padding: "4px",
         }}
       >
         {formatDate(date, timeFilter)}
       </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 pl-0">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-0.5 bg-gray-100">
         {entities.map((entity: NamedEntity, index: number) => {
           const backgroundColor =
             entity[2] >= 0.5 && entity[2] <= 1
@@ -88,50 +87,36 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
           return (
             <div
               key={index}
-              className="ml-[-1px] border-l border-t border-gray-300 p-4 bg-white"
+              className="bg-white p-5 transition-all duration-200 border border-gray-100 hover:border-gray-200"
             >
-              <div className="flex justify-center">
-                <div className="inline-block justify-center items-center text-center font-[18px] font-bold pl-3 pr-3 pt-1 pb-1">
+              <div className="flex justify-center mb-4">
+                <h4 className="text-lg font-bold text-gray-800">
                   {entity[0]}
-                </div>
+                </h4>
               </div>
-              <div className="ml-5 mr-5 mt-3 mb-3">
+              <div className="space-y-4">
                 <div className="flex flex-col items-center">
                   <span
-                    className="pl-3 pr-3 pt-1 pb-1 rounded-md"
+                    className="px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
                     style={{
-                      fontWeight: 600,
-                      fontSize: "15px",
-                      backgroundColor: backgroundColor,
-                      width: "fit-content",
+                      backgroundColor,
                     }}
                   >
-                    Sentiment Score {"  "} = {"  "}
-                    {entity[2]}
+                    Sentiment Score: {entity[2].toFixed(2)}
                   </span>
                 </div>
 
-                {entity[3] != "" && (
-                  <div
-                    style={{
-                      fontWeight: 600,
-                      fontSize: "14px",
-                      marginTop: "20px",
-                      marginBottom: "5px",
-                    }}
-                  >
-                    Key Points
+                {entity[3] && (
+                  <div className="space-y-2">
+                    <h5 className="font-semibold text-gray-700 text-sm">
+                      Key Points
+                    </h5>
+                    <div className="text-sm text-gray-600">
+                      <SummarizedSentimentBulletPoints summary={entity[3]} />
+                    </div>
                   </div>
                 )}
-                <div
-                  style={{
-                    fontSize: "13.5px",
-                    color: "#333",
-                  }}
-                >
-                  <SummarizedSentimentBulletPoints summary={entity[3]} />
-                  <LinksForEntity entity={entity} />
-                </div>
+                <LinksForEntity entity={entity} />
               </div>
             </div>
           );
