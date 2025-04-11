@@ -1,4 +1,4 @@
-# redditnlp
+# RedditNLP
 
 ![Screenshot](screenshot.png)
 
