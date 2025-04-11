@@ -136,7 +136,7 @@ function RequestAnalysisForSpecificSubreddit() {
             <input
                 type="submit"
                 value="Submit"
-                className="rounded-xl bg-[#57bcb3] py-2 px-7 mt-7 text-white font-bold shadow hover:cursor-pointer hover:bg-[#58ada6]"
+                className="rounded-xl bg-[#fa6f4d] py-2 px-7 mt-7 text-white font-bold shadow hover:cursor-pointer hover:bg-[#e36748]"
                 onClick={submitRequest}
             />
         </div>
@@ -149,7 +149,7 @@ export default function Home() {
     return (
         <Template>
             <div className="flex flex-col items-center pb-3">
-                <div className="flex rounded-full bg-[#a5bf5d] text-white font-bold text-3xl h-24 w-24 justify-center items-center">
+                <div className="flex rounded-full bg-[#fa6f4d] text-white font-bold text-3xl h-24 w-24 justify-center items-center">
                     NLP
                 </div>
                 <h1 className="pt-2 pb-4 text-3xl">
