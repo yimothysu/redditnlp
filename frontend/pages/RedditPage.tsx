@@ -1,17 +1,16 @@
 import { ChangeEvent } from "react";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import RedditAnalysisDisplay from "../Components/RedditAnalysisDisplay.tsx";
+import RedditAnalysisDisplay from "../src/components/RedditAnalysisDisplay.tsx";
 import Template from "../pages/Template.tsx";
 import { Helmet } from "react-helmet";
-import {subreddits} from '../subreddits.tsx';
+import { subreddits } from "../subreddits.tsx";
 
 // RedditPage is the page that displays when /subreddit/{name} is visited
 export default function RedditPage() {
-
   const { subredditName } = useParams();
   const [compareSubredditName, setCompareSubredditName] = useState("");
-  const [inComparisonMode, setInComparisonMode] = useState("false")
+  const [inComparisonMode, setInComparisonMode] = useState("false");
 
   // When the user selects a subreddit to compare to, update state to reflect that
   const handleSubredditChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -20,10 +19,12 @@ export default function RedditPage() {
 
   // Select subreddit dropdown menu
   const renderSelectReddit = () => {
-    console.log('subreddit: ', compareSubredditName)
+    console.log("subreddit: ", compareSubredditName);
     return (
       <div className="flex items-center mr-5">
-        <p className="text-black font-medium mr-2">Compare r/{subredditName} to: </p>
+        <p className="text-black font-medium mr-2">
+          Compare r/{subredditName} to:{" "}
+        </p>
         <select
           className="ml-2 bg-white border-2 border-black rounded-lg p-2 shadow-sm"
           onChange={handleSubredditChange}
@@ -47,21 +48,31 @@ export default function RedditPage() {
 
   // Displays side by side analysis of subreddits
   const Analysis = () => {
-    if (compareSubredditName != "" && compareSubredditName != "Select Subreddit") {
-      setInComparisonMode("true")
-    }
-    else {
-      setInComparisonMode("false")
+    if (
+      compareSubredditName != "" &&
+      compareSubredditName != "Select Subreddit"
+    ) {
+      setInComparisonMode("true");
+    } else {
+      setInComparisonMode("false");
     }
 
     return (
       <div className="flex w-full">
         <div className={displayFull}>
-          <RedditAnalysisDisplay name={subredditName} inComparisonMode={inComparisonMode} />
+          <RedditAnalysisDisplay
+            name={subredditName}
+            inComparisonMode={inComparisonMode}
+          />
         </div>
         {compareSubredditName && (
           <div className="w-1/2 hidden md:block">
-            {<RedditAnalysisDisplay name={compareSubredditName} inComparisonMode={inComparisonMode} />}
+            {
+              <RedditAnalysisDisplay
+                name={compareSubredditName}
+                inComparisonMode={inComparisonMode}
+              />
+            }
           </div>
         )}
       </div>
@@ -75,7 +86,9 @@ export default function RedditPage() {
         <meta
           name="description"
           content={`Explore natural language trends in r/${subredditName}${
-            compareSubredditName ? ` and compare with r/${compareSubredditName}` : ""
+            compareSubredditName
+              ? ` and compare with r/${compareSubredditName}`
+              : ""
           }.`}
         />
         <meta
@@ -95,7 +108,9 @@ export default function RedditPage() {
             name: `Reddit NLP - r/${subredditName}`,
             url: `https://redditnlp.com/subreddit/r/${subredditName}`,
             description: `Explore NLP trends in r/${subredditName}${
-              compareSubredditName ? ` and compare with r/${compareSubredditName}` : ""
+              compareSubredditName
+                ? ` and compare with r/${compareSubredditName}`
+                : ""
             }.`,
           })}
         </script>
@@ -112,7 +127,8 @@ export default function RedditPage() {
               r/{subredditName} vs. r/{compareSubredditName}
             </h1>
             <p className="text-center text-gray-500">
-              Below is an in-depth analysis comparing r/{subredditName} and r/{compareSubredditName}
+              Below is an in-depth analysis comparing r/{subredditName} and r/
+              {compareSubredditName}
             </p>
           </div>
         )}
