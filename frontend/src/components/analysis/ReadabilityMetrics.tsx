@@ -1,6 +1,15 @@
 import { SubredditAnalysis } from "../../types/redditAnalysis";
 import ButtonPopover from "../ButtonPopover";
-
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from "recharts";
+import { Metric } from "./Metric";
 interface ReadabilityMetricsProps {
   analysis: SubredditAnalysis;
 }
@@ -8,6 +17,47 @@ interface ReadabilityMetricsProps {
 export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
   analysis,
 }) => {
+  
+  const data = Object.entries(analysis.readability_metrics.dale_chall_grade_levels).map(([key, value]) => ({
+    bin: key,
+    count: value
+  }))
+
+  const histogram = analysis.readability_metrics["dale_chall_grade_levels"] && Object.keys(analysis.readability_metrics["dale_chall_grade_levels"]).length > 0 ? 
+    <div className="mt-5 flex justify-content align-center h-90 w-[50%] p-4 bg-white shadow-md rounded-xl">
+    <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+            data={data}
+            margin={{ bottom: 15, left: 7 }}
+        >
+            <XAxis
+                dataKey="bin"
+                tick={{ fontSize: 10, fill: "black" }}
+                label={{
+                    value: "Grade Level",
+                    fill: "black",
+                    position: "outsideBottom",
+                    dy: 20,
+                    dx: -12
+                }}
+            />
+            <YAxis
+                tick={{ fill: "black" }}
+                label={{
+                    value: "# Posts",
+                    fill: "black",
+                    angle: -90,
+                    position: "insideLeft",
+                    dy: 20,
+                    dx: -4,
+                }}
+            />
+            <Tooltip />
+            <Bar dataKey="count" fill="#4f46e5"></Bar>
+        </BarChart>
+    </ResponsiveContainer>
+</div> : <h1 className="text-center text-gray-400">No data to provide</h1>;
+
   return (
     <div>
       <h1 className="font-bold text-xl text-center mt-5 p-1">
@@ -18,32 +68,21 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
         <ButtonPopover title="What are readability metrics">
           Readability metrics evaluate how easy a body text is to read. This
           includes expected grade level of education required to understand a
-          text.
+          text. Note: Grade level data can only be calculated for posts of 100 words or greater.
         </ButtonPopover>
-      </div>
+        </div>
       <br />
-      <p className="text-center text-gray-800">
-        <b>Average Number of Words Per Post Title: </b>
-        {analysis.readability_metrics["avg_num_words_title"]}
-      </p>
-      <p className="text-center text-gray-800">
-        <b>Average Number of Words Per Post Description: </b>
-        {analysis.readability_metrics["avg_num_words_description"]}
-      </p>
-      <p className="text-center text-gray-800">
-        <b>Average Grade Level of Text (Flesch Score): </b>
-        {analysis.readability_metrics["avg_flesch_grade_level"] != -1
-          ? analysis.readability_metrics["avg_flesch_grade_level"].toFixed(2)
-          : "Not enough data to provide"}
-      </p>
-      <p className="text-center">
-        <b>Average Grade Level of Text (Dale Chall Score): </b>
-        {analysis.readability_metrics["avg_dale_chall_grade_level"] != -1
-          ? analysis.readability_metrics["avg_dale_chall_grade_level"].toFixed(
-              2
-            )
-          : "Not enough data to provide"}
-      </p>
+      <div className="flex flex-col align-center items-center">
+        <Metric name="Avg Word Count Per Title" metric={analysis.readability_metrics["avg_num_words_title"]}/>
+        <Metric name="Avg Word Count Per Description" metric={analysis.readability_metrics["avg_num_words_description"]}/>
+        <Metric name="Avg Flesch Grade Level" metric={analysis.readability_metrics["avg_flesch_grade_level"] == -1 ? "No Data Available": analysis.readability_metrics["avg_flesch_grade_level"]}/>
+        <div className="border bg-white border-gray-200 rounded-lg shadow-md m-2 w-1/2 p-3">
+          <p className="text-center text-gray-500">
+            <b>Distribution of Grade Levels (Dale Chall)</b>
+            {histogram}
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
