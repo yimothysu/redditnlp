@@ -9,7 +9,7 @@ export const subreddits = [
     "worldnews",
     "technology",
     "100YearsAgo",
-    "Feminism",
+    "AskHistorians",
     "unpopularopinion",
     "philosophy",
     "mentalhealth",
