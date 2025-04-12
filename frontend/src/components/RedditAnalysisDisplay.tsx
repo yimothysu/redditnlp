@@ -91,6 +91,63 @@ export default function RedditAnalysisDisplay({
   const spinnerStyle =
     "animate-spin h-6 w-6 border-t-4 border-blue-500 border-solid rounded-full";
 
+  const DisplayOutdatedOrNot = () => {
+    if (!analysis) return null;
+
+    const timestamp = analysis.timestamp
+    const now = new Date(); 
+    if(timeFilter == "week") {
+      const isMoreThanADayOld = timestamp > new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      if(isMoreThanADayOld) {
+        return (
+          <div className="mb-4">
+            <div className="flex gap-2 justify-center items-center mb-2">
+              <h1 className="text-white bg-[#fa6f4d] font-bold w-7 h-7 rounded-full text-center text-[18px]">!</h1>
+              <h1 className="text-[#fa6f4d] font-semibold text-center">This analysis may be outdated.</h1>
+            </div>
+            <h1 className="text-[#fa6f4d] text-[13px] font-semibold text-center">Week analyses are refreshed daily. This analysis is older than a day.</h1>
+          </div>
+        );
+      }
+      else {
+        return (
+        <div className="mb-4">
+            <div className="flex gap-2 justify-center items-center mb-2">
+              <h1 className="text-white bg-green-600 font-bold w-7 h-7 rounded-full text-center text-[18px]">✓</h1>
+              <h1 className="text-green-600 font-semibold text-center">This analysis is up to date.</h1>
+            </div>
+            <h1 className="text-green-600 text-[13px] font-semibold text-center">Week analyses are refreshed daily. This analysis is less than a day old.</h1>
+        </div>
+        );
+      }
+    }
+    if(timeFilter == "year" || timeFilter == "all") {
+      const isMoreThanAMonthOld = timestamp > new Date(now.getTime() - 720 * 60 * 60 * 1000);
+      if(isMoreThanAMonthOld) {
+        return (
+          <div className="mb-4">
+            <div className="flex gap-2 justify-center items-center mb-2">
+              <h1 className="text-white bg-[#fa6f4d] font-bold w-7 h-7 rounded-full text-center text-[18px]">!</h1>
+              <h1 className="text-[#fa6f4d] font-semibold text-center">This analysis may be outdated.</h1>
+            </div>
+            <h1 className="text-[#fa6f4d] text-[13px] font-semibold text-center">{timeFilter} analyses are refreshed monthly. This analysis is older than a month.</h1>
+          </div>
+        );
+      }
+      else {
+        return (
+          <div className="mb-4">
+              <div className="flex gap-2 justify-center items-center mb-2">
+              <h1 className="text-white bg-green-600 font-bold w-7 h-7 rounded-full text-center text-[18px]">✓</h1>
+                <h1 className="text-green-600 font-semibold text-center">This analysis is up to date.</h1>
+              </div>
+              <h1 className="text-green-600 text-[13px] font-semibold text-center">{timeFilter} analyses are refreshed monthly. This analysis is less than a month old.</h1>
+          </div>
+          );
+      }
+    }
+  };
+
   return (
     <div>
       <div className="ml-2 mr-2 mt-4 mb-4 p-5 bg-white rounded-md shadow-sm">
@@ -147,14 +204,7 @@ export default function RedditAnalysisDisplay({
             <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
             <div className="flex items-center justify-center">
               <div className="flex flex-col m-2 text-[15px] items-center justify-center text-center">
-                <div className="flex gap-2 justify-center items-center mb-4">
-                  <h1 className="text-white bg-[#fa6f4d] font-bold w-7 h-7 rounded-full text-center text-[18px]">
-                    !
-                  </h1>
-                  <h1 className="text-[#fa6f4d] font-semibold text-center">
-                    This analysis may be outdated
-                  </h1>
-                </div>
+                  <DisplayOutdatedOrNot></DisplayOutdatedOrNot>
                 <h1 className="mb-4">
                   analysis generated on
                   <span className="font-bold p-1 rounded-sm">
