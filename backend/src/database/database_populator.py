@@ -23,7 +23,9 @@ subreddits = [
     "worldnews",
     "technology",
     "100YearsAgo",
-    "Feminists",
+    "AskHistorians",
+    "conspiracytheories",
+    "LetsNotMeet",
     "unpopularopinion",
     "philosophy",
     "mentalhealth",
@@ -37,19 +39,22 @@ subreddits = [
 ]
 
 async def fetch_subreddit_data(subreddit, time_filter):
-    subreddit_query = SubredditQuery(
-        name=subreddit,
-        time_filter=time_filter,
-        sort_by="top"
-    )
+    try:
+        subreddit_query = SubredditQuery(
+            name=subreddit,
+            time_filter=time_filter,
+            sort_by="top"
+        )
 
-    analysis = await perform_subreddit_analysis(subreddit_query)
-    collection = COLLECTIONS[subreddit_query.time_filter]
-    collection.update_one(
-        {"id_": subreddit_query.name},
-        {"$set": analysis.model_dump()},
-        upsert=True # insert if no match
-    )
+        analysis = await perform_subreddit_analysis(subreddit_query)
+        collection = COLLECTIONS[subreddit_query.time_filter]
+        collection.update_one(
+            {"id_": subreddit_query.name},
+            {"$set": analysis.model_dump()},
+            upsert=True # insert if no match
+        )
+    except:
+        print("something went wrong in fetch_subreddit_data")
 
 
 if __name__ == "__main__":
