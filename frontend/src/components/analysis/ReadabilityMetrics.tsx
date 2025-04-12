@@ -18,7 +18,7 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
 }) => {
   
   const data = Object.entries(analysis.readability_metrics.dale_chall_grade_levels).map(([key, value]) => ({
-    bin: key,
+    bin: key == "college_graduate" ? "> college" : key,
     count: value
   }))
 
@@ -55,7 +55,7 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
             <Bar dataKey="count" fill="#4f46e5"></Bar>
         </BarChart>
     </ResponsiveContainer>
-</div> : <h1 className="text-center text-gray-400">No data to provide</h1>;
+</div> : <h1 className="text-center text-gray-400">No data available</h1>;
 
   return (
     <div>
