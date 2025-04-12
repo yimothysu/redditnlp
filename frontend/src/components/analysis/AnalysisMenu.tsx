@@ -22,7 +22,7 @@ const Tab: React.FC<TabProps> = ({ label, isActive, onClick }) => {
 interface AnalysisMenuProps {
   timeFilter: string;
   currentMenuItem: string;
-  setCurrentMenuItem: (item: string) => void;
+  setCurrentMenuItem: any;
 }
 
 export const AnalysisMenu: React.FC<AnalysisMenuProps> = ({

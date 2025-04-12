@@ -63,7 +63,7 @@ export default function RedditAnalysisDisplay({
   const DisplayedAnalysis = () => {
     if (!analysis) return null;
 
-    switch (subredditMenu) {
+    switch (currentMenuItem === undefined ? subredditMenu : currentMenuItem) {
       case "Ranking":
         return timeFilter === "all" ? (
           <ComparativeAnalysis analysis={analysis} />
@@ -116,7 +116,7 @@ export default function RedditAnalysisDisplay({
               <h1 className="text-white bg-green-600 font-bold w-7 h-7 rounded-full text-center text-[18px]">✓</h1>
               <h1 className="text-green-600 font-semibold text-center">This analysis is up to date.</h1>
             </div>
-            <h1 className="text-green-600 text-[13px] font-semibold text-center">Week analyses are refreshed daily. This analysis is less than a day old.</h1>
+            <h1 className="text-green-600 text-[13px] font-semibold text-center">time filter = Week analyses are refreshed daily. This analysis is less than a day old.</h1>
         </div>
         );
       }
@@ -130,7 +130,7 @@ export default function RedditAnalysisDisplay({
               <h1 className="text-white bg-[#fa6f4d] font-bold w-7 h-7 rounded-full text-center text-[18px]">!</h1>
               <h1 className="text-[#fa6f4d] font-semibold text-center">This analysis may be outdated.</h1>
             </div>
-            <h1 className="text-[#fa6f4d] text-[13px] font-semibold text-center">{timeFilter} analyses are refreshed monthly. This analysis is older than a month.</h1>
+            <h1 className="text-[#fa6f4d] text-[13px] font-semibold text-center">time filter = {timeFilter} analyses are refreshed monthly. This analysis is older than a month.</h1>
           </div>
         );
       }
@@ -224,8 +224,8 @@ export default function RedditAnalysisDisplay({
             <div className="flex flex-col">
               <AnalysisMenu
                 timeFilter={timeFilter}
-                currentMenuItem={currentMenuItem != undefined ? currentMenuItem : subredditMenu}
-                setCurrentMenuItem={setCurrentMenuItem != undefined ? setCurrentMenuItem : setSubredditMenu}
+                currentMenuItem={currentMenuItem === undefined ? subredditMenu : currentMenuItem/*!inComparisonMode ? subredditMenu : currentMenuItem || "Named Entities"*/}
+                setCurrentMenuItem={currentMenuItem === undefined ? setSubredditMenu : setCurrentMenuItem/*!inComparisonMode ? setSubredditMenu : setCurrentMenuItem || setSubredditMenu*/}
               />
               <DisplayedAnalysis />
             </div>
