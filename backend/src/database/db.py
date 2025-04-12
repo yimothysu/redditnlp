@@ -1,31 +1,28 @@
 import os
-
+import sys 
 from dotenv import load_dotenv
 from pymongo.mongo_client import MongoClient
 from pymongo.server_api import ServerApi
 
-from utils.subreddit_classes import SubredditQuery
+from src.utils.subreddit_classes import SubredditQuery
 
-
-load_dotenv("./config/.env")
+dotenv_path = os.path.join(os.path.dirname(__file__), '../../config/.env')
+load_dotenv(dotenv_path)
 
 uri = os.environ["MONGODB_CONNECTION_STRING"]
 client = MongoClient(uri, server_api=ServerApi("1"))
 db = client["20_subreddits_analyses"]  
 week = db["week_analyses"]  
-month = db["month_analyses"]  
 year = db["year_analyses"] 
 all = db["all_time_analyses"]
 
 # defining 'subreddit' as the key for each collection 
 week.create_index("subreddit", unique=True)
-month.create_index("subreddit", unique=True)
 year.create_index("subreddit", unique=True)
 all.create_index("subreddit", unique=True)
 
 COLLECTIONS = {
     "week": week,
-    "month": month,
     "year": year,
     "all": all,
 }

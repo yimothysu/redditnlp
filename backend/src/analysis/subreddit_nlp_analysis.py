@@ -31,20 +31,20 @@ import spacy
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 from spacy.tokens import Doc
 
-from reddit_topic_extractor import (
+from src.data_fetchers.reddit_topic_extractor import (
     fetch_post_data,
 )
 
-from subreddit_classes import (
+from src.utils.subreddit_classes import (
     SubredditQuery,
     SubredditAnalysis,
 )
 
-from word_embeddings import (
+from src.analysis.word_embeddings import (
     get_2d_embeddings,
 )
 
-from word_cloud import (
+from src.analysis.word_cloud import (
     generate_word_cloud,
 )
 

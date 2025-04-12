@@ -1,16 +1,16 @@
 # gets all the top 20 subreddit analyses for a specific time filter and stores it in 
 # the db 
 
-from db import COLLECTIONS
+from src.database.db import COLLECTIONS
 import asyncio
 import sys
 
-from utils.subreddit_classes import (
-    SubredditQuery,
+from src.analysis.subreddit_nlp_analysis import (
+    perform_subreddit_analysis,
 )
 
-from analysis.subreddit_nlp_analysis import (
-    perform_subreddit_analysis,
+from src.utils.subreddit_classes import (
+    SubredditQuery,
 )
 
 subreddits = [
