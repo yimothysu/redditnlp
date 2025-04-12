@@ -36,4 +36,6 @@ export interface SubredditAnalysis {
 export interface RedditAnalysisDisplayProps {
   name?: string;
   inComparisonMode: string;
+  currentMenuItem: string;
+  setCurrentMenuItem: () => void;
 }
