@@ -1,28 +1,42 @@
 # gets all the top 20 subreddit analyses for a specific time filter and stores it in 
 # the db 
 
-import requests
 from db import COLLECTIONS
 import asyncio
-import time 
+import sys
 
-from subreddit_classes import (
+from utils.subreddit_classes import (
     SubredditQuery,
 )
 
-from subreddit_nlp_analysis import (
+from analysis.subreddit_nlp_analysis import (
     perform_subreddit_analysis,
 )
 
+subreddits = [
+    "AskReddit",
+    "politics",
+    "AskOldPeople",
+    "gaming",
+    "science",
+    "popculturechat",
+    "worldnews",
+    "technology",
+    "100YearsAgo",
+    "Feminists",
+    "unpopularopinion",
+    "philosophy",
+    "mentalhealth",
+    "teenagers",
+    "AskMen",
+    "AskWomen",
+    "personalfinance",
+    "changemyview",
+    "LateStageCapitalism",
+    "UpliftingNews"
+]
 
-time_filter = "week" # CHANGE IF YOU WANT A DIFFERENT TIME FILTER 
-# BASE_URL = "http://localhost:8000/analysis"
-f = open("20_subreddits.txt", "r", encoding="utf-8")
-subreddits = []
-for line in f:
-    subreddits.append(line.strip())  
-
-async def fetch_subreddit_data(subreddit):
+async def fetch_subreddit_data(subreddit, time_filter):
     subreddit_query = SubredditQuery(
         name=subreddit,
         time_filter=time_filter,
@@ -37,20 +51,17 @@ async def fetch_subreddit_data(subreddit):
         upsert=True # insert if no match
     )
 
-    """
-    response = requests.post(BASE_URL, json=subreddit_query)
-    if response.status_code == 200:
-        print("Response:", response.json())
-        if time_filter == "week": week.insert_one(response.json())
-        elif time_filter == "month": month.insert_one(response.json())
-        elif time_filter == "year": year.insert_one(response.json())
-        if time_filter == "all_time": all_time.insert_one(response.json())
-    else:
-        print("Error:", response.status_code, response.text)
-    """
-
 
 if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Error: must pass in time filter argument")
+        sys.exit(1)
+    
+    time_filter = sys.argv[1]
+    if(time_filter not in ['week', 'year', 'all']):
+        print("Error: time filter argument must be 'week', 'year', or 'all'")
+        sys.exit(1)
+    
     for subreddit in subreddits:
         print(f"Working on subreddit {subreddit}")
-        asyncio.run(fetch_subreddit_data(subreddit))
+        asyncio.run(fetch_subreddit_data(subreddit, time_filter))
