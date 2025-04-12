@@ -1,6 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
-from typing import Dict, List, Tuple 
+from typing import Dict, List, Tuple, Optional, Any
 
 class SubredditQuery(BaseModel):
     name: str
@@ -27,7 +26,7 @@ class SubredditAnalysis(BaseModel):
     top_named_entities: Dict[str, List[Tuple[str, int, float, str, List[str]]]]
     top_named_entities_embeddings: Dict[str, Tuple[float, float]]
     top_named_entities_wordcloud: str
-    readability_metrics: Dict[str, float]
+    readability_metrics: Dict[str, Any]
     # For subreddit ranking
     toxicity_score: Optional[float] = None # [0, 1] --> 0 = not toxic at all, 1 = all toxic 
     toxicity_grade: Optional[str] = None # A+ to F 
