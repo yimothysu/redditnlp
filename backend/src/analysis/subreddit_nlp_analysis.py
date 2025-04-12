@@ -132,6 +132,15 @@ def cluster_similar_entities(named_entities):
         entity_to_cluster[most_common_entity] = named_entities[most_common_entity]
     return entity_to_cluster
 
+# Entities to group together: 
+# (republican, republicans) 
+# (Democrat, democrats) 
+# (US, USA, America) 
+# (American, Americans) 
+# Anything where if you lowercase the first letter, it’s the same —> Ex: China, china
+def group_named_entities():
+    print('meow')
+
 # gets the top post urls for each named entity so users can reference the posts 
 def get_post_urls(date_to_posts, date_to_entities):
     t1 = time.time()
@@ -248,10 +257,10 @@ async def postprocess_named_entities(date, doc, set_progress):
                        'ten years', 'january', 'february', 'march', 'april', 'may', 'june',
                        'july', 'august', 'september', 'october', 'november', 'december', 'four',
                        'five', 'nine', 'this week', 'next week', 'a few more years', 'a new day', 
-                       'the other day', 'third', 'every night', 'max', 'Nah', 'Yeah', 'Yea', 'RIP', 
-                       'last night', 'six months', 'years later', 'about a week', 'more than one', 'Depends', 
+                       'the other day', 'third', 'every night', 'max', 'nah', 'yeah', 'yea', 'rip', 
+                       'last night', 'six months', 'years later', 'about a week', 'more than one', 'depends', 
                        'about a year', 'every night', 'monthly', 'each month', 'one night', 'the night', 'the year', 
-                       'a few weeks', 'nights', 'that night', 'a few hours', 'that year', 'the first year'}
+                       'a few weeks', 'nights', 'that night', 'a few hours', 'that year', 'the first year', 'time'}
     # clustered_named_entites = cluster_similar_entities(named_entities)
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
