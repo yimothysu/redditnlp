@@ -13,10 +13,11 @@ import { NamedEntities } from "./analysis/NamedEntities";
 export default function RedditAnalysisDisplay({
   name,
   inComparisonMode,
+  setCurrentMenuItem,
+  currentMenuItem
 }: RedditAnalysisDisplayProps) {
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<any | null>(null);
-  const [currentMenuItem, setCurrentMenuItem] = useState("Named Entities");
   const [isBusy, setIsBusy] = useState(false);
   const [timeFilter, setTimeFilter] = useState("week");
   const [sortBy, setSortBy] = useState("top");

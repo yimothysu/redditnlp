@@ -11,6 +11,7 @@ export default function RedditPage() {
   const { subredditName } = useParams();
   const [compareSubredditName, setCompareSubredditName] = useState("");
   const [inComparisonMode, setInComparisonMode] = useState("false");
+  const [currentMenuItem, setCurrentMenuItem] = useState("Named Entities");
 
   // When the user selects a subreddit to compare to, update state to reflect that
   const handleSubredditChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -63,6 +64,8 @@ export default function RedditPage() {
           <RedditAnalysisDisplay
             name={subredditName}
             inComparisonMode={inComparisonMode}
+            currentMenuItem={currentMenuItem}
+            setCurrentMenuItem={setCurrentMenuItem}
           />
         </div>
         {compareSubredditName && (
@@ -71,6 +74,8 @@ export default function RedditPage() {
               <RedditAnalysisDisplay
                 name={compareSubredditName}
                 inComparisonMode={inComparisonMode}
+                currentMenuItem={currentMenuItem}
+                setCurrentMenuItem={setCurrentMenuItem}
               />
             }
           </div>
