@@ -23,7 +23,7 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
   }))
 
   const histogram = analysis.readability_metrics["dale_chall_grade_levels"] && Object.keys(analysis.readability_metrics["dale_chall_grade_levels"]).length > 0 ? 
-    <div className="mt-5 flex justify-content align-center h-90 w-[100%] p-4 bg-white shadow-md rounded-xl">
+    <div className="mt-5 flex justify-content align-center h-45 sm:h-80 w-[100%] p-1 bg-white rounded-xl">
     <ResponsiveContainer width="100%" height="100%">
         <BarChart
             data={data}
@@ -67,7 +67,8 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
         <ButtonPopover title="What are readability metrics">
           Readability metrics evaluate how easy a body text is to read. This
           includes expected grade level of education required to understand a
-          text. Note: Grade level data can only be calculated for posts of 100 words or greater.
+          text. To learn more about Flesch-Kincaid scores and Dale Chall metrics, see <a href="https://pypi.org/project/py-readability-metrics/#flesch-kincaid-grade-level">here</a>.
+          Note: Grade level data can only be calculated for posts of 100 words or greater.
         </ButtonPopover>
         </div>
       <br />
@@ -75,7 +76,7 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
         <Metric name="Avg Word Count Per Title" metric={analysis.readability_metrics["avg_num_words_title"]}/>
         <Metric name="Avg Word Count Per Description" metric={analysis.readability_metrics["avg_num_words_description"]}/>
         <Metric name="Avg Flesch Grade Level" metric={analysis.readability_metrics["avg_flesch_grade_level"] == -1 ? "No Data Available": analysis.readability_metrics["avg_flesch_grade_level"]}/>
-        <div className="border bg-white border-gray-200 rounded-lg shadow-md m-2 w-1/2 p-3">
+        <div className="border bg-white border-gray-200 rounded-lg shadow-md m-2 sm:w-7/8 p-3">
           <p className="text-center text-gray-500">
             <b>Distribution of Grade Levels (Dale Chall)</b>
             {histogram}
