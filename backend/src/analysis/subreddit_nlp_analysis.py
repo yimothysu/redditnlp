@@ -247,7 +247,11 @@ async def postprocess_named_entities(date, doc, set_progress):
                        'thousands', 'af', 'weekly', 'a decade', 'another day', 'each year', 'each week',
                        'ten years', 'january', 'february', 'march', 'april', 'may', 'june',
                        'july', 'august', 'september', 'october', 'november', 'december', 'four',
-                       'five', 'nine', 'this week', 'next week', 'a few more years', 'a new day'}
+                       'five', 'nine', 'this week', 'next week', 'a few more years', 'a new day', 
+                       'the other day', 'third', 'every night', 'max', 'Nah', 'Yeah', 'Yea', 'RIP', 
+                       'last night', 'six months', 'years later', 'about a week', 'more than one', 'Depends', 
+                       'about a year', 'every night', 'monthly', 'each month', 'one night', 'the night', 'the year', 
+                       'a few weeks', 'nights', 'that night', 'a few hours', 'that year', 'the first year'}
     # clustered_named_entites = cluster_similar_entities(named_entities)
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
