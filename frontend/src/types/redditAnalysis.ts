@@ -37,5 +37,5 @@ export interface RedditAnalysisDisplayProps {
   name?: string;
   inComparisonMode: string;
   currentMenuItem: string;
-  setCurrentMenuItem: () => void;
+  setCurrentMenuItem: (item: string) => void;
 }
