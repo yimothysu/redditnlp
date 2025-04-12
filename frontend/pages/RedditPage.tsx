@@ -34,7 +34,7 @@ export default function RedditPage() {
           <option key="" value="">
             Select Subreddit
           </option>
-          {subreddits.map((r) => (
+          {subreddits.map((r) => (r != subredditName &&
             <option key={r} value={r}>
               {r}
             </option>
@@ -58,30 +58,33 @@ export default function RedditPage() {
       setInComparisonMode("false");
     }
 
-    return (
-      <div className="flex w-full">
+    if (compareSubredditName){
+      return (<div className="flex w-full">
         <div className={displayFull}>
-          <RedditAnalysisDisplay
-            name={subredditName}
-            inComparisonMode={inComparisonMode}
-            currentMenuItem={currentMenuItem}
-            setCurrentMenuItem={setCurrentMenuItem}
-          />
-        </div>
-        {compareSubredditName && (
-          <div className="w-1/2 hidden md:block">
-            {
+        <RedditAnalysisDisplay
+        name={subredditName}
+        inComparisonMode={inComparisonMode}
+        currentMenuItem={currentMenuItem}
+        setCurrentMenuItem={setCurrentMenuItem}
+      />
+      </div>
+        <div className="w-1/2 hidden md:block">
+          {
               <RedditAnalysisDisplay
                 name={compareSubredditName}
                 inComparisonMode={inComparisonMode}
                 currentMenuItem={currentMenuItem}
                 setCurrentMenuItem={setCurrentMenuItem}
               />
-            }
-          </div>
-        )}
-      </div>
-    );
+          }
+        </div>
+        </div>);
+    } else {
+      return  <RedditAnalysisDisplay
+          name={subredditName}
+          inComparisonMode={inComparisonMode}
+        />;
+    }
   };
 
   return (

@@ -13,15 +13,15 @@ import { NamedEntities } from "./analysis/NamedEntities";
 export default function RedditAnalysisDisplay({
   name,
   inComparisonMode,
-  setCurrentMenuItem,
-  currentMenuItem
+  currentMenuItem,
+  setCurrentMenuItem
 }: RedditAnalysisDisplayProps) {
   const [error, setError] = useState<string | null>(null);
   const [analysis, setAnalysis] = useState<any | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [timeFilter, setTimeFilter] = useState("week");
   const [sortBy, setSortBy] = useState("top");
-
+  const [subredditMenu, setSubredditMenu] = useState("Named Entities");
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function RedditAnalysisDisplay({
   const DisplayedAnalysis = () => {
     if (!analysis) return null;
 
-    switch (currentMenuItem) {
+    switch (subredditMenu) {
       case "Ranking":
         return timeFilter === "all" ? (
           <ComparativeAnalysis analysis={analysis} />
@@ -224,8 +224,8 @@ export default function RedditAnalysisDisplay({
             <div className="flex flex-col">
               <AnalysisMenu
                 timeFilter={timeFilter}
-                currentMenuItem={currentMenuItem}
-                setCurrentMenuItem={setCurrentMenuItem}
+                currentMenuItem={currentMenuItem != undefined ? currentMenuItem : subredditMenu}
+                setCurrentMenuItem={setCurrentMenuItem != undefined ? setCurrentMenuItem : setSubredditMenu}
               />
               <DisplayedAnalysis />
             </div>
