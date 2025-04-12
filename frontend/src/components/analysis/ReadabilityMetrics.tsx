@@ -23,7 +23,7 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
   }))
 
   const histogram = analysis.readability_metrics["dale_chall_grade_levels"] && Object.keys(analysis.readability_metrics["dale_chall_grade_levels"]).length > 0 ? 
-    <div className="mt-5 flex justify-content align-center h-90 w-[50%] p-4 bg-white shadow-md rounded-xl">
+    <div className="mt-5 flex justify-content align-center h-90 w-[100%] p-4 bg-white shadow-md rounded-xl">
     <ResponsiveContainer width="100%" height="100%">
         <BarChart
             data={data}
