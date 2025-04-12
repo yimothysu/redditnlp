@@ -25,7 +25,7 @@ export interface SubredditAnalysis {
     avg_num_words_title: number;
     avg_num_words_description: number;
     avg_flesch_grade_level: number;
-    avg_dale_chall_grade_level: number;
+    dale_chall_grade_levels: Record<string, number>;
   };
   top_named_entities: Record<string, NamedEntity[]>;
   top_n_grams: Record<string, NGram[]>;
