@@ -36,19 +36,38 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
   if (Object.keys(entity[4]).length === 0) {
     return null;
   }
-  return (
-    <div className="mt-4">
-      {Object.entries(entity[4]).map(([_, link]) => (
-        <div
-          onClick={() => window.open(link, "_blank")}
-          className="bg-gray-50 hover:bg-gray-100 transition-colors duration-200 p-3 text-sm font-medium rounded-lg text-gray-700 text-center flex items-center justify-center cursor-pointer border border-gray-100"
-        >
-          Top Post discussing "{entity[0]}"
-          <ChevronRight className="w-5 h-5 ml-2 text-gray-500" />
-        </div>
-      ))}
-    </div>
-  );
+
+  console.log("entity[4].length: ", entity[4].length)
+  if(Number(entity[4].length) == 1) {
+    return (
+      <div className="mt-4">
+        {Object.entries(entity[4]).map(([_, link]) => (
+          <div
+            onClick={() => window.open(link, "_blank")}
+            className="bg-gray-50 hover:bg-gray-100 transition-colors duration-200 p-3 text-sm font-medium rounded-lg text-gray-700 text-center flex items-center justify-center cursor-pointer border border-gray-100"
+          >
+            Top Post discussing "{entity[0]}"
+            <ChevronRight className="w-5 h-5 ml-2 text-gray-500" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+  else {
+    return (
+      <div className="mt-4">
+        {Object.entries(entity[4]).map(([idx, link]) => (
+          <div
+            onClick={() => window.open(link, "_blank")}
+            className="m-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 p-3 text-sm font-medium rounded-lg text-gray-700 text-center flex items-center justify-center cursor-pointer border border-gray-100"
+          >
+            #{Number(idx) + 1} Top Post discussing "{entity[0]}"
+            <ChevronRight className="w-5 h-5 ml-2 text-gray-500" />
+          </div>
+        ))}
+      </div>
+    );
+  }
 };
 
 const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
