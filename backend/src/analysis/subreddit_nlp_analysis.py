@@ -75,7 +75,9 @@ TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'month': 100, 'week': 50}
 
 load_dotenv()
 
-TIME_FILTER = "week"
+config = {
+    "time_filter": "week"
+}
 
 # Perhaps naive filtering of named entities
 # Returns true iff name is a valid named entity name
@@ -131,10 +133,10 @@ def cluster_similar_entities(named_entities):
     return entity_to_cluster
 
 # gets the top post urls for each named entity so users can reference the posts 
-def get_post_urls(date_to_posts, date_to_entities, time_filter):
+def get_post_urls(date_to_posts, date_to_entities):
     t1 = time.time()
     time_filter_to_post_url_limit = {'week': 1, 'year': 3, 'all': 3}
-    num_urls_max = time_filter_to_post_url_limit[time_filter]
+    num_urls_max = time_filter_to_post_url_limit[config['time_filter']]
     new_date_to_entities = {}
     for date, entities in date_to_entities.items():
         for entity in entities:
@@ -216,7 +218,7 @@ async def get_subreddit_analysis(sorted_slice_to_posts, set_progress): # called 
     for date, entities in results:
         top_named_entities[date] = entities
 
-    top_named_entities = get_post_urls(sorted_slice_to_posts, top_named_entities, TIME_FILTER)
+    top_named_entities = get_post_urls(sorted_slice_to_posts, top_named_entities)
 
     t5 = time.time()
     print('finished NER analysis in: ', t5-t2)
@@ -375,7 +377,7 @@ def summarize_comments(entity, flattened_comments):
     #print('# characters in text: ', len(text))
     summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
     time_filter_to_key_points_limit = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
-    key_points_limit = time_filter_to_key_points_limit[TIME_FILTER]
+    key_points_limit = time_filter_to_key_points_limit[config['time_filter']]
     complete_summary = ""
     if len(flattened_comments) > 2500:
         t1 = time.time()
@@ -588,8 +590,9 @@ def get_readability_metrics(posts):
 #   key = date of slice (Ex: 07/24)
 #   value = vector of RedditPost objects for slice 
 
-def slice_posts_list(posts_list, time_filter):
+def slice_posts_list(posts_list):
     slice_to_posts = dict()
+    time_filter = config['time_filter']
     for post in posts_list:
         # convert post date from utc to readable format 
         date_format = ''
@@ -618,7 +621,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     def set_progress(_bruh_):
         pass
     
-    TIME_FILTER = subreddit_query.time_filter
+    config['time_filter'] = subreddit_query.time_filter
 
     reddit = asyncpraw.Reddit(
         client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -681,7 +684,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     # Save post to file (uncomment to use)
     # await print_to_json(posts_list, "posts.txt")
 
-    sorted_slice_to_posts = slice_posts_list(posts_list, subreddit_query.time_filter)
+    sorted_slice_to_posts = slice_posts_list(posts_list)
     print('Finished getting sorted_slice_to_posts')
     print('got posts from the slices: ', sorted_slice_to_posts.keys())
     
