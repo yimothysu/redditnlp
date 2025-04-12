@@ -1,6 +1,6 @@
 interface MetricProps {
     name: string;
-    metric: number;
+    metric: string | number;
   }
   
   export const Metric: React.FC<MetricProps> = ({ name, metric }) => {
