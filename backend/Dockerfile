@@ -1,6 +1,7 @@
 FROM python:3.12
 WORKDIR /code
-COPY ./requirements_docker.txt /code/requirements.txt
+COPY ./requirements/requirements_docker.txt /code/requirements.txt
 RUN pip install --no-cache-dir --upgrade -r /code/requirements.txt
-COPY ./ /code
-CMD ["fastapi", "run", "main.py", "--port", "80"]
+COPY ./data/ /code/data/
+COPY ./src/ /code/src/
+CMD ["fastapi", "run", "src/main.py", "--port", "80"]

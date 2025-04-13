@@ -1,6 +1,7 @@
 from http.client import BAD_REQUEST
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List
 
@@ -14,15 +15,17 @@ import aiofiles
 import json
 import random
 
-from subreddit_classes import (
+from src.utils.subreddit_classes import (
     SubredditQuery,
     SubredditAnalysis,
 )
 
-from db import (
+from src.database.db import (
     fetch_subreddit_analysis,
 )
 
+from src.data_fetchers.toxicity_fetcher import get_toxicity_metrics 
+from src.data_fetchers.positive_content_fetcher import get_positive_content_metrics
 
 # Constants
 
@@ -70,6 +73,10 @@ class Comment(BaseModel):
 #     name: str 
 #     count: int 
 #     sentiment_score: float
+
+class SubredditRequest(BaseModel):
+    subreddit: str
+    email: str
 
 
 # Methods
@@ -144,7 +151,33 @@ async def fetch_subreddit_analysis_from_db(
         raise HTTPException(
             status_code=404, detail="Analysis not found for the given subreddit."
         )
+    toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores, all_toxicity_grades = await get_toxicity_metrics(subreddit_query.name)
+    positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores, all_positive_content_grades = await get_positive_content_metrics(subreddit_query.name)
+    
+    print(type(analysis))
+
+    analysis["toxicity_score"] = toxicity_score 
+    analysis["toxicity_grade"] = toxicity_grade 
+    analysis["toxicity_percentile"] = toxicity_percentile 
+    analysis["all_toxicity_scores"] = all_toxicity_scores 
+    analysis["all_toxicity_grades"] = all_toxicity_grades 
+    
+    analysis["positive_content_score"] = positive_content_score 
+    analysis["positive_content_grade"] = positive_content_grade 
+    analysis["positive_content_percentile"] = positive_content_percentile 
+    analysis["all_positive_content_scores"] = all_positive_content_scores
+    analysis["all_positive_content_grades"] = all_positive_content_grades 
+    
     return analysis
+
+@app.post("/request_subreddit/", status_code=status.HTTP_204_NO_CONTENT)
+async def request_subreddit(
+    subreddit_request: SubredditRequest,
+):
+    # TODO: Implement
+    print(f"Subreddit Request from {subreddit_request.email} for the subreddit r/{subreddit_request.subreddit}")
+    
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 """
