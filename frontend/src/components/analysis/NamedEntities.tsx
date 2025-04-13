@@ -37,8 +37,8 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
     return null;
   }
 
-  console.log("entity[4].length: ", entity[4].length)
-  if(Number(entity[4].length) == 1) {
+  console.log("entity[4].length: ", entity[4].length);
+  if (Number(entity[4].length) == 1) {
     return (
       <div className="mt-4">
         {Object.entries(entity[4]).map(([_, link]) => (
@@ -52,8 +52,7 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
         ))}
       </div>
     );
-  }
-  else {
+  } else {
     return (
       <div className="mt-4">
         {Object.entries(entity[4]).map(([idx, link]) => (
@@ -109,9 +108,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
               className="bg-white p-5 transition-all duration-200 border border-gray-100 hover:border-gray-200"
             >
               <div className="flex justify-center mb-4">
-                <h4 className="text-lg font-bold text-gray-800">
-                  {entity[0]}
-                </h4>
+                <h4 className="text-lg font-bold text-gray-800">{entity[0]}</h4>
               </div>
               <div className="space-y-4">
                 <div className="flex flex-col items-center">
@@ -177,10 +174,7 @@ const NamedEntitiesMenu: React.FC<{
   return (
     <div className="flex mt-2 mb-6 w-auto bg-white border border-gray-300 z-10 rounded-md">
       {dates.map((date, idx) => (
-        <div
-          key={date}
-          className={idx !== 0 ? "border-l border-gray-300" : ""}
-        >
+        <div key={date} className={idx !== 0 ? "border-l border-gray-300" : ""}>
           <div
             onClick={() => setCurrentDate(date)}
             className={`px-4 py-2 cursor-pointer hover:bg-indigo-50 ${
@@ -200,7 +194,9 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
   timeFilter,
 }) => {
   const [currentNamedEntityDate, setCurrentNamedEntityDate] = useState(
-    Object.keys(analysis.top_named_entities)[0]
+    Object.keys(analysis.top_named_entities).sort(
+      (a, b) => new Date(b).getTime() - new Date(a).getTime()
+    )[0]
   );
 
   return (
@@ -217,7 +213,11 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
       </div>
       <div className="flex flex-col items-center justify-center">
         <NamedEntitiesMenu
-          dates={Array.from(Object.keys(analysis.top_named_entities))}
+          dates={Array.from(
+            Object.keys(analysis.top_named_entities).sort(
+              (a, b) => new Date(b).getTime() - new Date(a).getTime()
+            )
+          )}
           currentDate={currentNamedEntityDate}
           setCurrentDate={setCurrentNamedEntityDate}
           timeFilter={timeFilter}
