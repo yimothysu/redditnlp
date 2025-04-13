@@ -32,7 +32,9 @@ function SubredditsCached() {
   return (
     <>
       <Helmet>
-        <title>Reddit NLP</title>
+        <title>
+          Reddit NLP: Explore Natural Language in Reddit Communities
+        </title>
         <meta name="description" content="Explore NLP for Reddit communities" />
         <meta
           name="keywords"
