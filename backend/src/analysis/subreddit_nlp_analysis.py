@@ -70,8 +70,9 @@ summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
 # Strategy: First query a bunch of posts up to the limit defined by TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT. 
 # Then throw away the posts which have an empty description (means OP posted a link or a photo.) 
 # Then with the remaining posts, query the comments of posts up to the limit defined by TIME_FILTER_TO_POST_LIMIT 
-TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'month': 500, 'week': 200}
-TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'month': 100, 'week': 50}
+TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'week': 200}
+TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'week': 50}
+TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 12, 'year': 10, 'week': 8}
 
 load_dotenv()
 
@@ -132,12 +133,6 @@ def cluster_similar_entities(named_entities):
         entity_to_cluster[most_common_entity] = named_entities[most_common_entity]
     return entity_to_cluster
 
-# Entities to group together: 
-# (republican, republicans) 
-# (Democrat, democrats) 
-# (US, USA, America) 
-# (American, Americans) 
-# Anything where if you lowercase the first letter, it’s the same —> Ex: China, china
 def group_named_entities():
     print('meow')
 
@@ -260,7 +255,8 @@ async def postprocess_named_entities(date, doc, set_progress):
                        'the other day', 'third', 'every night', 'max', 'nah', 'yeah', 'yea', 'rip', 
                        'last night', 'six months', 'years later', 'about a week', 'more than one', 'depends', 
                        'about a year', 'every night', 'monthly', 'each month', 'one night', 'the night', 'the year', 
-                       'a few weeks', 'nights', 'that night', 'a few hours', 'that year', 'the first year', 'time'}
+                       'a few weeks', 'nights', 'that night', 'a few hours', 'that year', 'the first year', 'time',
+                       'a couple of years'}
     # clustered_named_entites = cluster_similar_entities(named_entities)
     filtered_named_entities = Counter()
     for name, count in named_entities.items():
@@ -270,7 +266,8 @@ async def postprocess_named_entities(date, doc, set_progress):
         filtered_named_entities[name] = count
     t2 = time.time()
 
-    top_ten_entities = filtered_named_entities.most_common(6)
+
+    top_ten_entities = filtered_named_entities.most_common(TIME_FILTER_TO_NAMED_ENTITIES_LIMIT[config['time_filter']])
     top_ten_entity_names = set([entity[0] for entity in top_ten_entities])
     # Write entity_to_sentences to a text file - I want to inspect the sentences individually
     #f = open("entity_to_sentences.txt", "w", encoding="utf-8")
@@ -283,9 +280,14 @@ async def postprocess_named_entities(date, doc, set_progress):
     for i in range(len(top_ten_entities)):
         entity_name = top_ten_entities[i][0]
         entity_count = top_ten_entities[i][1]
-        entity_sentiment = round(entity_to_sentiment[entity_name], 2)
-        entity_sentences = entity_to_sentences[entity_name]
-        top_ten_entities[i] = (entity_name, entity_count, entity_sentiment, entity_sentences)
+        if entity_name in entity_to_sentiment:
+            entity_sentiment = round(entity_to_sentiment[entity_name], 2)
+            entity_sentences = entity_to_sentences[entity_name]
+            top_ten_entities[i] = (entity_name, entity_count, entity_sentiment, entity_sentences)
+        else:
+            top_ten_entities[i] = None
+    
+    top_ten_entities = [top_entity for top_entity in top_ten_entities if top_entity is not None]
 
     set_progress(1.0)
 
@@ -321,10 +323,72 @@ async def get_sentiments_of_entities(top_ten_entity_names, doc):
     
     tasks = [asyncio.to_thread(summarize_comments, entity, entity_to_flattened_sentences[entity]) for entity in entity_to_sentences]
     summarized_comments_results = await asyncio.gather(*tasks)
+    summarized_comments_results = [result for result in summarized_comments_results if result is not None]
     for entity, summary in summarized_comments_results:
         entity_to_summary[entity] = summary
+    
+    entity_to_sentiment, entity_to_summary = combine_same_entities(entity_to_sentiment, entity_to_summary)
+    return entity_to_sentiment, entity_to_summary
+
+
+def combine_entity_summaries_and_sentiments(entity_to_sentiment, entity_to_summary, entity_1, entity_2):
+    combined_sentiment = (entity_to_sentiment[entity_1] + entity_to_sentiment[entity_2]) / 2
+    entity_to_sentiment[entity_1] = combined_sentiment
+    del entity_to_sentiment[entity_2]
+
+    combined_summary = entity_to_summary[entity_1] + " \n " + entity_to_summary[entity_2]
+    _, combined_summary = summarize_comments(entity_1, combined_summary)
+    entity_to_summary[entity_1] = combined_summary
+    del entity_to_summary[entity_2]
 
     return entity_to_sentiment, entity_to_summary
+
+
+def combine_same_entities(entity_to_sentiment, entity_to_summary):
+    # Combine entities that refer to the same thing
+    # Ex: (republican, republicans), (Democrat, democrats), (US, USA, America), (American, Americans) 
+    # Any pair of entities that are the same if you lowercase the first letter —> Ex: China, china
+    
+    print('inside combine_same_entities')
+    for entity in list(entity_to_summary.keys()):
+        entity_lowercase = entity[0].lower() + entity[1:]
+        entity_lowercase_plural = entity[0].lower() + entity[1:] + "s"
+        entity_plural = entity + "s"
+        
+        if entity_lowercase in entity_to_summary and entity != entity_lowercase:
+            print('combining ', entity, ' and ', entity_lowercase)
+            entity_to_sentiment, entity_to_summary = combine_entity_summaries_and_sentiments(entity_to_sentiment, entity_to_summary, entity, entity_lowercase)
+        
+        if entity_lowercase_plural in entity_to_summary:
+            print('combining ', entity, ' and ', entity_lowercase_plural)
+            entity_to_sentiment, entity_to_summary = combine_entity_summaries_and_sentiments(entity_to_sentiment, entity_to_summary, entity, entity_lowercase_plural)
+        
+        if entity_plural in entity_to_summary:
+            print('combining ', entity, ' and ', entity_plural)
+            entity_to_sentiment, entity_to_summary = combine_entity_summaries_and_sentiments(entity_to_sentiment, entity_to_summary, entity, entity_plural)
+
+        america_synonyms = ["USA", "US", "America", "america", "usa"]
+        if entity in america_synonyms and entity in entity_to_summary:
+            america_synonyms.remove(entity)
+            sentiments = [entity_to_sentiment[entity]]
+            summaries = [entity_to_summary[entity]]
+            
+            for america_synonym in america_synonyms:
+                if america_synonym in entity_to_summary:
+                    sentiments.append(entity_to_sentiment[america_synonym])
+                    summaries.append(entity_to_summary[america_synonym])
+                    del entity_to_sentiment[america_synonym]
+                    del entity_to_summary[america_synonym]
+            
+            if len(sentiments) > 1:
+                print('combining ', entity, ' with ', len(sentiments), ' synonyms')
+                combined_sentiment = sum(sentiments) / len(sentiments)
+                _, combined_summary = summarize_comments(entity, ' \n '.join(summaries))
+                entity_to_sentiment[entity] = combined_sentiment
+                entity_to_summary[entity] = combined_summary
+
+    return entity_to_sentiment, entity_to_summary 
+    
 
 def split_string_into_chunks(text, num_chunks):
     words = text.split()
