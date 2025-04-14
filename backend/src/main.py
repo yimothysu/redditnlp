@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List
+from email.message import EmailMessage
 
 import asyncpraw
 import os 
@@ -177,6 +178,14 @@ async def request_subreddit(
     # TODO: Implement
     print(f"Subreddit Request from {subreddit_request.email} for the subreddit r/{subreddit_request.subreddit}")
     
+    msg = EmailMessage()
+    msg["Subject"] = "Subreddit Analysis Request"
+    msg["From"] = "" # TODO
+    msg["To"] = "" # TODO
+    msg.set_content(
+        f"A user with email {subreddit_request.email} has requested analysis for the subreddit r/{subreddit_request.subreddit}."
+    )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
