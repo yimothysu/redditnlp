@@ -1,10 +1,6 @@
 import numbers 
 import re 
 from collections import Counter
-from pydantic import BaseModel
-from typing import Dict, List, Tuple 
-import concurrent.futures
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor, as_completed
 import time
 import asyncio
 import re
@@ -14,7 +10,7 @@ import random
 import asyncpraw
 from dotenv import load_dotenv
 from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-from datetime import datetime, timezone
+from datetime import datetime
 from readability import Readability
 from collections import defaultdict
 
@@ -29,9 +25,8 @@ from nltk.stem import WordNetLemmatizer
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import spacy 
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
-from spacy.tokens import Doc
 
-from src.data_fetchers.reddit_topic_extractor import (
+from src.data_fetchers.reddit_post_fetcher import (
     fetch_post_data,
 )
 

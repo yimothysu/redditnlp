@@ -1,7 +1,6 @@
 import gensim.downloader as api
 #from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
-import matplotlib.pyplot as plt
 import numpy as np
 
 model = api.load("word2vec-google-news-300")

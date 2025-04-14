@@ -10,12 +10,6 @@ import asyncpraw
 import os 
 from dotenv import load_dotenv
 
-from praw.models import MoreComments
-# TODO: Remove aiofiles if not needed
-import aiofiles
-import json
-import random
-
 from src.utils.subreddit_classes import (
     SubredditQuery,
     SubredditAnalysis,
@@ -78,55 +72,6 @@ class Comment(BaseModel):
 class SubredditRequest(BaseModel):
     subreddit: str
     email: str
-
-
-# Methods
-
-async def fetch_post_data(post):
-    # get the post's comments 
-    #print("inside fetch_post_data")
-    try:
-        comments = await post.comments()
-        post_comments = []  
-        comment_scores = []
-        for comment in comments:
-            if isinstance(comment, MoreComments): continue
-            if hasattr(comment, "body"):
-                post_comments.append(comment.body)
-            if hasattr(comment, "score"):
-                comment_scores.append(comment.score)
-
-        # randomly sampling comments if there's a large # of comments 
-        if len(post_comments) > 30 and len(post_comments) <= 60:
-            post_comments = random.sample(post_comments, 25)
-        if len(post_comments) > 60 and len(post_comments) <= 100:
-            post_comments = random.sample(post_comments, 50)
-        if len(post_comments) > 100:
-            post_comments = random.sample(post_comments, 75)
-
-        return RedditPost(
-            title=post.title,
-            description=post.selftext,
-            score=post.score,
-            url=post.url,
-            created_utc=post.created_utc,
-            num_comments=post.num_comments,
-            comments=post_comments,
-            comment_scores=comment_scores
-        )
-    except:
-        print('could not get post comments')
-
-async def print_to_json(posts_list, filename):
-    # Save post to file
-    # TODO: Save to database (maybe)
-    try:
-        json_data = json.dumps([post.to_dict() for post in posts_list], indent=4)
-        async with aiofiles.open("posts.txt", "w") as f:
-            await f.write(json_data)
-        print("Posts saved to file")
-    except Exception as e:
-        print(f"Error saving posts to file: {e}")
 
 
 # API
