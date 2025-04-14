@@ -153,7 +153,9 @@ export default function RedditAnalysisDisplay({
       <div className="ml-2 mr-2 mt-4 mb-4 p-5 bg-white rounded-md shadow-sm">
         <div className="flex flex-col items-center mb-6">
           <SubredditAvatar subredditName={name ?? ""} />
-          <h1 className="text-lg font-bold">r/{name}</h1>
+          <a target="_blank" href={`https://reddit.com/r/` + name}>
+            <h1 className="text-lg font-bold">r/{name}</h1>
+          </a>
         </div>
         <div className="flex justify-center items-center gap-4 mb-2">
           <div>
