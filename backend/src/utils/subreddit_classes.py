@@ -9,21 +9,28 @@ class SubredditQuery(BaseModel):
     def to_composite_key(self) -> str:
         return f"{self.name}#{self.time_filter}#{self.sort_by}"
 
+
+class NamedEntity(BaseModel):
+    name: str
+    count: int 
+    sentiment: Optional[float] = None 
+    key_points: Optional[List[str]] = None 
+    urls: Optional[List[str]] = None
+
+
+class NGram(BaseModel):
+    name: str
+    count: int 
+
+
 class SubredditAnalysis(BaseModel):
     timestamp: int # when the analysis was generated 
     num_words: int 
     subreddit: str
-    #  key = date, value = list of top n grams for slice 
-    # Tuple[str, int] = (n-gram, n-gram # occurrences)
-    top_n_grams: Dict[str, List[Tuple[str, int]]]
-    # key = date, value = list of top 10 named entities for slice 
-    # Tuple[str, int, float, List[str]] = 
-    #   1. named entity
-    #   2. named entity # occurrences
-    #   3. named entity sentiment score
-    #   4. summary of comments regarding named entity 
-    #   5. urls of most relevant posts that mention the named entity 
-    top_named_entities: Dict[str, List[Tuple[str, int, float, str, List[str]]]]
+    #  key = date
+    top_n_grams: Dict[str, List[NGram]]
+    # key = date 
+    top_named_entities: Dict[str, List[NamedEntity]]
     top_named_entities_embeddings: Dict[str, Tuple[float, float]]
     top_named_entities_wordcloud: str
     readability_metrics: Dict[str, Any]
@@ -39,4 +46,6 @@ class SubredditAnalysis(BaseModel):
     positive_content_percentile: Optional[float] = None # [0, 100]
     all_positive_content_scores: Optional[List[float]] = None # for generating a positive content scores distribution graph on the UI 
     all_positive_content_grades: Optional[List[str]] = None # for generating a positive content grades distribution graph on the UI
+
+
 

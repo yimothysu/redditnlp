@@ -1,5 +1,4 @@
-import gensim.downloader as api
-#from sklearn.manifold import TSNE
+import gensim.downloader as api # type: ignore
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
 import numpy as np
