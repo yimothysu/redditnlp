@@ -1,12 +1,12 @@
 export type NGram = [string, number];
 
-export type NamedEntity = [
-  string,
-  number,
-  number,
-  string,
-  Record<string, string>
-];
+export interface NamedEntity {
+  name: string, 
+  count: number,
+  sentiment: number,
+  key_points: string[],
+  urls: string[]
+};
 
 export interface SubredditAnalysis {
   timestamp: number;

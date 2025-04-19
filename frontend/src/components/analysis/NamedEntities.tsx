@@ -17,15 +17,12 @@ interface TopNamedEntitiesForDateProps {
 }
 
 const SummarizedSentimentBulletPoints: React.FC<{
-  summary: string;
-}> = ({ summary }) => {
-  if (!summary) return null;
-  const sentences = summary
-    .split("---")
-    .filter((sentence: string) => sentence.trim() !== "");
+  key_points: string[];
+}> = ({ key_points }) => {
+  if (!key_points) return null;
   return (
     <ul className="list-disc pl-4">
-      {sentences.map((sentence: string, index: number) => (
+      {key_points.map((sentence: string, index: number) => (
         <li key={index}>{sentence.trim()}</li>
       ))}
     </ul>
@@ -33,20 +30,20 @@ const SummarizedSentimentBulletPoints: React.FC<{
 };
 
 const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
-  if (Object.keys(entity[4]).length === 0) {
+  if (Object.keys(entity.urls).length === 0) {
     return null;
   }
 
-  console.log("entity[4].length: ", entity[4].length);
-  if (Number(entity[4].length) == 1) {
+  console.log("entity[4].length: ", entity.urls.length);
+  if (Number(entity.urls.length) == 1) {
     return (
       <div className="mt-4">
-        {Object.entries(entity[4]).map(([_, link]) => (
+        {Object.entries(entity.urls).map(([_, link]) => (
           <div
             onClick={() => window.open(link, "_blank")}
             className="bg-gray-50 hover:bg-gray-100 transition-colors duration-200 p-3 text-sm font-medium rounded-lg text-gray-700 text-center flex items-center justify-center cursor-pointer border border-gray-100"
           >
-            Top Post discussing "{entity[0]}"
+            Top Post discussing "{entity.name}"
             <ChevronRight className="w-5 h-5 ml-2 text-gray-500" />
           </div>
         ))}
@@ -55,12 +52,12 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
   } else {
     return (
       <div className="mt-4">
-        {Object.entries(entity[4]).map(([idx, link]) => (
+        {Object.entries(entity.urls).map(([idx, link]) => (
           <div
             onClick={() => window.open(link, "_blank")}
             className="m-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 p-3 text-sm font-medium rounded-lg text-gray-700 text-center flex items-center justify-center cursor-pointer border border-gray-100"
           >
-            #{Number(idx) + 1} Top Post discussing "{entity[0]}"
+            #{Number(idx) + 1} Top Post discussing "{entity.name}"
             <ChevronRight className="w-5 h-5 ml-2 text-gray-500" />
           </div>
         ))}
@@ -91,15 +88,15 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-0.5 bg-gray-100">
         {entities.map((entity: NamedEntity, index: number) => {
           const backgroundColor =
-            entity[2] >= 0.5 && entity[2] <= 1
+            entity.sentiment >= 0.5 && entity.sentiment <= 1
               ? "#AFE1AF"
-              : entity[2] >= 0.1 && entity[2] < 0.5
+              : entity.sentiment >= 0.1 && entity.sentiment < 0.5
               ? "#e2f4a5"
-              : entity[2] >= -0.1 && entity[2] < 0.1
+              : entity.sentiment >= -0.1 && entity.sentiment < 0.1
               ? "#FFFFC5"
-              : entity[2] >= -0.5 && entity[2] < -0.1
+              : entity.sentiment >= -0.5 && entity.sentiment < -0.1
               ? "#FFD580"
-              : entity[2] >= -1 && entity[2] < -0.5
+              : entity.sentiment >= -1 && entity.sentiment < -0.5
               ? "#ffb9b9"
               : "bg-gray-100";
           return (
@@ -108,7 +105,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
               className="bg-white p-5 transition-all duration-200 border border-gray-100 hover:border-gray-200"
             >
               <div className="flex justify-center mb-4">
-                <h4 className="text-lg font-bold text-gray-800">{entity[0]}</h4>
+                <h4 className="text-lg font-bold text-gray-800">{entity.name}</h4>
               </div>
               <div className="space-y-4">
                 <div className="flex flex-col items-center">
@@ -118,17 +115,17 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
                       backgroundColor,
                     }}
                   >
-                    Sentiment Score: {entity[2].toFixed(2)}
+                    Sentiment Score: {entity.sentiment.toFixed(2)}
                   </span>
                 </div>
 
-                {entity[3] && (
+                {entity.key_points && (
                   <div className="space-y-2">
                     <h5 className="font-semibold text-gray-700 text-sm">
                       Key Points
                     </h5>
                     <div className="text-sm text-gray-600">
-                      <SummarizedSentimentBulletPoints summary={entity[3]} />
+                      <SummarizedSentimentBulletPoints key_points={entity.key_points} />
                     </div>
                   </div>
                 )}
