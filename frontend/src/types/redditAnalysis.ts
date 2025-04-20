@@ -1,4 +1,7 @@
-export type NGram = [string, number];
+export interface NGram {
+  name: string,
+  count: number
+};
 
 export interface NamedEntity {
   name: string, 
