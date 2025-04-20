@@ -22,7 +22,7 @@ export default function RedditAnalysisDisplay({
   const [isBusy, setIsBusy] = useState(false);
   const [timeFilter, setTimeFilter] = useState("week");
   const [sortBy, setSortBy] = useState("top");
-  const [subredditMenu, setSubredditMenu] = useState("Named Entities");
+  const [subredditMenu, setSubredditMenu] = useState("Trends");
   const isMounted = useRef(true);
 
   useEffect(() => {
