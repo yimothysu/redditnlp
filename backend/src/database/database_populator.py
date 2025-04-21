@@ -90,14 +90,16 @@ if __name__ == "__main__":
         print("Error: time filter argument must be 'week', 'year', or 'all'")
         sys.exit(1)
     
-    if not isinstance(start_from_idx, int):
+    try:
+        if int(start_from_idx) < 0 or int(start_from_idx) >= len(subreddits):
+            print("Error: not a valid start from index argument. Must be between 0 and ", len(subreddits), " inclusive")
+    except: 
         print("Error: start from index argument must be an integer")
         sys.exit(1)
     
-    if start_from_idx < 0 or start_from_idx >= len(subreddits):
-        print("Error: not a valid start from index argument. Must be between 0 and ", len(subreddits), " inclusive")
-    
-    for start_from_idx in range(len(subreddits)):
-        subreddit = subreddits[start_from_idx]
+    start_from_idx = int(start_from_idx)
+    print('start_from_idx: ', start_from_idx)
+    for i in range(start_from_idx, len(subreddits)):
+        subreddit = subreddits[i]
         print(f"Working on subreddit {subreddit}")
         asyncio.run(fetch_subreddit_data(subreddit, time_filter))
