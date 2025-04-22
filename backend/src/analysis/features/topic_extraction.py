@@ -2,6 +2,7 @@
 
 from bertopic import BERTopic
 
+
 def extract_topics(texts, num_topics=10):
     """Extract topics from a list of texts using BERTopic.
     

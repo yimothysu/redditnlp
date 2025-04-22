@@ -43,6 +43,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
 class RedditPost(BaseModel):
     """Represents a Reddit post with its metadata and comments."""
     title: str
@@ -58,15 +59,18 @@ class RedditPost(BaseModel):
         """Convert RedditPost to dictionary format."""
         return self.model_dump()
 
+
 class Comment(BaseModel):
     """Represents a Reddit comment with its text and score."""
     text: str
     score: int
 
+
 class SubredditRequest(BaseModel):
     """Request model for subreddit analysis requests."""
     subreddit: str
     email: str
+
 
 @app.post("/analysis/", response_model=SubredditAnalysis)
 async def fetch_subreddit_analysis_from_db(
@@ -117,6 +121,7 @@ async def fetch_subreddit_analysis_from_db(
     
     return analysis
 
+
 @app.post("/request_subreddit/", status_code=status.HTTP_204_NO_CONTENT)
 async def request_subreddit(
     subreddit_request: SubredditRequest,
@@ -134,14 +139,17 @@ async def request_subreddit(
 
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
 class SubredditInfo(BaseModel):
     """Basic information about a subreddit."""
     name: str
     description: str
 
+
 class PopularSubreddits(BaseModel):
     """Container for list of popular subreddits."""
     reddits: List[SubredditInfo]
+
 
 @app.get("/popular_subreddits", response_model=PopularSubreddits)
 async def get_popular_subreddits():
@@ -163,6 +171,7 @@ async def get_popular_subreddits():
             )
     await reddit.close()
     return PopularSubreddits(reddits=reddits)
+
 
 if __name__ == "__main__":
     import uvicorn

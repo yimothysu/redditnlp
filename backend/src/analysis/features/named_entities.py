@@ -69,12 +69,10 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
     dates = list(post_content_grouped_by_date.keys())
     post_content = list(post_content_grouped_by_date.values())
     
-    '''
-     for each entity, get: 
-       - sentiment score
-       - key points
-       - top post urls 
-    '''
+    # for each entity, get: 
+    #    - sentiment score
+    #    - key points
+    #    - top post urls
     t1 = time.time()
     nlp = spacy.load("en_core_web_sm", disable=["parser", "tagger"])
     nlp.add_pipe('sentencizer')
@@ -161,6 +159,15 @@ async def postprocess_named_entities(date, doc):
 
 
 async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc):
+    """Get sentiment and key points for top entities from a spaCy document.
+    
+    Args:
+        top_entity_names: List of entity names to analyze
+        doc: spaCy Doc object
+    Returns:
+        entity_to_sentiment: Dictionary mapping entity names to sentiment scores
+        entity_to_key_points: Dictionary mapping entity names to key points
+    """
     entity_to_sentiment  = dict()
     entity_to_sentences = dict()
     entity_to_flattened_sentences = dict()
@@ -196,12 +203,12 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc):
     entity_to_sentiment, entity_to_key_points = combine_same_entities(entity_to_sentiment, entity_to_key_points)
     return entity_to_sentiment, entity_to_key_points
 
-'''
-    For 2 entities that refer to the same thing but have a slightly different spelling (Ex: US, USA), MERGE the 2 entities.
-        - Take the average of their sentiment scores 
-        - Combine their key points 
-'''
+
 def combine_two_entities(entity_to_sentiment, entity_to_key_points, entity_1, entity_2):
+    """For 2 entities that refer to the same thing but have a slightly different spelling (Ex: US, USA), MERGE the 2 entities.
+        - Take the average of their sentiment scores 
+        - Combine their key points
+    """
     print('combining ', entity_1, ' and ', entity_2)
     combined_sentiment = (entity_to_sentiment[entity_1] + entity_to_sentiment[entity_2]) / 2
     entity_to_sentiment[entity_1] = combined_sentiment
@@ -215,12 +222,11 @@ def combine_two_entities(entity_to_sentiment, entity_to_key_points, entity_1, en
     return entity_to_sentiment, entity_to_key_points
 
 
-'''
-    Combine entities that refer to the same thing
+def combine_same_entities(entity_to_sentiment, entity_to_key_points):
+    """Combine entities that refer to the same thing
     Ex: (republican, republicans), (Democrat, democrats), (US, USA, America), (American, Americans) 
     Any pair of entities that are the same if you lowercase the first letter —> Ex: China, china
-'''
-def combine_same_entities(entity_to_sentiment, entity_to_key_points):
+    """
     print('inside combine_same_entities')
     for entity in list(entity_to_key_points.keys()):
         entity_lowercase = entity[0].lower() + entity[1:]
@@ -335,6 +341,7 @@ def get_sentiment_of_entity(entity, flattened_sentences):
 
 
 def get_key_points_of_entity(entity, flattened_comments):
+    """Get the key points of an entity from a list of comments."""
     summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
     key_points_limit = TIME_FILTER_TO_KEY_POINTS_LIMIT[config['time_filter']]
     if len(flattened_comments) > config['max_input_len_to_summarizer']:
@@ -370,10 +377,8 @@ def get_key_points_of_entity(entity, flattened_comments):
         return (entity, key_points)
 
 
-'''
-    gets the top post urls for each named entity so users can reference the posts 
-'''
 def get_post_urls(date_to_posts, date_to_entities):
+    """Get the top post urls for each named entity so users can reference the posts."""
     t1 = time.time()
     num_urls_max = TIME_FILTER_TO_POST_URL_LIMIT[config['time_filter']]
     new_date_to_entities = {}

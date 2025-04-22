@@ -3,6 +3,7 @@
 from readability import Readability
 from collections import defaultdict
 
+
 def get_readability_metrics(posts):
     """Calculate readability metrics for a list of Reddit posts.
     

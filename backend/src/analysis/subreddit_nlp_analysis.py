@@ -25,6 +25,7 @@ config = {
     "max_post_len": 1000000 # in characters 
 }
 
+
 async def get_post_title_and_description(post):
     """Extract title and description text from a Reddit post.
     
@@ -39,6 +40,7 @@ async def get_post_title_and_description(post):
         return (flattened_post_text, upvotes)
     except Exception as e:
         print('could not get post title and description: ', e)
+
 
 def group_posts_by_date(posts):
     """Group Reddit posts by their creation date.
@@ -62,6 +64,7 @@ def group_posts_by_date(posts):
     sorted_months = sorted(dates, key=lambda x: datetime.strptime(x, date_format))
     posts_grouped_by_date = {i: posts_grouped_by_date[i] for i in sorted_months}
     return posts_grouped_by_date
+
 
 async def get_subreddit_analysis(posts_grouped_by_date):
     """Perform NLP analysis on grouped posts.

@@ -4,6 +4,7 @@ from wordcloud import WordCloud # type: ignore
 from io import BytesIO
 import base64
 
+
 def generate_word_cloud(named_entities):    
     """Generate a base64 encoded word cloud image from named entities.
     
@@ -29,6 +30,7 @@ def generate_word_cloud(named_entities):
     img_base64 = base64.b64encode(buffer.read()).decode("utf-8")
     
     return img_base64
+
 
 def generate_by_date(named_entities):
     """Generate word cloud arrays for each date's named entities.

@@ -114,7 +114,7 @@ const SentimentChart: React.FC<TrendsProps> = ({analysis}) => {
     return (
         <div className="items-center justify-center space-between pb-100 pt-10" style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
           {entityNames.map((entity_name, idx) => (
-            <div className="rounded shadow-md bg-white w-full opacity-100 md:w-[calc(32%-0.5rem)]"
+            <div className="rounded shadow-md bg-white w-full opacity-100 md:w-[calc(47%-0.5rem)]"
               key={entity_name}
               style={{
                 padding: '1rem',
