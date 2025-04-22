@@ -3,6 +3,7 @@ import RedditPage from "../pages/RedditPage.tsx";
 
 import { Routes, Route } from "react-router-dom";
 
+// Based on url path, display components for Home and analysis display
 function App() {
   return (
     <Routes>
