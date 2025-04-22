@@ -1,3 +1,12 @@
+"""Module for extracting and analyzing topics from Reddit posts and comments.
+
+Provides functionality for:
+- Fetching posts and comments from subreddits
+- Organizing posts by time periods
+- Extracting topics using NLP techniques
+- Saving analysis results
+"""
+
 import asyncio
 import os
 import asyncpraw
@@ -7,15 +16,15 @@ from dotenv import load_dotenv
 import time
 from src.data_fetchers.reddit_post_fetcher import fetch_post_data
 
-# Need to load environment variables for Reddit API access
+# Load environment variables for Reddit API access
 load_dotenv()
 
-# Time filter to post limit mapping
+# Maximum number of posts to fetch for each time filter
 time_filter_to_post_limit = {'all': 400, 'year': 200, 'month': 100, 'week': 50}
 
+
 def get_subreddit_topics(sorted_slice_to_posts, num_topics=10):
-    """
-    Extract topics from subreddit posts and comments for each time slice.
+    """Extract topics from subreddit posts and comments for each time slice.
     
     Args:
         sorted_slice_to_posts (dict): Dictionary mapping time slices to posts
@@ -58,10 +67,15 @@ def get_subreddit_topics(sorted_slice_to_posts, num_topics=10):
     
     return subreddit_topics
 
+
 def slice_posts_list(posts_list, time_filter):
-    """
-    Organize posts by time slices based on the time filter
-    Returns a dictionary where keys are date strings and values are lists of posts
+    """Organize posts into time slices based on their creation dates.
+    
+    Args:
+        posts_list: List of Reddit posts
+        time_filter: Time period ('all', 'year', 'week', etc.)
+    Returns:
+        dict: Mapping of date strings to lists of posts from that date
     """
     slice_to_posts = dict()
     for post in posts_list:
@@ -86,8 +100,19 @@ def slice_posts_list(posts_list, time_filter):
     sorted_slice_to_posts = {i: slice_to_posts[i] for i in sorted_months}
     return sorted_slice_to_posts
 
+
 async def get_subreddit_data(subreddit_name, time_filter='week', sort_by='top'):
-    """Fetch data from a subreddit"""
+    """Fetch and organize posts from a subreddit.
+    
+    Args:
+        subreddit_name: Name of the subreddit to analyze
+        time_filter: Time period to fetch posts from (default: 'week')
+        sort_by: How to sort posts ('top' or 'controversial', default: 'top')
+    Returns:
+        dict: Posts organized by time slices
+    Raises:
+        ValueError: If time_filter or sort_by is invalid
+    """
     if time_filter not in ['hour', 'day', 'week', 'month', 'year', 'all']:
         raise ValueError(f"Invalid time filter. Must be one of ['hour', 'day', 'week', 'month', 'year', 'all'].")
     
@@ -125,9 +150,16 @@ async def get_subreddit_data(subreddit_name, time_filter='week', sort_by='top'):
         # Close the Reddit client
         await reddit.close()
 
+
 async def extract_and_print_topics(subreddit_name, time_filter='week', num_topics=10):
-    """
-    Extract topics from a subreddit and print the results
+    """Extract topics from a subreddit and output results.
+    
+    Fetches data, performs topic extraction, and saves results to a JSON file.
+    
+    Args:
+        subreddit_name: Name of the subreddit to analyze
+        time_filter: Time period to analyze (default: 'week')
+        num_topics: Number of topics to extract (default: 10)
     """
     print(f"Fetching data from r/{subreddit_name} (time filter: {time_filter})...")
     
@@ -170,7 +202,9 @@ async def extract_and_print_topics(subreddit_name, time_filter='week', num_topic
     
     print(f"\nResults saved to {output_file}")
 
+
 async def main():
+    """Command-line interface for topic extraction."""
     # Get user input for subreddit and time filter
     subreddit_name = input("Enter a subreddit name (without r/): ").strip()
     
@@ -196,12 +230,11 @@ async def main():
     
     time_filter = time_filter_map.get(time_filter_choice, 'week')
     
-    # Get number of topics
     num_topics_input = input("Enter number of topics to extract (default is 10): ").strip()
     num_topics = int(num_topics_input) if num_topics_input.isdigit() else 10
     
-    # Extract and print topics
     await extract_and_print_topics(subreddit_name, time_filter, num_topics)
+
 
 if __name__ == "__main__":
     asyncio.run(main()) 

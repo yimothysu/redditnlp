@@ -1,12 +1,38 @@
+"""Module for fetching and processing Reddit posts and their comments.
+
+Provides data models and functions for retrieving post content, comments,
+and associated metadata from Reddit using asyncpraw.
+"""
+
 import asyncpraw
 from pydantic import BaseModel
 from typing import Optional
 
+
 class Comment(BaseModel):
+    """Data model for a Reddit comment.
+    
+    Attributes:
+        text: The comment's content
+        score: The comment's score (upvotes - downvotes)
+    """
     text: str
     score: int 
 
+
 class RedditPost(BaseModel):
+    """Data model for a Reddit post with its metadata and comments.
+    
+    Attributes:
+        title: Post title
+        description: Post content/selftext
+        score: Post score (upvotes - downvotes)
+        url: URL of the post
+        created_utc: Post creation timestamp in UTC
+        num_comments: Total number of comments
+        comments: List of comment texts
+        comment_scores: List of comment scores
+    """
     title: str
     description: str 
     score: int
@@ -17,11 +43,18 @@ class RedditPost(BaseModel):
     comment_scores: list[int]
     
     def to_dict(self):
+        """Convert the post data to a dictionary format."""
         return self.model_dump()
 
+
 async def fetch_post_data(post) -> Optional[RedditPost]:
-    """
-    Fetch data from a Reddit post including its comments.
+    """Fetch and process data from a Reddit post including its comments.
+    
+    Retrieves post metadata and comments, filtering and sorting comments by score.
+    For posts with many comments, only keeps the highest-scoring ones:
+    - 25 comments for posts with 30-60 comments
+    - 50 comments for posts with 60-100 comments
+    - 75 comments for posts with >100 comments
     
     Args:
         post: A Reddit post object from asyncpraw
@@ -31,9 +64,12 @@ async def fetch_post_data(post) -> Optional[RedditPost]:
         None: If there was an error fetching the post data
     """
     try:
+        # Fetch comments
         comments = await post.comments()
         post_comments = []  
         comment_scores = []
+        
+        # Extract comment text and scores, skipping MoreComments objects
         for comment in comments:
             if isinstance(comment, asyncpraw.models.MoreComments):
                 continue
@@ -42,10 +78,11 @@ async def fetch_post_data(post) -> Optional[RedditPost]:
             if hasattr(comment, "score"):
                 comment_scores.append(comment.score)
 
-        comment_objects = []
-        for i in range(len(post_comments)):
-            comment_objects.append(Comment(text=post_comments[i], score=comment_scores[i]))
-        # sort the comments by their score 
+        # Create Comment objects and sort by score
+        comment_objects = [
+            Comment(text=text, score=score) 
+            for text, score in zip(post_comments, comment_scores)
+        ]
         comment_objects.sort(key=lambda comment: comment.score)
         
         # sampling comments with the highest score if there's a large # of comments 
@@ -70,4 +107,4 @@ async def fetch_post_data(post) -> Optional[RedditPost]:
         )
     except Exception as e:
         print(f'Error fetching post data: {e}')
-        return None 
+        return None

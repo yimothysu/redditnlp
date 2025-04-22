@@ -1,7 +1,13 @@
+"""
+Analyzes and grades subreddits based on their toxicity levels.
+Provides metrics including toxicity scores, letter grades, and percentile rankings.
+"""
+
 from scipy.stats import percentileofscore
 
 
 async def get_post_title_and_description(post):
+    """Extract and combine post title and description text."""
     try:
         flattened_post_text = str(post.title) + "\n" + str(post.selftext)
         upvotes = post.score
@@ -11,14 +17,13 @@ async def get_post_title_and_description(post):
 
 
 def get_percentile(values, target_value):
-    # gets the percentile of target_value in values distribution 
+    """Calculate the percentile rank of a value within a distribution."""
     percentile = percentileofscore(values, target_value, kind='rank')
     return round(percentile, 4)
 
 
 def get_toxicity_grade(toxicity):
-    # A+ means extremely civil, respectful, and non-toxic subreddit.
-    # F- means extremely toxic subreddit 
+    """Convert toxicity score to letter grade from A+ (least toxic) to F (most toxic)."""
     toxicity *= 100 # convert toxicity from [0, 1] scale to [0, 100] scale
     grade_to_toxicity_cutoff = {'A+': 0.05, 'A': 0.1, 'B+': 0.5, 'B': 1, 'B-': 5, 
                                 'C+': 10, 'C': 15, 'C-': 20, 'D+': 30, 'D': 40, 'D-': 50}
@@ -27,13 +32,16 @@ def get_toxicity_grade(toxicity):
     return "F"
 
 
-# This function will compute and return 4 values:
-#   1. toxicity_score: float # [0, 1] --> 0 = not toxic at all, 1 = all toxic 
-#   2. toxicity_grade: str # A+ to F 
-#   3. toxicity_percentile: float # [0, 100]
-#   4. all_toxicity_scores: List[float] # for generating a toxicity scores distribution graph on the UI 
-#   5. all_toxicity_grades: List[str] # for generating a toxicity grades distribution graph on the UI 
 async def get_toxicity_metrics(sub_name):
+    """
+    Calculate toxicity metrics for a subreddit.
+    Returns:
+        - toxicity_score (float): Score from 0 (non-toxic) to 1 (toxic)
+        - toxicity_grade (str): Letter grade
+        - toxicity_percentile (float): Percentile ranking
+        - all_toxicity_scores (list): Distribution of scores
+        - all_toxicity_grades (list): Distribution of grades
+    """
     toxicity_dict = {}
     with open("data/top_subreddits_toxicity_score.txt", "r", encoding="utf-8") as file:
         for line in file:

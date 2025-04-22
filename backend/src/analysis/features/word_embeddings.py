@@ -1,10 +1,21 @@
-import gensim.downloader as api # type: ignore
+"""Module for generating word embeddings using Word2Vec and dimensionality reduction."""
+
+import gensim.downloader as api
 from sklearn.decomposition import PCA
 import numpy as np
 
+# Load pre-trained Word2Vec model
 model = api.load("word2vec-google-news-300")
 
+
 def get_word_embeddings(word_list):
+    """Get word embeddings for a list of words using Word2Vec.
+    
+    Args:
+        word_list: List of words to get embeddings for
+    Returns:
+        tuple: (list of words found in model, list of their embeddings)
+    """
     word_embeddings = []
     words = []
     for word in word_list:
@@ -13,7 +24,16 @@ def get_word_embeddings(word_list):
             words.append(word)
     return words, word_embeddings
 
+
 def get_2d_embeddings(word_list):
+    """Convert word embeddings to 2D coordinates using PCA.
+    
+    Args:
+        word_list: List of words to get 2D embeddings for
+    Returns:
+        dict: Mapping of words to their 2D coordinates,
+              or None if fewer than 2 words found in model
+    """
     words, embeddings = get_word_embeddings(word_list)
     if len(words) <= 1:
         return None
