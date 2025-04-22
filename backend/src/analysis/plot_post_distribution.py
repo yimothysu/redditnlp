@@ -2,6 +2,7 @@
 
 import matplotlib.pyplot as plt
 
+
 def plot_post_distribution(subreddit, time_filter, sorted_slice_to_posts):
     """Plot a bar chart showing post distribution over time.
     

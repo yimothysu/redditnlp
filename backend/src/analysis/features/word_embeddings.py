@@ -7,6 +7,7 @@ import numpy as np
 # Load pre-trained Word2Vec model
 model = api.load("word2vec-google-news-300")
 
+
 def get_word_embeddings(word_list):
     """Get word embeddings for a list of words using Word2Vec.
     
@@ -22,6 +23,7 @@ def get_word_embeddings(word_list):
             word_embeddings.append(model[word])
             words.append(word)
     return words, word_embeddings
+
 
 def get_2d_embeddings(word_list):
     """Convert word embeddings to 2D coordinates using PCA.

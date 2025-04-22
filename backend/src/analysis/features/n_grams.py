@@ -8,6 +8,7 @@ from src.utils.subreddit_classes import ( NGram )
 
 nltk.download('stopwords')
 
+
 def get_top_ngrams(post_content_grouped_by_date):
     """Extract top n-grams from posts grouped by date.
     
