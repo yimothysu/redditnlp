@@ -21,7 +21,6 @@ from main import app
 
 client = TestClient(app)
 
-
 def test_analysis_invalid_time_filter():
     """
     Tests that the API rejects requests with invalid time filters.
@@ -36,3 +35,19 @@ def test_analysis_invalid_time_filter():
     )
     assert response.status_code == 400
     assert "Invalid time filter" in response.json()["detail"]
+
+
+def test_analysis_invalid_sort_method():
+    """
+    Tests that the API rejects requests with invalid sort methods.
+    """
+    response = client.post(
+        "/analysis/",
+        json={
+            "name": "AskReddit",
+            "sort_by": "trending",
+            "time_filter": "week"
+        }
+    )
+    assert response.status_code == 400
+    assert "Invalid sort method" in response.json()["detail"]
