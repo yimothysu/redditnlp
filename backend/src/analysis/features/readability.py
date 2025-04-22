@@ -1,7 +1,24 @@
+"""Module for calculating readability metrics of subreddit posts using various algorithms."""
+
 from readability import Readability
 from collections import defaultdict
 
 def get_readability_metrics(posts):
+    """Calculate readability metrics for a list of Reddit posts.
+    
+    Computes average word counts and readability scores using Flesch-Kincaid
+    and Dale-Chall algorithms. Only posts with 100+ words are used for
+    readability calculations.
+    
+    Args:
+        posts: List of RedditPost objects
+    Returns:
+        dict: Dictionary containing:
+            - avg_num_words_title: Average word count in titles
+            - avg_num_words_description: Average word count in descriptions
+            - avg_flesch_grade_level: Average Flesch-Kincaid grade level
+            - dale_chall_grade_levels: Distribution of Dale-Chall grade levels
+    """
     total_num_words_title = 0
     total_num_words_description = 0
     num_posts_over_100_words = 0
@@ -9,11 +26,15 @@ def get_readability_metrics(posts):
         "flesch_grade_level": 0.0,
         "dale_chall_grade_levels": defaultdict(int)
     }
+    
+    # Calculate word counts and readability scores
     for post in posts:
         num_words_title = len(post.title.split())
         num_words_description = len(post.description.split())
         total_num_words_title += num_words_title
         total_num_words_description += num_words_description
+        
+        # Only analyze readability for posts with substantial content
         if num_words_description >= 100:
             num_posts_over_100_words += 1
             try:
@@ -25,12 +46,15 @@ def get_readability_metrics(posts):
                     readability_metrics["dale_chall_grade_levels"][level] += 1
             except:
                 print("An error occurred while generating readability metrics")
+    
+    # Calculate averages
     avg_num_words_title = total_num_words_title / len(posts) if len(posts) != 0 else None
     avg_num_words_description = total_num_words_description / len(posts) if len(posts) != 0 else None
-    avg_flesch_grade_level =  readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
+    avg_flesch_grade_level = readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
+    
     return {
-             "avg_num_words_title": avg_num_words_title,
-             "avg_num_words_description": avg_num_words_description,
-             "avg_flesch_grade_level": avg_flesch_grade_level,
-             "dale_chall_grade_levels": readability_metrics["dale_chall_grade_levels"]
-            }
+        "avg_num_words_title": avg_num_words_title,
+        "avg_num_words_description": avg_num_words_description,
+        "avg_flesch_grade_level": avg_flesch_grade_level,
+        "dale_chall_grade_levels": readability_metrics["dale_chall_grade_levels"]
+    }

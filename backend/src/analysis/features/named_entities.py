@@ -1,9 +1,19 @@
+"""Module for extracting and analyzing named entities from subreddit content.
+
+Provides functionality for:
+- Named entity recognition using spaCy
+- Sentiment analysis using ABSA (Aspect-Based Sentiment Analysis)
+- Key point extraction using BART summarization
+- Entity consolidation and filtering
+"""
+
 import time, asyncio, random, re, math, nltk, numbers  # type: ignore
 from collections import Counter
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import spacy  # type: ignore
 from src.utils.subreddit_classes import ( NamedEntity )
 
+# Load NLP models
 absa_model_name = "yangheng/deberta-v3-base-absa-v1.1"
 absa_model = AutoModelForSequenceClassification.from_pretrained(absa_model_name)
 absa_tokenizer = AutoTokenizer.from_pretrained(absa_model_name)
@@ -11,6 +21,7 @@ classifier = pipeline("text-classification", model=absa_model, tokenizer=absa_to
 summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
 summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
 
+# Configuration constants
 TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 12, 'year': 10, 'week': 8}
 TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
 TIME_FILTER_TO_POST_URL_LIMIT = {'week': 1, 'year': 3, 'all': 3}
@@ -37,6 +48,7 @@ banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomor
                    'that year', 'the first year', 'time', 'a couple of years', 'a nice day', 'reader', 'nsfw', 'youtube'}
 
 
+# Download required NLTK resources
 nltk.download('stopwords')
 nltk.download('punkt')
 nltk.download('punkt_tab')
@@ -44,6 +56,15 @@ nltk.download('wordnet')
 nltk.download('vader_lexicon')
 
 async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grouped_by_date):
+    """Extract and analyze top named entities from grouped post content.
+    
+    Args:
+        time_filter: Time period filter ('all', 'year', 'week')
+        post_content_grouped_by_date: Dictionary mapping dates to post content
+        posts_grouped_by_date: Dictionary mapping dates to post objects
+    Returns:
+        dict: Mapping of dates to lists of analyzed NamedEntity objects
+    """
     config["time_filter"] = time_filter 
     dates = list(post_content_grouped_by_date.keys())
     post_content = list(post_content_grouped_by_date.values())
@@ -63,6 +84,7 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
     t2 = time.time()
     print('Computing top named entities using nlp.pipe took: ', t2-t1)
     
+    # Process entities in parallel
     tasks = [asyncio.create_task(postprocess_named_entities(date, doc)) for _, (date, doc) in enumerate(top_named_entities.items())]
     results = await asyncio.gather(*tasks)
     for date, entities in results:
@@ -72,15 +94,17 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
     print('NER analysis took: ', t3-t2)
     return top_named_entities 
 
-
-'''
-    Naive filtering of named entities
-    Returns true iff name is a valid named entity name
-
-    # NOTE: May want to check for numbers as well
-    # TODO: Allow ampersands in between "words"
-'''
 def filter_named_entity(name: str) -> bool:
+    """Check if a string is a valid named entity.
+    
+    Validates that the entity name consists of proper words,
+    allowing for hyphenations and apostrophes.
+    
+    Args:
+        name: String to validate
+    Returns:
+        bool: True if valid named entity, False otherwise
+    """
     parts = name.split()
     if len(parts) == 0: return False
 
@@ -93,6 +117,18 @@ def filter_named_entity(name: str) -> bool:
 
 
 async def postprocess_named_entities(date, doc):
+    """Process and analyze named entities from a spaCy document.
+    
+    Filters entities, calculates frequencies, and enriches with
+    sentiment and key points.
+    
+    Args:
+        date: Date string for the document
+        doc: spaCy Doc object
+    Returns:
+        tuple: (date, list of processed NamedEntity objects)
+    """
+    # Count and filter entities
     entities = Counter([ent.text for ent in doc.ents])
     filtered_entities = Counter()
     for name, count in entities.items():
@@ -101,6 +137,7 @@ async def postprocess_named_entities(date, doc):
         if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
         filtered_entities[name] = count
 
+    # Get top entities and analyze
     top_entities = filtered_entities.most_common(TIME_FILTER_TO_NAMED_ENTITIES_LIMIT[config['time_filter']])
     top_entity_names = set([entity[0] for entity in top_entities])
     t1 = time.time()
@@ -223,6 +260,14 @@ def combine_same_entities(entity_to_sentiment, entity_to_key_points):
 
 
 def split_string_into_chunks(text, num_chunks):
+    """Split text into roughly equal chunks for processing.
+    
+    Args:
+        text: Text to split
+        num_chunks: Number of chunks to create
+    Returns:
+        list: Non-empty text chunks
+    """
     words = text.split()
     avg = math.ceil(len(words) / num_chunks)
     chunks = [" ".join(words[i * avg:(i + 1) * avg]) for i in range(num_chunks)]
@@ -230,6 +275,16 @@ def split_string_into_chunks(text, num_chunks):
 
 
 def get_sentiment_of_entity(entity, flattened_sentences):
+    """Calculate sentiment score for an entity using ABSA.
+    
+    Handles long texts by splitting into chunks and averaging scores.
+    
+    Args:
+        entity: Entity name to analyze
+        flattened_sentences: Combined sentences mentioning the entity
+    Returns:
+        tuple: (entity name, sentiment score) or None if analysis fails
+    """
     absa_tokenizer = AutoTokenizer.from_pretrained(absa_model_name)
     tokens = absa_tokenizer(flattened_sentences, truncation=False)
     if(len(tokens['input_ids']) >= config['max_absa_tokens']):
@@ -240,7 +295,6 @@ def get_sentiment_of_entity(entity, flattened_sentences):
         
         for chunk in chunks:
             tokens = absa_tokenizer(chunk, truncation=False)
-            print("Number of tokens:", len(tokens['input_ids']))
             try:
                 sentiment = classifier(chunk, text_pair=entity)
             except:
