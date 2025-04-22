@@ -13,6 +13,7 @@ interface NGramsForDateProps {
   timeFilter: string;
 }
 
+// Component to display n-grams by date
 const NGramsForDate: React.FC<NGramsForDateProps> = ({
   date,
   ngrams,
@@ -31,6 +32,7 @@ const NGramsForDate: React.FC<NGramsForDateProps> = ({
         <h2>Count</h2>
       </div>
       <ul className="list-none pl-5 pr-5 pt-2">
+        {/* For each n-gram, show its count */}
         {ngrams.map((ngram: NGram, index: number) => (
           <li key={index} className="pb-1 pt-1">
             <div className="text-[14px] flex justify-between">

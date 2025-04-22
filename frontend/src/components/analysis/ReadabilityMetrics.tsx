@@ -13,6 +13,7 @@ interface ReadabilityMetricsProps {
   analysis: SubredditAnalysis;
 }
 
+// Component to display readability metrics for a subreddit
 export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
   analysis,
 }) => {

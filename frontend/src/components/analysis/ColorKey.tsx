@@ -21,6 +21,7 @@ const ColorCodeBox: React.FC<ColorCodeBoxProps> = ({
   );
 };
 
+// This component displays the color code key for sentiment 
 export const ColorKey: React.FC = () => {
   if (window.innerWidth < 500) {
     return (

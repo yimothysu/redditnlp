@@ -1,5 +1,6 @@
-# gets all the top 20 subreddit analyses for a specific time filter and stores it in 
-# the db 
+"""Script to populate MongoDB collections with subreddit analysis data.
+Performs NLP analysis on top posts from specified subreddits and stores results.
+"""
 
 from src.database.db import COLLECTIONS
 import asyncio
@@ -63,7 +64,14 @@ subreddits = [
     "ufl",
 ]
 
+
 async def fetch_subreddit_data(subreddit, time_filter):
+    """Fetch and store NLP analysis data for a specific subreddit.
+    
+    Args:
+        subreddit (str): Name of the subreddit to analyze
+        time_filter (str): Time period to analyze ('week', 'year', 'all')
+    """
     subreddit_query = SubredditQuery(
             name=subreddit,
             time_filter=time_filter,

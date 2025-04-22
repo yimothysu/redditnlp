@@ -1,9 +1,18 @@
+"""Module for generating word clouds from named entities in subreddit content."""
+
 from wordcloud import WordCloud # type: ignore
 from io import BytesIO
 import base64
 
-# Takes in dictionary of named entities
+
 def generate_word_cloud(named_entities):    
+    """Generate a base64 encoded word cloud image from named entities.
+    
+    Args:
+        named_entities: Dictionary mapping dates to lists of named entities
+    Returns:
+        str: Base64 encoded PNG image of the word cloud
+    """
     # Create dictionary of named entities and their frequencies
     entities_to_freq = named_entities_to_dictionary(named_entities)
     
@@ -17,6 +26,13 @@ def generate_word_cloud(named_entities):
     return img_base64
 
 def named_entities_to_dictionary(named_entities):
+    """Generate a dictionary of named entities and their frequencies from a dictionary of named entities.
+    
+    Args:
+        named_entities: Dictionary mapping dates to lists of named entities
+    Returns:
+        dict: Dictionary mapping named entities to their frequencies
+    """
     # Create dictionary of named entities and their frequencies
     entities_to_freq = {}
     

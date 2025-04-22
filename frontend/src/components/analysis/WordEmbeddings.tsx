@@ -7,6 +7,7 @@ interface WordEmbeddingsProps {
   inComparisonMode: string;
 }
 
+// Component to display each word embedding
 export const WordEmbeddings: React.FC<WordEmbeddingsProps> = ({
   analysis,
   inComparisonMode,
