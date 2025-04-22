@@ -1,6 +1,6 @@
 """Module for generating word embeddings using Word2Vec and dimensionality reduction."""
 
-import gensim.downloader as api # type: ignore
+import gensim.downloader as api
 from sklearn.decomposition import PCA
 import numpy as np
 
