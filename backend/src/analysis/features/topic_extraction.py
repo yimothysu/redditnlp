@@ -1,20 +1,23 @@
-# Topic extraction with BERTopic
+"""Module for extracting topics from text content using BERTopic model."""
+
 from bertopic import BERTopic
 
-# Topic extraction with BERTopic
 def extract_topics(texts, num_topics=10):
-    """
-    Extract topics from a list of texts using BERTopic.
+    """Extract topics from a list of texts using BERTopic.
+    
+    Uses BERTopic to identify main themes and topics in the text corpus.
+    Preprocesses texts to remove stopwords and applies topic modeling.
     
     Args:
-        texts (list): List of text documents for topic modeling
-        num_topics (int, optional): Number of topics to extract. Defaults to 10.
+        texts: List of text documents for topic modeling
+        num_topics: Number of topics to extract (default: 10)
         
     Returns:
-        dict: A dictionary containing:
+        dict: Dictionary containing:
             - topics: List of topic numbers assigned to each document
             - topic_info: DataFrame with information about each topic
-            - topic_representations: Dict with topic representations (words and their weights)
+            - topic_representations: Dict mapping topic IDs to word-weight pairs
+            - error: Error message if processing fails
     """
     try:
         # Preprocess texts to remove stopwords
@@ -33,10 +36,8 @@ def extract_topics(texts, num_topics=10):
                 "topic_representations": {}
             }
         
-        # Initialize BERTopic model with improved configuration
+        # Initialize and fit BERTopic model
         topic_model = BERTopic()
-        
-        # Fit the model and transform texts to get topics
         topics, probs = topic_model.fit_transform(preprocessed_texts)
         
         # Get topic info and representation
@@ -49,14 +50,11 @@ def extract_topics(texts, num_topics=10):
                 topic_words = topic_model.get_topic(topic_id)
                 topic_representations[str(topic_id)] = topic_words
         
-        # Return results
-        result = {
+        return {
             "topics": topics,
             "topic_info": topic_info.to_dict('records'),
             "topic_representations": topic_representations
         }
-        
-        return result
     except Exception as e:
         print(f"Error in topic extraction: {str(e)}")
         return {

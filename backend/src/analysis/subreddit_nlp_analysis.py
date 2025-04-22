@@ -1,3 +1,6 @@
+"""Module for performing comprehensive NLP analysis on subreddit content.
+Includes functionality for post collection, text analysis, and feature extraction."""
+
 import time, asyncio, asyncpraw, os, random  # type: ignore
 from dotenv import load_dotenv # type: ignore
 load_dotenv()
@@ -11,6 +14,7 @@ from src.analysis.features.readability import ( get_readability_metrics )
 from src.analysis.features.word_embeddings import ( get_2d_embeddings )
 from src.analysis.features.word_cloud import ( generate_word_cloud )
 
+# Configuration maps for different time filters
 TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'week': 200}
 TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'week': 50}
 TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 12, 'year': 10, 'week': 8}
@@ -22,6 +26,13 @@ config = {
 }
 
 async def get_post_title_and_description(post):
+    """Extract title and description text from a Reddit post.
+    
+    Args:
+        post: Reddit post object
+    Returns:
+        tuple: (combined post text, upvotes)
+    """
     try:
         flattened_post_text = str(post.title) + "\n" + str(post.selftext)
         upvotes = post.score
@@ -29,13 +40,14 @@ async def get_post_title_and_description(post):
     except Exception as e:
         print('could not get post title and description: ', e)
 
-'''
- posts is a list of RedditPost objects
- function returns a sorted map by date where:
-   key = date (Ex: 07/24)
-   value = reddit posts with a timestamp inside [date]
-'''
 def group_posts_by_date(posts):
+    """Group Reddit posts by their creation date.
+    
+    Args:
+        posts: List of RedditPost objects
+    Returns:
+        dict: Sorted map where key=date string, value=list of posts from that date
+    """
     posts_grouped_by_date = dict()
     date_format = TIME_FILTER_TO_DATE_FORMAT[config['time_filter']]
     for post in posts:
@@ -45,14 +57,20 @@ def group_posts_by_date(posts):
             posts_grouped_by_date[post_date] = []
         posts_grouped_by_date[post_date].append(post)
 
-    # sort posts_grouped_by_date by date
+    # Sort posts by date
     dates = list(posts_grouped_by_date.keys())
     sorted_months = sorted(dates, key=lambda x: datetime.strptime(x, date_format))
     posts_grouped_by_date = {i: posts_grouped_by_date[i] for i in sorted_months}
     return posts_grouped_by_date
 
-
 async def get_subreddit_analysis(posts_grouped_by_date):
+    """Perform NLP analysis on grouped posts.
+    
+    Args:
+        posts_grouped_by_date: Dictionary of posts grouped by date
+    Returns:
+        tuple: (top n-grams, top named entities)
+    """
     post_content_grouped_by_date = dict() 
     for date, posts in posts_grouped_by_date.items():
         post_content = ' '.join([post.title + ' ' + post.description + ' '.join(post.comments) for post in posts])
@@ -71,6 +89,15 @@ async def get_subreddit_analysis(posts_grouped_by_date):
 
 
 async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
+    """Main function to perform comprehensive analysis on a subreddit.
+    
+    Fetches posts, analyzes content, and generates various NLP metrics.
+    
+    Args:
+        subreddit_query: SubredditQuery object containing analysis parameters
+    Returns:
+        SubredditAnalysis: Complete analysis results
+    """
     config['time_filter'] = subreddit_query.time_filter
 
     reddit = asyncpraw.Reddit(
@@ -79,17 +106,16 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
         user_agent="reddit sampler",
     )
 
+    # Fetch initial set of posts
     initial_post_query_limit = TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT[subreddit_query.time_filter]
-
     subreddit_instance = await reddit.subreddit(subreddit_query.name)
     posts = [post async for post in subreddit_instance.top(
         limit=initial_post_query_limit,
         time_filter=subreddit_query.time_filter
     )]
-    print("initially queried ", len(posts), posts)
 
+    # Limit posts and prioritize those with more content
     if(len(posts) > TIME_FILTER_TO_POST_LIMIT[subreddit_query.time_filter]):
-        # Get the posts with the most amount of description text 
         posts.sort(key=lambda post: len(post.selftext) + len(post.title))
         posts = posts[-TIME_FILTER_TO_POST_LIMIT[subreddit_query.time_filter]:]
 
@@ -111,7 +137,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
         post_batches.append(posts[third:2*third])
         post_batches.append(posts[2*third:])
 
-
+    # Fetch comments for all posts
     posts_list = []
     if len(post_batches) > 0:
         for post_batch in post_batches:
@@ -122,32 +148,26 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
             time.sleep(65)  # Wait for 65 seconds to prevent exceeding praw's api limit 
     else:
         posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
-    print("# of posts after fetching comments: ", len(posts_list))
 
+    # Calculate total words across all content
     total_words = 0
     for post in posts_list:
         total_words += len(post.title.split()) + len(post.description.split()) + sum([len(comment.split()) for comment in post.comments])
-    print('total_words: ', total_words)
 
+    # Perform various analyses
     posts_grouped_by_date = group_posts_by_date(posts_list)
-    print('got posts from the dates: ', posts_grouped_by_date.keys())
-    
     readability_metrics = get_readability_metrics(posts_list)
-    print('Finished getting readability_metrics')
-    print(readability_metrics)
-
-    #plot_post_distribution(subreddit, time_filter, posts_grouped_by_date)
     top_n_grams, top_named_entities = await get_subreddit_analysis(posts_grouped_by_date)
-    print(top_named_entities)
 
-    entity_set= set()
+    # Generate embeddings and word cloud for named entities
+    entity_set = set()
     for _, entities in top_named_entities.items():
         entity_names = [entity.name for entity in entities]
         for entity_name in entity_names: entity_set.add(entity_name)
     top_named_entities_embeddings = get_2d_embeddings(list(entity_set))
-    print(top_named_entities_embeddings)
     top_named_entities_wordcloud = generate_word_cloud(top_named_entities)
     
+    # Compile final analysis
     analysis = SubredditAnalysis(
         timestamp = int(time.time()),
         num_words = total_words,
