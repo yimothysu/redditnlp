@@ -25,11 +25,14 @@ interface AnalysisMenuProps {
   setCurrentMenuItem: any;
 }
 
+// This component provides the menu tabs for the different metrics individuals can view
 export const AnalysisMenu: React.FC<AnalysisMenuProps> = ({
   timeFilter,
   currentMenuItem,
   setCurrentMenuItem,
 }) => {
+
+  // List of different NLP analyses
   const tabs = [
     ...(timeFilter === "all" ? [{ label: "Ranking" }] : []),
     { label: "Trends" },
@@ -40,6 +43,7 @@ export const AnalysisMenu: React.FC<AnalysisMenuProps> = ({
     { label: "Readability Metrics" },
   ];
 
+  // For each NLP analysis, display tab
   return (
     <div className="mb-6 overflow-x-auto">
       <nav className="flex flex-wrap gap-2 border-b border-gray-200 pb-2 min-w-max sm:flex-nowrap">

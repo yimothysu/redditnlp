@@ -3,6 +3,7 @@ interface MetricProps {
     metric: string | number;
   }
   
+  // This component provides the style for readability metrics. It displays the name of the metric on the left and the numerical data on the right
   export const Metric: React.FC<MetricProps> = ({ name, metric }) => {
     return (
       <>

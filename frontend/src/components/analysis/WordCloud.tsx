@@ -5,6 +5,7 @@ interface WordCloudProps {
   analysis: SubredditAnalysis;
 }
 
+// Component to display word cloud with description
 export const WordCloud: React.FC<WordCloudProps> = ({ analysis }) => {
   const wordCloud = new Image();
   wordCloud.src = `data:image/png;base64, ${analysis.top_named_entities_wordcloud}`;
