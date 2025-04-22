@@ -9,7 +9,9 @@ import { WordEmbeddings } from "./analysis/WordEmbeddings";
 import { NGrams } from "./analysis/NGrams";
 import { ComparativeAnalysis } from "./analysis/ComparativeAnalysis";
 import { NamedEntities } from "./analysis/NamedEntities";
+import { Trends } from "./analysis/Trends";
 
+// This component is in charge of displaying all aspects of subreddit analysis and allowing users to filter subreddit
 export default function RedditAnalysisDisplay({
   name,
   inComparisonMode,
@@ -21,7 +23,7 @@ export default function RedditAnalysisDisplay({
   const [isBusy, setIsBusy] = useState(false);
   const [timeFilter, setTimeFilter] = useState("week");
   const [sortBy, setSortBy] = useState("top");
-  const [subredditMenu, setSubredditMenu] = useState("Named Entities");
+  const [subredditMenu, setSubredditMenu] = useState("Trends");
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -36,6 +38,7 @@ export default function RedditAnalysisDisplay({
     };
   }, []);
 
+  // Get subreddit analysis based on filter and sort by
   const loadSubredditAnalysis = async () => {
     if (isBusy || !name || name.trim().length === 0) return;
     setIsBusy(true);
@@ -60,10 +63,13 @@ export default function RedditAnalysisDisplay({
     loadSubredditAnalysis();
   }, []);
 
+  // Based on menu item, display analysis for current menu item
   const DisplayedAnalysis = () => {
     if (!analysis) return null;
 
     switch (currentMenuItem === undefined ? subredditMenu : currentMenuItem) {
+      case "Trends":
+        return <Trends analysis={analysis}/>;
       case "Ranking":
         return timeFilter === "all" ? (
           <ComparativeAnalysis analysis={analysis} />
@@ -91,6 +97,7 @@ export default function RedditAnalysisDisplay({
   const spinnerStyle =
     "animate-spin h-6 w-6 border-t-4 border-blue-500 border-solid rounded-full";
 
+  // Based on timestamp, display whether analysis is up to date
   const DisplayOutdatedOrNot = () => {
     if (!analysis) return null;
 
@@ -116,7 +123,7 @@ export default function RedditAnalysisDisplay({
               <h1 className="text-white bg-green-600 font-bold w-7 h-7 rounded-full text-center text-[18px]">✓</h1>
               <h1 className="text-green-600 font-semibold text-center">This analysis is up to date.</h1>
             </div>
-            <h1 className="text-green-600 text-[13px] font-semibold text-center">time filter = Week analyses are refreshed daily. This analysis is less than a day old.</h1>
+            <h1 className="text-green-600 text-[13px] font-semibold text-center">time filter = 'week' analyses are refreshed daily. This analysis is less than a day old.</h1>
         </div>
         );
       }
@@ -130,7 +137,7 @@ export default function RedditAnalysisDisplay({
               <h1 className="text-white bg-[#fa6f4d] font-bold w-7 h-7 rounded-full text-center text-[18px]">!</h1>
               <h1 className="text-[#fa6f4d] font-semibold text-center">This analysis may be outdated.</h1>
             </div>
-            <h1 className="text-[#fa6f4d] text-[13px] font-semibold text-center">time filter = {timeFilter} analyses are refreshed monthly. This analysis is older than a month.</h1>
+            <h1 className="text-[#fa6f4d] text-[13px] font-semibold text-center">time filter = '{timeFilter}' analyses are refreshed monthly. This analysis is older than a month.</h1>
           </div>
         );
       }
@@ -141,7 +148,7 @@ export default function RedditAnalysisDisplay({
               <h1 className="text-white bg-green-600 font-bold w-7 h-7 rounded-full text-center text-[18px]">✓</h1>
                 <h1 className="text-green-600 font-semibold text-center">This analysis is up to date.</h1>
               </div>
-              <h1 className="text-green-600 text-[13px] font-semibold text-center">{timeFilter} analyses are refreshed monthly. This analysis is less than a month old.</h1>
+              <h1 className="text-green-600 text-[13px] font-semibold text-center">time filter = '{timeFilter}' analyses are refreshed monthly. This analysis is less than a month old.</h1>
           </div>
           );
       }
@@ -153,7 +160,9 @@ export default function RedditAnalysisDisplay({
       <div className="ml-2 mr-2 mt-4 mb-4 p-5 bg-white rounded-md shadow-sm">
         <div className="flex flex-col items-center mb-6">
           <SubredditAvatar subredditName={name ?? ""} />
-          <h1 className="text-lg font-bold">r/{name}</h1>
+          <a target="_blank" href={`https://reddit.com/r/` + name}>
+            <h1 className="text-lg font-bold">r/{name}</h1>
+          </a>
         </div>
         <div className="flex justify-center items-center gap-4 mb-2">
           <div>

@@ -4,16 +4,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
 from typing import List
+from email.message import EmailMessage
 
 import asyncpraw
 import os 
 from dotenv import load_dotenv
-
-from praw.models import MoreComments
-# TODO: Remove aiofiles if not needed
-import aiofiles
-import json
-import random
 
 from src.utils.subreddit_classes import (
     SubredditQuery,
@@ -79,55 +74,6 @@ class SubredditRequest(BaseModel):
     email: str
 
 
-# Methods
-
-async def fetch_post_data(post):
-    # get the post's comments 
-    #print("inside fetch_post_data")
-    try:
-        comments = await post.comments()
-        post_comments = []  
-        comment_scores = []
-        for comment in comments:
-            if isinstance(comment, MoreComments): continue
-            if hasattr(comment, "body"):
-                post_comments.append(comment.body)
-            if hasattr(comment, "score"):
-                comment_scores.append(comment.score)
-
-        # randomly sampling comments if there's a large # of comments 
-        if len(post_comments) > 30 and len(post_comments) <= 60:
-            post_comments = random.sample(post_comments, 25)
-        if len(post_comments) > 60 and len(post_comments) <= 100:
-            post_comments = random.sample(post_comments, 50)
-        if len(post_comments) > 100:
-            post_comments = random.sample(post_comments, 75)
-
-        return RedditPost(
-            title=post.title,
-            description=post.selftext,
-            score=post.score,
-            url=post.url,
-            created_utc=post.created_utc,
-            num_comments=post.num_comments,
-            comments=post_comments,
-            comment_scores=comment_scores
-        )
-    except:
-        print('could not get post comments')
-
-async def print_to_json(posts_list, filename):
-    # Save post to file
-    # TODO: Save to database (maybe)
-    try:
-        json_data = json.dumps([post.to_dict() for post in posts_list], indent=4)
-        async with aiofiles.open("posts.txt", "w") as f:
-            await f.write(json_data)
-        print("Posts saved to file")
-    except Exception as e:
-        print(f"Error saving posts to file: {e}")
-
-
 # API
 
 @app.post("/analysis/", response_model=SubredditAnalysis)
@@ -151,23 +97,24 @@ async def fetch_subreddit_analysis_from_db(
         raise HTTPException(
             status_code=404, detail="Analysis not found for the given subreddit."
         )
-    toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores, all_toxicity_grades = await get_toxicity_metrics(subreddit_query.name)
-    positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores, all_positive_content_grades = await get_positive_content_metrics(subreddit_query.name)
+    try:
+        toxicity_score, toxicity_grade, toxicity_percentile, all_toxicity_scores, all_toxicity_grades = await get_toxicity_metrics(subreddit_query.name)
+        positive_content_score, positive_content_grade, positive_content_percentile, all_positive_content_scores, all_positive_content_grades = await get_positive_content_metrics(subreddit_query.name)
+        analysis["toxicity_score"] = toxicity_score 
+        analysis["toxicity_grade"] = toxicity_grade 
+        analysis["toxicity_percentile"] = toxicity_percentile 
+        analysis["all_toxicity_scores"] = all_toxicity_scores 
+        analysis["all_toxicity_grades"] = all_toxicity_grades 
+    
+        analysis["positive_content_score"] = positive_content_score 
+        analysis["positive_content_grade"] = positive_content_grade 
+        analysis["positive_content_percentile"] = positive_content_percentile 
+        analysis["all_positive_content_scores"] = all_positive_content_scores
+        analysis["all_positive_content_grades"] = all_positive_content_grades 
+    except:
+        print("couldn't get toxicity and positive content metrics")
     
     print(type(analysis))
-
-    analysis["toxicity_score"] = toxicity_score 
-    analysis["toxicity_grade"] = toxicity_grade 
-    analysis["toxicity_percentile"] = toxicity_percentile 
-    analysis["all_toxicity_scores"] = all_toxicity_scores 
-    analysis["all_toxicity_grades"] = all_toxicity_grades 
-    
-    analysis["positive_content_score"] = positive_content_score 
-    analysis["positive_content_grade"] = positive_content_grade 
-    analysis["positive_content_percentile"] = positive_content_percentile 
-    analysis["all_positive_content_scores"] = all_positive_content_scores
-    analysis["all_positive_content_grades"] = all_positive_content_grades 
-    
     return analysis
 
 @app.post("/request_subreddit/", status_code=status.HTTP_204_NO_CONTENT)
@@ -177,6 +124,14 @@ async def request_subreddit(
     # TODO: Implement
     print(f"Subreddit Request from {subreddit_request.email} for the subreddit r/{subreddit_request.subreddit}")
     
+    msg = EmailMessage()
+    msg["Subject"] = "Subreddit Analysis Request"
+    msg["From"] = "" # TODO
+    msg["To"] = "" # TODO
+    msg.set_content(
+        f"A user with email {subreddit_request.email} has requested analysis for the subreddit r/{subreddit_request.subreddit}."
+    )
+
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 

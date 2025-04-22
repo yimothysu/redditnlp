@@ -24,8 +24,6 @@ subreddits = [
     "technology",
     "100YearsAgo",
     "AskHistorians",
-    "conspiracytheories",
-    "LetsNotMeet",
     "unpopularopinion",
     "philosophy",
     "mentalhealth",
@@ -35,38 +33,73 @@ subreddits = [
     "personalfinance",
     "changemyview",
     "LateStageCapitalism",
-    "UpliftingNews"
+    "UpliftingNews",
+    "ApplyingToCollege",
+    "conspiracytheories",
+    "linguistics",
+    "lgbt",
+    "DrugNerds",
+    "Bitcoin",
+    "Futurology",
+    "findapath",
+    "Parenting",
+    "4chan",
+    "TheRedPill",
+    "TheBluePill",
+    "SkincareAddiction",
+    "Conservative",
+    "Libertarian",
+    "antiwork",
+    "Christianity",
+    "uofm",
+    "Harvard",
+    "stanford", 
+    "mit",
+    "berkeley",
+    "UPenn",
+    "yale",
+    "columbia",
+    "princeton",
+    "ufl",
 ]
 
 async def fetch_subreddit_data(subreddit, time_filter):
-    try:
-        subreddit_query = SubredditQuery(
+    subreddit_query = SubredditQuery(
             name=subreddit,
             time_filter=time_filter,
             sort_by="top"
-        )
+    )
 
-        analysis = await perform_subreddit_analysis(subreddit_query)
-        collection = COLLECTIONS[subreddit_query.time_filter]
-        collection.update_one(
+    analysis = await perform_subreddit_analysis(subreddit_query)
+    collection = COLLECTIONS[subreddit_query.time_filter]
+    collection.update_one(
             {"id_": subreddit_query.name},
             {"$set": analysis.model_dump()},
             upsert=True # insert if no match
-        )
-    except:
-        print("something went wrong in fetch_subreddit_data")
+    )
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Error: must pass in time filter argument")
+    if len(sys.argv) != 3:
+        print("Error: must pass in time filter argument and start from index")
         sys.exit(1)
     
     time_filter = sys.argv[1]
-    if(time_filter not in ['week', 'year', 'all']):
+    start_from_idx = sys.argv[2]
+    if time_filter not in ['week', 'year', 'all']:
         print("Error: time filter argument must be 'week', 'year', or 'all'")
         sys.exit(1)
     
-    for subreddit in subreddits:
+    try:
+        if int(start_from_idx) < 0 or int(start_from_idx) >= len(subreddits):
+            print("Error: not a valid start from index argument. Must be between 0 and ", len(subreddits), " inclusive")
+    except: 
+        print("Error: start from index argument must be an integer")
+        sys.exit(1)
+    
+    start_from_idx = int(start_from_idx)
+    print('start_from_idx: ', start_from_idx)
+    for i in range(start_from_idx, len(subreddits)):
+        subreddit = subreddits[i]
         print(f"Working on subreddit {subreddit}")
         asyncio.run(fetch_subreddit_data(subreddit, time_filter))

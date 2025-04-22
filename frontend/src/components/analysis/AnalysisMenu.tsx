@@ -32,6 +32,7 @@ export const AnalysisMenu: React.FC<AnalysisMenuProps> = ({
 }) => {
   const tabs = [
     ...(timeFilter === "all" ? [{ label: "Ranking" }] : []),
+    { label: "Trends" },
     { label: "Named Entities" },
     { label: "Bi-Grams" },
     { label: "Word Embeddings" },

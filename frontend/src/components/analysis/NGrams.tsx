@@ -34,8 +34,8 @@ const NGramsForDate: React.FC<NGramsForDateProps> = ({
         {ngrams.map((ngram: NGram, index: number) => (
           <li key={index} className="pb-1 pt-1">
             <div className="text-[14px] flex justify-between">
-              <div>{ngram[0]}</div>
-              <div>{ngram[1]}</div>
+              <div>{ngram.name}</div>
+              <div>{ngram.count}</div>
             </div>
             <hr className="border-t border-gray-300 my-1" />
           </li>

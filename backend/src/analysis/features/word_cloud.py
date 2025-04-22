@@ -1,17 +1,14 @@
-from wordcloud import WordCloud
-import matplotlib.pyplot as plt
+from wordcloud import WordCloud # type: ignore
 from io import BytesIO
 import base64
 
 # Takes in dictionary of named entities
 def generate_word_cloud(named_entities):    
     # Create dictionary of named entities and their frequencies
-    fullDict = named_entities_to_dictionary(named_entities)
+    entities_to_freq = named_entities_to_dictionary(named_entities)
     
     wc = WordCloud(background_color="white", max_words=2000, contour_width=3, contour_color='steelblue')
-    
-    wc.generate_from_frequencies(fullDict)
-        
+    wc.generate_from_frequencies(entities_to_freq)
     buffer = BytesIO()
     wc.to_image().save(buffer, "PNG")
     buffer.seek(0)
@@ -21,7 +18,7 @@ def generate_word_cloud(named_entities):
 
 def named_entities_to_dictionary(named_entities):
     # Create dictionary of named entities and their frequencies
-    fullDict = {}
+    entities_to_freq = {}
     
     # Add named entities to dictionary
     for entity_list in named_entities.values():        
@@ -31,5 +28,5 @@ def named_entities_to_dictionary(named_entities):
             elif entity[0] in fullDict:
                 fullDict[entity[0]] += entity[1]
     
-    return fullDict
+    return entities_to_freq
     
