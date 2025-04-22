@@ -49,6 +49,10 @@ backend/
    python src/main.py
    ```
 
+## Testing
+
+To run tests, execute `pytest` in the terminal.
+
 ## Documentation
 
 Additional documentation can be found in the `docs/` directory. 
