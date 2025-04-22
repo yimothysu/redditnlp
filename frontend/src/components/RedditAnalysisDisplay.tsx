@@ -11,6 +11,7 @@ import { ComparativeAnalysis } from "./analysis/ComparativeAnalysis";
 import { NamedEntities } from "./analysis/NamedEntities";
 import { Trends } from "./analysis/Trends";
 
+// This component is in charge of displaying all aspects of subreddit analysis and allowing users to filter subreddit
 export default function RedditAnalysisDisplay({
   name,
   inComparisonMode,
@@ -37,6 +38,7 @@ export default function RedditAnalysisDisplay({
     };
   }, []);
 
+  // Get subreddit analysis based on filter and sort by
   const loadSubredditAnalysis = async () => {
     if (isBusy || !name || name.trim().length === 0) return;
     setIsBusy(true);
@@ -61,6 +63,7 @@ export default function RedditAnalysisDisplay({
     loadSubredditAnalysis();
   }, []);
 
+  // Based on menu item, display analysis for current menu item
   const DisplayedAnalysis = () => {
     if (!analysis) return null;
 
@@ -94,6 +97,7 @@ export default function RedditAnalysisDisplay({
   const spinnerStyle =
     "animate-spin h-6 w-6 border-t-4 border-blue-500 border-solid rounded-full";
 
+  // Based on timestamp, display whether analysis is up to date
   const DisplayOutdatedOrNot = () => {
     if (!analysis) return null;
 

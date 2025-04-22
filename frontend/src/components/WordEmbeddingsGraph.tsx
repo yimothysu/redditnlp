@@ -6,6 +6,7 @@ import annotationPlugin from "chartjs-plugin-annotation";
 
 Chart.register(PointElement, LinearScale, annotationPlugin);
 
+// Component to display word embeddings in 2D format
 function WordEmbeddingsGraph({
   embeddings,
   isComparisonMode,
@@ -15,6 +16,7 @@ function WordEmbeddingsGraph({
 }) {
   const annotations: { [param: number]: any } = {};
 
+  // For each embedding create arrows on graph
   embeddings.map(({ x, y, word }, index) => {
     annotations[index] = {
       type: "line",
