@@ -23,10 +23,10 @@ def named_entities_to_dictionary(named_entities):
     # Add named entities to dictionary
     for entity_list in named_entities.values():        
         for entity in entity_list:
-            if entity[0] not in fullDict:
-                fullDict[entity[0]] = entity[1]
-            elif entity[0] in fullDict:
-                fullDict[entity[0]] += entity[1]
+            if entity[0] not in entities_to_freq:
+                entities_to_freq[entity[0]] = entity[1]
+            elif entity[0] in entities_to_freq:
+                entities_to_freq[entity[0]] += entity[1]
     
     return entities_to_freq
     
