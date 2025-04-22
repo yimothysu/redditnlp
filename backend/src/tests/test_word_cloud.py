@@ -50,7 +50,7 @@ class TestEdgeCases:
         output = named_entities_to_dictionary(input)
         assert output == expected_output
         
-class TestWordCloud:
+class TestNamedEntitiesToDictionary:
     def test_simple_named_entities_to_dictionary(self):
         input = {
             "04-20": [("Entity A", 5), ("Entity B", 3)],
