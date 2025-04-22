@@ -1,4 +1,4 @@
-import gensim.downloader as api # type: ignore
+import gensim.downloader as api
 from sklearn.decomposition import PCA
 import numpy as np
 
