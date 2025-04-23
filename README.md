@@ -5,10 +5,9 @@
 ## Project Overview
 
 This project aims to provide meaningful insights into Reddit content by:
-- Extracting and analyzing topics from Reddit posts and comments
-- Identifying and measuring toxicity levels in discussions
-- Highlighting positive and constructive content
-- Visualizing trends and patterns in Reddit interactions
+- Extracting and analyzing named entities from Reddit posts and comments
+- Measuring toxicity and positive content scores in discussions
+- Visualizing sentiment trends across time
 
 ## Architecture
 
@@ -50,23 +49,6 @@ Visit `http://localhost:5173` to access the application.
 ├── docs/               # Project documentation
 └── README.md           # This file
 ```
-
-## Features
-
-- Topic Analysis
-  - Extract trending topics from Reddit content
-  - Track topic evolution over time
-  - Identify related subtopics
-
-- Toxicity Analysis
-  - Measure toxicity levels in discussions
-  - Identify problematic content
-  - Track community health metrics
-
-- Positive Content Identification
-  - Highlight constructive discussions
-  - Identify helpful community members
-  - Track positive engagement metrics
 
 ## Documentation
 
