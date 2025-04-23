@@ -379,6 +379,8 @@ def get_key_points_of_entity(entity, flattened_comments):
 
 def get_post_urls(date_to_posts, date_to_entities):
     """Get the top post urls for each named entity so users can reference the posts."""
+    if date_to_posts == {}:
+        return date_to_entities
     t1 = time.time()
     num_urls_max = TIME_FILTER_TO_POST_URL_LIMIT[config['time_filter']]
     new_date_to_entities = {}

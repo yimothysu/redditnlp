@@ -14,13 +14,7 @@ def generate_word_cloud(named_entities):
         str: Base64 encoded PNG image of the word cloud
     """
     # Create dictionary of named entities and their frequencies
-    entities_to_freq = {}
-    for entity_list in named_entities.values():        
-        for entity in entity_list:
-            if entity.name not in entities_to_freq:
-                entities_to_freq[entity.name] = entity.count
-            elif entity.name in entities_to_freq:
-                entities_to_freq[entity.name] += entity.count
+    entities_to_freq = named_entities_to_dictionary(named_entities)
     
     wc = WordCloud(background_color="white", max_words=2000, contour_width=3, contour_color='steelblue')
     wc.generate_from_frequencies(entities_to_freq)
@@ -31,27 +25,24 @@ def generate_word_cloud(named_entities):
     
     return img_base64
 
-
-def generate_by_date(named_entities):
-    """Generate word cloud arrays for each date's named entities.
+def named_entities_to_dictionary(named_entities):
+    """Generate a dictionary of named entities and their frequencies from a dictionary of named entities.
     
     Args:
         named_entities: Dictionary mapping dates to lists of named entities
     Returns:
-        numpy.ndarray: Word cloud image array for the first non-empty date,
-                      or None if no entities found
+        dict: Dictionary mapping named entities to their frequencies
     """
+    # Create dictionary of named entities and their frequencies
+    entities_to_freq = {}
+    
     # Add named entities to dictionary
-    for date, entity_list in named_entities.items():
-        tempDict = {}        
+    for entity_list in named_entities.values():        
         for entity in entity_list:
-            if entity.name not in tempDict:
-                tempDict[entity.name] = entity.count
-            elif entity.name in tempDict:
-                tempDict[entity.name] += entity.count
-        
-        if not entity_list: continue
-        
-        wc = WordCloud(background_color="white", max_words=2000, contour_width=3, contour_color='steelblue')  
-        wc.generate_from_frequencies(tempDict)
-        return wc.to_array()
+            if entity[0] not in entities_to_freq:
+                entities_to_freq[entity[0]] = entity[1]
+            elif entity[0] in entities_to_freq:
+                entities_to_freq[entity[0]] += entity[1]
+    
+    return entities_to_freq
+    
