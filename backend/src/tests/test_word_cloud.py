@@ -1,12 +1,13 @@
 import pytest
 import sys
+import os 
 from wordcloud import WordCloud
 from PIL import Image
 from io import BytesIO
 import base64
 
-sys.path.append("../analysis/features")
-from word_cloud import named_entities_to_dictionary, generate_word_cloud
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from analysis.features.word_cloud import *
 
 # Test edge cases for the named_entities_to_dictionary function
 class TestEdgeCases:
