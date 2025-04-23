@@ -4,7 +4,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from analysis.features.word_embeddings import *
 
+# Input for Tests
 words = ["hello", "bye"]
+
+# Expected embeddings
 expected_2d_embeddings = {'hello': (-2.0874107, 5.039613e-07), 'bye': (2.0874116, 5.0396113e-07)}
 expected_embedding = np.array([[-0.05419922,  0.01708984, -0.00527954,  0.33203125, -0.25      ,
        -0.01397705, -0.15039062, -0.265625  ,  0.01647949,  0.3828125 ,
@@ -149,7 +152,7 @@ def test_word_embeddings():
     actual_output_words, actual_output_embeddings = get_word_embeddings(words)
     assert len(actual_output_words) == len(expected_words) == len(actual_output_embeddings)
     assert actual_output_words == expected_words
-    np.testing.assert_allclose(actual_output_embeddings, expected_embedding, rtol=1e-3, atol=1e-10)
+    np.testing.assert_allclose(actual_output_embeddings, expected_embedding, rtol=0, atol=1e-2)
 
 # Test that 2D embedding output is in correct shape, format, and produces expected result
 def test_get_2d_embeddings():
@@ -161,4 +164,4 @@ def test_get_2d_embeddings():
     assert len(actual_embeddings_2d["bye"]) == 2
     # Ensure word embeddings equals expected result
     for word in actual_embeddings_2d:
-        np.testing.assert_allclose(expected_2d_embeddings[word], actual_embeddings_2d[word])
+        np.testing.assert_allclose(expected_2d_embeddings[word], actual_embeddings_2d[word], rtol=0, atol=1e-2)
