@@ -1,4 +1,5 @@
 import { SubredditAnalysis } from "../../types/redditAnalysis";
+import { EntityPicture } from "./EntityPicture";
 import {
     LineChart,
     Line,
@@ -20,17 +21,16 @@ const COLORS: string[] = [
     "#1982C4", // sky blue
     "#F15BB5", // bright pink
     "#FF595E", // red-pink
-    "#FFAB00",  // amber
-    "#8AC926", // lime green
     "#9B5DE5", // purple
+    "#00C49A", // sea green
     "#FF924C", // tangerine
     "#00BBF9", // bright cyan
     "#D81159", // crimson
-    "#00C49A", // sea green
     "#FF007F", // neon pink
     "#FF6F61", // colar-pink
     "#FFCA3A", // golden yellow
     "#FDCB6E", // soft yellow-orange
+    "#FFAB00",  // amber
   ];
   
 const getColor = (index: number) => COLORS[index % COLORS.length];
@@ -114,7 +114,7 @@ const SentimentChart: React.FC<TrendsProps> = ({analysis}) => {
     return (
         <div className="items-center justify-center space-between pb-100 pt-10" style={{ display: 'flex', flexWrap: 'wrap', gap: '2rem' }}>
           {entityNames.map((entity_name, idx) => (
-            <div className="rounded shadow-md bg-white w-full opacity-100 md:w-[calc(47%-0.5rem)]"
+            <div className="rounded shadow-md bg-white w-full opacity-100 md:w-[calc(32%-0.5rem)]"
               key={entity_name}
               style={{
                 padding: '1rem',
@@ -122,7 +122,10 @@ const SentimentChart: React.FC<TrendsProps> = ({analysis}) => {
                 // width: 'calc(30% - 0.5rem)', // two per row with 1rem gap
               }}
             >
-              <h2 className="text-center font-semibold text-xl" style={{ color: getColor(idx), marginBottom: '1rem' }}>{entity_name}</h2>
+              <div className="flex gap-6 items-center justify-center">
+                <EntityPicture entity_name={entity_name}></EntityPicture>
+                <h2 className="text-center font-semibold text-xl mt-4" style={{ color: getColor(idx), marginBottom: '1rem' }}>{entity_name}</h2>
+              </div>
               <ResponsiveContainer width="100%" height={window.innerWidth < 640 ? 150 : 200} >
                 <LineChart data={Object.entries(chartData[entity_name]).map(([date, value]) => ({date,value,}))} 
                            margin={{ top: 15, right: 5, bottom: 20, left: 5 }}>
@@ -180,7 +183,7 @@ function GetTrends({ analysis }: { analysis: SubredditAnalysis }) {
     }
     console.log('entity_to_sentiment_progression: ', entity_to_sentiment_progression);
     // Only keep the key value pairs in entity_to_sentiment_progression that have >= 2 elements in value 
-    const filtered_entity_to_sentiment_progression = new Map([...entity_to_sentiment_progression].filter(([_, sentiment_progression]) => sentiment_progression.length >= 2 ));
+    const filtered_entity_to_sentiment_progression = new Map([...entity_to_sentiment_progression].filter(([_, sentiment_progression]) => sentiment_progression.length >= 4 ));
     console.log('filtered_entity_to_sentiment_progression: ', filtered_entity_to_sentiment_progression);
     return filtered_entity_to_sentiment_progression;
 };
