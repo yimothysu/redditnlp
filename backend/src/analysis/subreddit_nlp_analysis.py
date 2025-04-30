@@ -15,8 +15,8 @@ from src.analysis.features.word_embeddings import ( get_2d_embeddings )
 from src.analysis.features.word_cloud import ( generate_word_cloud )
 
 # Configuration maps for different time filters
-TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'week': 200}
-TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'week': 50}
+TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'week': 1000}
+TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'week': 200}
 TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 12, 'year': 10, 'week': 8}
 TIME_FILTER_TO_DATE_FORMAT = {'all': '%y', 'year': '%m-%y', 'week': '%m-%d'}
 
@@ -66,7 +66,7 @@ def group_posts_by_date(posts):
     return posts_grouped_by_date
 
 
-async def get_subreddit_analysis(posts_grouped_by_date):
+async def get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_grouped_by_date):
     """Perform NLP analysis on grouped posts.
     
     Args:
@@ -87,8 +87,17 @@ async def get_subreddit_analysis(posts_grouped_by_date):
         post_content_grouped_by_date[date] = post_content
     
     top_n_grams = get_top_ngrams(post_content_grouped_by_date)
-    top_named_entities = await get_top_entities(config['time_filter'], post_content_grouped_by_date, posts_grouped_by_date)
-    return top_n_grams, top_named_entities
+    top_named_entities = await get_top_entities(config['time_filter'], post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date)
+    
+    # Generate embeddings and word cloud for named entities
+    entity_set = set()
+    for _, entities in top_named_entities.items():
+        entity_names = [entity.name for entity in entities]
+        for entity_name in entity_names: entity_set.add(entity_name)
+    top_named_entities_embeddings = get_2d_embeddings(list(entity_set))
+    top_named_entities_wordcloud = generate_word_cloud(top_named_entities)
+    
+    return top_n_grams, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud
 
 
 async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
@@ -159,16 +168,18 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
 
     # Perform various analyses
     posts_grouped_by_date = group_posts_by_date(posts_list)
+    comment_and_score_pairs_grouped_by_date = dict()
+    for date, posts in posts_grouped_by_date.items():
+        # very unlikely that 2 comments mentioning an entity will be EXACTLY the same 
+        comment_and_score_pairs = dict() # across all posts in this date 
+        for post in posts:
+            for i in range(len(post.comments)):
+                comment = post.comments[i]
+                comment_score = post.comment_scores[i]
+                comment_and_score_pairs[comment] = comment_score 
+        comment_and_score_pairs_grouped_by_date[date] = comment_and_score_pairs
     readability_metrics = get_readability_metrics(posts_list)
-    top_n_grams, top_named_entities = await get_subreddit_analysis(posts_grouped_by_date)
-
-    # Generate embeddings and word cloud for named entities
-    entity_set = set()
-    for _, entities in top_named_entities.items():
-        entity_names = [entity.name for entity in entities]
-        for entity_name in entity_names: entity_set.add(entity_name)
-    top_named_entities_embeddings = get_2d_embeddings(list(entity_set))
-    top_named_entities_wordcloud = generate_word_cloud(top_named_entities)
+    top_n_grams, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud = await get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_grouped_by_date)
     
     # Compile final analysis
     analysis = SubredditAnalysis(
