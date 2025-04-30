@@ -4,6 +4,7 @@ import ButtonPopover from "../ButtonPopover";
 import { ColorKey } from "./ColorKey";
 import { formatDate } from "../../utils/dateUtils";
 import { ChevronRight } from "lucide-react";
+import { entity_name_to_png } from "../../constants/named_entity_png.ts";
 
 interface NamedEntitiesProps {
   analysis: SubredditAnalysis;
@@ -71,6 +72,37 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
   entities,
   timeFilter,
 }) => {
+
+  const EntityPicture = ({entity_name}: { entity_name: string }) => {
+    let picture_file_name = null;
+    if(entity_name in entity_name_to_png) {
+      picture_file_name = entity_name_to_png[entity_name];
+    }
+    else {
+      entity_name = entity_name.toLowerCase();
+      if(entity_name in entity_name_to_png) {
+        picture_file_name = entity_name_to_png[entity_name];
+      }
+      else if (entity_name.startsWith("the ") && entity_name.slice(4) in entity_name_to_png) {
+        picture_file_name = entity_name_to_png[entity_name.slice(4)];
+      }
+      else if (!entity_name.endsWith("s") && (entity_name + "s") in entity_name_to_png) {
+        picture_file_name = entity_name_to_png[entity_name + "s"];
+      }
+    }
+
+    if (picture_file_name != null) {
+      return (
+        <div className="shadow-xs rounded-sm p-1">
+          <img
+            src={"/named_entity_pics/" + picture_file_name}
+            className="w-9 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
+          />
+        </div>
+      );
+    }
+  };
+
   return (
     <div
       key={date}
@@ -104,8 +136,9 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
               key={index}
               className="bg-white p-5 transition-all duration-200 border border-gray-100 hover:border-gray-200"
             >
-              <div className="flex justify-center mb-4">
-                <h4 className="text-lg font-bold text-gray-800">{entity.name}</h4>
+              <div className="flex justify-center mb-4 gap-6">
+                <EntityPicture entity_name={entity.name}></EntityPicture>
+                <h4 className="mt-2 text-lg font-bold text-gray-800">{entity.name}</h4>
               </div>
               <div className="space-y-4">
                 <div className="flex flex-col items-center">
