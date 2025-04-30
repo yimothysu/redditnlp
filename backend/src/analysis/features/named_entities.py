@@ -22,9 +22,10 @@ summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
 summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
 
 # Configuration constants
-TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 25}
+TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 20}
 TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
 TIME_FILTER_TO_POST_URL_LIMIT = {'week': 1, 'year': 3, 'all': 3}
+TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 35, 'year': 50, 'all': 65}
 
 config = {
     "time_filter": "week",
@@ -50,7 +51,11 @@ banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomor
                    'a hundred years ago', 'the end of the month', 'this month', 'the coming days', 'annual', 'every week', 'Monday to Friday', 'a work week', 'annually',
                    'last friday', 'the last decade', 'the last decade or so', 'r', 'hundreds', 'secondly', 'a day', 'many years later', 'a million', 'one million',
                    'yearly', 'minute', 'a minute', 'late last year', 'at least today', 'August last year', 'just the last couple weeks', 'a month ago', 'every moment',
-                   'moment', 'a moment', 'decades ago', 'about half', 'that first year'}
+                   'moment', 'a moment', 'decades ago', 'about half', 'that first year', 'thousands of dollars', 'hundreds of dollars', 'millions of dollars', 'eating',
+                   'dad', 'mom', 'this age', 'the weekend', 'years ago', 'almost two', 'at least one', 'weekends', 'most nights', 'every single night', 'two cents',
+                   'mornings', 'under two', 'six year old', 'the weekend', 'that age', 'those summers', 'saturdays', 'half day', 'thirteen', 'many years', 'later at night',
+                   'all weekend', 'weekend', 'several hours', 'five year old', 'every summer', 'a day or so', 'a minute', 'a full day', 'this fall', 'minutes', 'the last year',
+                   'every month', 'three days', 'fridays', 'an extra day', 'several years', 'five days', 'many years ago', 'two days', 'every year', 'two years ago'}
 
 
 # Download required NLTK resources
@@ -79,7 +84,9 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
     #    - key points
     #    - top post urls
     t1 = time.time()
+    print('start loading en_core_web_trf')
     nlp = spacy.load("en_core_web_trf", disable=["parser", "tagger"])
+    print('finishing loading en_core_web_trf')
     nlp.add_pipe('sentencizer')
     top_named_entities = dict()
     for date, doc in zip(dates, nlp.pipe(post_content, batch_size=50)):
@@ -196,11 +203,11 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
             else:
                 print('could NOT find full_comment where named entity is mentioned')
     
-    # Only keep the top 50 comments for each entity --> try 50 for now 
     for entity, comments in entity_to_comments.items():
         # comments is a list of tuples (comment, score)
         comments = sorted(comments, key=lambda x: x[1])
-        comments = comments[-50:]
+        max_num_comments = TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT[config['time_filter']]
+        comments = comments[-max_num_comments:] 
         entity_to_comments[entity] = [comment[0] for comment in comments]
         print('kept ', len(comments), ' comments for ', entity)
 
@@ -296,11 +303,15 @@ def combine_same_entities(entity_to_sentiment, entity_to_key_points):
         kamala_harris_synonyms = ["Kamala", "kamala harris", "kamala", "harris", "Harris"]
         joe_biden_synonyms = ["biden", "Biden", "Joe Biden", "joe biden", "Joe biden"]
         bitcoin_synonyms = ["bitcoin", "BTC"]
+        nicolas_cage_synonyms = ["nicolas cage", "nick cage", "nic cage"]
+        tesla_synonyms = ["tesla", "TSLA"]
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, america_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, elon_musk_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, kamala_harris_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, joe_biden_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, bitcoin_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, nicolas_cage_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, tesla_synonyms, entity_to_sentiment, entity_to_key_points)
     return entity_to_sentiment, entity_to_key_points
 
 
