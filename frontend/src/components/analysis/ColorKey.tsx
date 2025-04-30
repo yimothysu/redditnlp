@@ -1,22 +1,18 @@
 interface ColorCodeBoxProps {
   backgroundColor: string;
-  label: string;
 }
 
 const ColorCodeBox: React.FC<ColorCodeBoxProps> = ({
-  backgroundColor,
-  label,
+  backgroundColor
 }) => {
   return (
     <div
-      className="flex items-center justify-center w-auto font-medium px-3 py-2 text-sm"
+      className="flex items-center w-[70px] justify-center font-medium py-3 text-sm"
       style={{
         backgroundColor,
         textAlign: "center",
-        maxWidth: "160px",
       }}
     >
-      {label}
     </div>
   );
 };
@@ -41,12 +37,12 @@ export const ColorKey: React.FC = () => {
   }
 
   return (
-    <div className="flex justify-center m-8 rounded-md overflow-hidden">
-      <ColorCodeBox backgroundColor="#AFE1AF" label="Very Positive Consensus" />
-      <ColorCodeBox backgroundColor="#e2f4a5" label="Positive Consensus" />
-      <ColorCodeBox backgroundColor="#FFFFC5" label="Neutral Consensus" />
-      <ColorCodeBox backgroundColor="#FFD580" label="Negative Consensus" />
-      <ColorCodeBox backgroundColor="#ffb9b9" label="Very Negative Consensus" />
+    <div className="ml-50 flex">
+      <ColorCodeBox backgroundColor="#ffb9b9"/>
+      <ColorCodeBox backgroundColor="#FFD580"/>
+      <ColorCodeBox backgroundColor="#FFFFC5"/>
+      <ColorCodeBox backgroundColor="#e2f4a5"/>
+      <ColorCodeBox backgroundColor="#AFE1AF"/>
     </div>
   );
 };

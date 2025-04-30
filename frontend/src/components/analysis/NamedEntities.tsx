@@ -22,9 +22,9 @@ const SummarizedSentimentBulletPoints: React.FC<{
 }> = ({ key_points }) => {
   if (!key_points) return null;
   return (
-    <ul className="list-disc pl-4">
+    <ul className="list-disc pl-4 max-w-[450px]">
       {key_points.map((sentence: string, index: number) => (
-        <li key={index}>{sentence.trim()}</li>
+        <li className="pb-1" key={index}>{sentence.trim()}</li>
       ))}
     </ul>
   );
@@ -38,14 +38,14 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
   console.log("entity[4].length: ", entity.urls.length);
   if (Number(entity.urls.length) == 1) {
     return (
-      <div className="mt-4">
+      <div className="">
         {Object.entries(entity.urls).map(([_, link]) => (
           <div
             onClick={() => window.open(link, "_blank")}
-            className="bg-gray-50 hover:bg-gray-100 transition-colors duration-200 p-3 text-sm font-medium rounded-lg text-gray-700 text-center flex items-center justify-center cursor-pointer border border-gray-100"
+            className="w-20 bg-[#fa6f4d] hover:bg-gray-100 transition-colors duration-200 p-2 text-sm font-medium rounded-lg text-white text-center flex items-center justify-center cursor-pointer border border-gray-100"
           >
-            Top Post discussing "{entity.name}"
-            <ChevronRight className="w-5 h-5 ml-2 text-gray-500" />
+            post
+            <ChevronRight className="w-5 h-5 ml-2 text-white" />
           </div>
         ))}
       </div>
@@ -70,71 +70,67 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
 const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
   date,
   entities,
-  timeFilter,
 }) => {
 
   return (
     <div
       key={date}
-      className="flex-grow flex-1 mb-6 mr-1 ml-1 bg-white rounded-xl overflow-hidden border border-gray-200"
+      className="flex-grow flex-1 mb-6 bg-white overflow-hidden"
     >
-      <h3
-        className="text-xl font-semibold bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200"
-        style={{
-          padding: "12px",
-          textAlign: "center",
-        }}
-      >
-        {formatDate(date, timeFilter)}
-      </h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-0.5 bg-gray-100">
+      <div className="grid grid-cols-1 gap-0.5 bg-gray-100">
         {entities.map((entity: NamedEntity, index: number) => {
           const backgroundColor =
-            entity.sentiment >= 0.5 && entity.sentiment <= 1
+            entity.sentiment >= 0.6 && entity.sentiment <= 1
               ? "#AFE1AF"
-              : entity.sentiment >= 0.1 && entity.sentiment < 0.5
+              : entity.sentiment >= 0.2 && entity.sentiment < 0.6
               ? "#e2f4a5"
-              : entity.sentiment >= -0.1 && entity.sentiment < 0.1
+              : entity.sentiment >= -0.2 && entity.sentiment < 0.2
               ? "#FFFFC5"
-              : entity.sentiment >= -0.5 && entity.sentiment < -0.1
+              : entity.sentiment >= -0.6 && entity.sentiment < -0.2
               ? "#FFD580"
-              : entity.sentiment >= -1 && entity.sentiment < -0.5
+              : entity.sentiment >= -1 && entity.sentiment < -0.6
               ? "#ffb9b9"
               : "bg-gray-100";
           return (
             <div
               key={index}
-              className="bg-white p-5 transition-all duration-200 border border-gray-100 hover:border-gray-200"
+              className="pt-1 pb-1 grid [grid-template-columns:200px_350px_450px_100px] bg-white transition-all duration-200"
             >
-              <div className="flex justify-center mb-4 gap-6">
-                <EntityPicture entity_name={entity.name}></EntityPicture>
-                <h4 className="mt-2 text-lg font-bold text-gray-800">{entity.name}</h4>
-              </div>
-              <div className="space-y-4">
-                <div className="flex flex-col items-center">
-                  <span
-                    className="px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200"
+                {/* Column 1 */}
+                <div className="flex p-1 bg-gray-50 gap-3 justify-center items-center">
+                  <h4 className="mt-3 text-[15px] font-bold text-gray-800">{entity.name}</h4>
+                  <EntityPicture entity_name={entity.name}></EntityPicture>
+                </div>
+                {/* Column 2 */}
+                <div className="flex gap-2 justify-start items-center">
+                  <div
+                    className="h-5 transition-colors duration-200"
                     style={{
-                      backgroundColor,
+                      backgroundColor: backgroundColor,
+                      width: `${(((entity.sentiment + 1) / 2) * 350)}px`
                     }}
                   >
-                    Sentiment Score: {entity.sentiment.toFixed(2)}
-                  </span>
-                </div>
-
-                {entity.key_points && (
-                  <div className="space-y-2">
-                    <h5 className="font-semibold text-gray-700 text-sm">
-                      Key Points
-                    </h5>
-                    <div className="text-sm text-gray-600">
-                      <SummarizedSentimentBulletPoints key_points={entity.key_points} />
-                    </div>
                   </div>
-                )}
-                <LinksForEntity entity={entity} />
+                  <div className="text-gray-700 text-xs font-semibold italic">
+                    {entity.sentiment.toFixed(2)}
+                  </div>
+                </div>
+                {/* Column 3  */}
+                <div className="p-2 bg-gray-50 text-left">
+                  {entity.key_points && (
+                    <div className="">
+                      <div className="text-[12px] text-gray-500">
+                        <SummarizedSentimentBulletPoints key_points={entity.key_points} />
+
+                      </div>
+                    </div>
+                  )}
+                </div>
+                                {/* Column 4 */}
+                                <div className="p-2 bg-white">
+                   <LinksForEntity entity={entity} /> 
+                </div>
               </div>
-            </div>
           );
         })}
       </div>
@@ -207,10 +203,6 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
       >
         Most Mentioned Named Entities
       </h2>
-      <div className="flex relative items-center text-center justify-center">
-        <br />
-        <ColorKey />
-      </div>
       <div className="flex flex-col items-center justify-center">
         <NamedEntitiesMenu
           dates={Array.from(
@@ -222,6 +214,12 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
           setCurrentDate={setCurrentNamedEntityDate}
           timeFilter={timeFilter}
         />
+      </div>
+      <div className="flex flex-col">
+        <div className="w-full">
+          <ColorKey />
+        </div>
+        <hr className="border-t-2 border-gray-400"></hr>
         <TopNamedEntitiesForDate
           date={currentNamedEntityDate}
           entities={analysis.top_named_entities[currentNamedEntityDate]}

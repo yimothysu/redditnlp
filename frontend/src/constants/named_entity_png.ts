@@ -50,7 +50,6 @@ export const entity_name_to_png: Record<string, string> = {
 "europe": "europe.png",
 "european": "europe.png",
 "north korea": "north_korea.png",
-"EU": "europe.png",
 "chrome" : "chrome.png",
 "kubrick": "kubrick.png",
 "RFK": "RFK.png",
