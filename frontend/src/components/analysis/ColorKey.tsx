@@ -37,12 +37,18 @@ export const ColorKey: React.FC = () => {
   }
 
   return (
-    <div className="ml-50 flex">
+    <div className="ml-33 flex flex-col align-items">
+      <h1 className="text-[13px] text-gray-500 pb-1 pl-35">consensus scale (negative to positive)</h1>
+      <div className="flex">
+      <h1 className="pr-3 text-gray-500 font-semibold pb-1">-1 (min)</h1>
       <ColorCodeBox backgroundColor="#ff9898"/>
       <ColorCodeBox backgroundColor="#ffc245"/>
       <ColorCodeBox backgroundColor="#ffffac"/>
       <ColorCodeBox backgroundColor="#d3ea84"/>
       <ColorCodeBox backgroundColor="#91CC91"/>
+      <h1 className="pl-3 text-gray-500 font-semibold pb-1">1 (max)</h1>
     </div>
+    </div>
+
   );
 };

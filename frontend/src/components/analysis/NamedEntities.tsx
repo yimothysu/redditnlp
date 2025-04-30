@@ -201,9 +201,9 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
         className="text-xl font-bold text-center"
         style={{ textAlign: "center", fontSize: "20px" }}
       >
-        Most Mentioned Named Entities
+        Named Entities
       </h2>
-      <div className="flex flex-col items-center justify-center">
+      <div className="mt-3 flex flex-col items-center justify-center">
         <NamedEntitiesMenu
           dates={Array.from(
             Object.keys(analysis.top_named_entities).sort(
@@ -215,7 +215,7 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
           timeFilter={timeFilter}
         />
       </div>
-      <div className="flex flex-col">
+      <div className="flex flex-col mt-5">
         <div className="w-full">
           <ColorKey />
         </div>
