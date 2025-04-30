@@ -5,6 +5,7 @@ Performs NLP analysis on top posts from specified subreddits and stores results.
 from src.database.db import COLLECTIONS
 import asyncio
 import sys
+import bson 
 
 from src.analysis.subreddit_nlp_analysis import (
     perform_subreddit_analysis,
@@ -16,14 +17,15 @@ from src.utils.subreddit_classes import (
 
 subreddits = [
     "AskReddit",
+    "technology",
     "politics",
-    "AskOldPeople",
     "gaming",
     "science",
     "popculturechat",
-    "worldnews",
-    "technology",
-    "100YearsAgo",
+    "cscareerquestions",
+    "stocks",
+    "investing",
+    "artificial",
     "AskHistorians",
     "unpopularopinion",
     "philosophy",
@@ -33,20 +35,14 @@ subreddits = [
     "AskWomen",
     "personalfinance",
     "changemyview",
-    "LateStageCapitalism",
-    "UpliftingNews",
     "ApplyingToCollege",
     "conspiracytheories",
-    "linguistics",
     "lgbt",
-    "DrugNerds",
     "Bitcoin",
     "Futurology",
     "findapath",
     "Parenting",
     "4chan",
-    "TheRedPill",
-    "TheBluePill",
     "SkincareAddiction",
     "Conservative",
     "Libertarian",
@@ -79,12 +75,27 @@ async def fetch_subreddit_data(subreddit, time_filter):
     )
 
     analysis = await perform_subreddit_analysis(subreddit_query)
+    # Serialize and measure size
+    document = analysis.model_dump()
+    document_size_bytes = len(bson.BSON.encode(document))
+    document_size_mb = document_size_bytes / (1024 * 1024)
+    print(f"Document size: {document_size_mb:.2f} MB")
+    
     collection = COLLECTIONS[subreddit_query.time_filter]
-    collection.update_one(
+    result = collection.update_one(
             {"id_": subreddit_query.name},
             {"$set": analysis.model_dump()},
             upsert=True # insert if no match
     )
+
+    # Check if the collection was updated
+    if result.matched_count > 0:
+        if result.modified_count > 0:
+            print("The document was updated.")
+        else:
+            print("The document was found but no changes were made (it may be the same).")
+    else:
+        print("No matching document was found, but a new one was inserted.")
 
 
 if __name__ == "__main__":

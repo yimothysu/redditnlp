@@ -1,14 +1,15 @@
 // importable list of cached subreddits
 export const subreddits = [
     "AskReddit",
+    "technology",
     "politics",
-    "AskOldPeople",
     "gaming",
     "science",
     "popculturechat",
-    "worldnews",
-    "technology",
-    "100YearsAgo",
+    "cscareerquestions",
+    "stocks",
+    "investing",
+    "artificial",
     "AskHistorians",
     "unpopularopinion",
     "philosophy",
@@ -18,20 +19,14 @@ export const subreddits = [
     "AskWomen",
     "personalfinance",
     "changemyview",
-    "LateStageCapitalism",
-    "UpliftingNews",
     "ApplyingToCollege",
     "conspiracytheories",
-    "linguistics",
     "lgbt",
-    "DrugNerds",
     "Bitcoin",
     "Futurology",
     "findapath",
     "Parenting",
     "4chan",
-    "TheRedPill",
-    "TheBluePill",
     "SkincareAddiction",
     "Conservative",
     "Libertarian",
@@ -48,3 +43,7 @@ export const subreddits = [
     "princeton",
     "ufl",
 ];
+
+export const entity_name_to_png: Record<string, string> = {
+   
+};
