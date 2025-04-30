@@ -22,7 +22,7 @@ summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
 summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
 
 # Configuration constants
-TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 12, 'year': 10, 'week': 8}
+TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 25}
 TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
 TIME_FILTER_TO_POST_URL_LIMIT = {'week': 1, 'year': 3, 'all': 3}
 
@@ -45,7 +45,10 @@ banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomor
                    'october', 'november', 'december', 'four', 'five', 'nine', 'this week', 'next week', 'a few more years', 'a new day', 'the other day', 'third', 
                    'every night', 'max', 'nah', 'yeah', 'yea', 'rip', 'last night', 'six months', 'years later', 'about a week', 'more than one', 'depends', 
                    'about a year', 'every night', 'monthly', 'each month', 'one night', 'the night', 'the year', 'a few weeks', 'nights', 'that night', 'a few hours', 
-                   'that year', 'the first year', 'time', 'a couple of years', 'a nice day', 'reader', 'nsfw', 'youtube'}
+                   'that year', 'the first year', 'time', 'a couple of years', 'a nice day', 'reader', 'nsfw', 'youtube', 'everyday', 'millions', 'billions', 'CMV', 
+                   'Bob', 'RemindMeBot', 'million', 'billion', 'a century ago', 'sixteen', 'the turn of the century', 'now', 'a little more than nine months', 
+                   'a hundred years ago', 'the end of the month', 'this month', 'the coming days', 'annual', 'every week', 'Monday to Friday', 'a work week', 'annually',
+                   'last friday', 'the last decade', 'the last decade or so', 'r', 'hundreds'}
 
 
 # Download required NLTK resources
@@ -55,7 +58,7 @@ nltk.download('punkt_tab')
 nltk.download('wordnet')
 nltk.download('vader_lexicon')
 
-async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grouped_by_date):
+async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date):
     """Extract and analyze top named entities from grouped post content.
     
     Args:
@@ -74,7 +77,7 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
     #    - key points
     #    - top post urls
     t1 = time.time()
-    nlp = spacy.load("en_core_web_sm", disable=["parser", "tagger"])
+    nlp = spacy.load("en_core_web_trf", disable=["parser", "tagger"])
     nlp.add_pipe('sentencizer')
     top_named_entities = dict()
     for date, doc in zip(dates, nlp.pipe(post_content, batch_size=50)):
@@ -83,7 +86,7 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
     print('Computing top named entities using nlp.pipe took: ', t2-t1)
     
     # Process entities in parallel
-    tasks = [asyncio.create_task(postprocess_named_entities(date, doc)) for _, (date, doc) in enumerate(top_named_entities.items())]
+    tasks = [asyncio.create_task(postprocess_named_entities(date, doc, comment_and_score_pairs_grouped_by_date[date])) for _, (date, doc) in enumerate(top_named_entities.items())]
     results = await asyncio.gather(*tasks)
     for date, entities in results:
         top_named_entities[date] = entities
@@ -114,7 +117,7 @@ def filter_named_entity(name: str) -> bool:
     return True
 
 
-async def postprocess_named_entities(date, doc):
+async def postprocess_named_entities(date, doc, comment_and_score_pairs):
     """Process and analyze named entities from a spaCy document.
     
     Filters entities, calculates frequencies, and enriches with
@@ -130,7 +133,7 @@ async def postprocess_named_entities(date, doc):
     entities = Counter([ent.text for ent in doc.ents])
     filtered_entities = Counter()
     for name, count in entities.items():
-        if count < 3: continue # not enough sentences to form a meaningful analysis of the entity 
+        # if count < 3: continue # not enough sentences to form a meaningful analysis of the entity 
         if not (isinstance(name, str) and filter_named_entity(name)): continue
         if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
         filtered_entities[name] = count
@@ -139,7 +142,7 @@ async def postprocess_named_entities(date, doc):
     top_entities = filtered_entities.most_common(TIME_FILTER_TO_NAMED_ENTITIES_LIMIT[config['time_filter']])
     top_entity_names = set([entity[0] for entity in top_entities])
     t1 = time.time()
-    entity_to_sentiment, entity_to_key_points = await get_sentiment_and_key_points_of_top_entities(top_entity_names, doc)
+    entity_to_sentiment, entity_to_key_points = await get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs)
     t2 = time.time()
     print('Computing sentiment + key points of named entities in ', date, ' took: ', t2 - t1)
 
@@ -158,43 +161,62 @@ async def postprocess_named_entities(date, doc):
     return (date, top_entities)
 
 
-async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc):
+async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs):
     """Get sentiment and key points for top entities from a spaCy document.
     
     Args:
         top_entity_names: List of entity names to analyze
         doc: spaCy Doc object
+        comment_and_score_pairs: Dictionary mapping a comment's text to its score 
     Returns:
-        entity_to_sentiment: Dictionary mapping entity names to sentiment scores
-        entity_to_key_points: Dictionary mapping entity names to key points
+        entity_to_sentiment: Dictionary mapping entity name to its sentiment score
+        entity_to_key_points: Dictionary mapping entity name to its key points
     """
-    entity_to_sentiment  = dict()
-    entity_to_sentences = dict()
-    entity_to_flattened_sentences = dict()
-    entity_to_key_points = dict() 
+    entity_to_sentiment  = dict() # Dictionary mapping entity name to its sentiment score [-1, 1]
+    entity_to_comments = dict() # Dictionary mapping entity name to a list of the comments its mentioned in 
+    entity_to_flattened_comments = dict() # Dictionary mapping entity name to its flattened comments 
+    entity_to_key_points = dict() # Dictionary mapping entity name to a list of its computed key points 
     for ent in doc.ents:
         ent_text = ent.text 
         if ent_text in top_entity_names:
             sent_text = ent.sent.text 
-            if ent_text not in entity_to_sentences: 
-                entity_to_sentences[ent_text] = set()
-            entity_to_sentences[ent_text].add(sent_text)
+            # Figure out the full comment that the entity appeared in (for context)
+            full_comment = None
+            for comment_text in comment_and_score_pairs.keys():
+                if sent_text in comment_text:
+                    full_comment = comment_text 
+                    break
+            if full_comment is not None:
+                print('found full_comment where named entity is mentioned')
+                if ent_text not in entity_to_comments: 
+                    entity_to_comments[ent_text] = set()
+                entity_to_comments[ent_text].add((full_comment, comment_and_score_pairs[full_comment]))
+            else:
+                print('could NOT find full_comment where named entity is mentioned')
     
-    for entity, sentences in entity_to_sentences.items():
-        flattened_sentences = "Comments regarding the entity \"" + entity + "\": \n"
+    # Only keep the top 50 comments for each entity --> try 50 for now 
+    for entity, comments in entity_to_comments.items():
+        # comments is a list of tuples (comment, score)
+        comments = sorted(comments, key=lambda x: x[1])
+        comments = comments[-50:]
+        entity_to_comments[entity] = [comment[0] for comment in comments]
+        print('kept ', len(comments), ' comments for ', entity)
+
+    for entity, comments in entity_to_comments.items():
+        flattened_comments = "Comments regarding the entity \"" + entity + "\": \n"
         count = 1
-        for sentence in sentences:
-            flattened_sentences += str(count) + ".) " + sentence.strip() + "\n"
+        for comment in comments:
+            flattened_comments += str(count) + ".) " + comment.strip() + "\n"
             count += 1
-        entity_to_flattened_sentences[entity] = flattened_sentences
+        entity_to_flattened_comments[entity] = flattened_comments
     
-    tasks = [asyncio.to_thread(get_sentiment_of_entity, entity, entity_to_flattened_sentences[entity]) for entity in entity_to_sentences]
+    tasks = [asyncio.to_thread(get_sentiment_of_entity, entity, entity_to_flattened_comments[entity]) for entity in entity_to_comments]
     sentiment_results = await asyncio.gather(*tasks)
     sentiment_results = [sentiment_result for sentiment_result in sentiment_results if sentiment_result is not None]
     for entity, sentiment_score in sentiment_results:
         entity_to_sentiment[entity] = sentiment_score
     
-    tasks = [asyncio.to_thread(get_key_points_of_entity, entity, entity_to_flattened_sentences[entity]) for entity in entity_to_sentences]
+    tasks = [asyncio.to_thread(get_key_points_of_entity, entity, entity_to_flattened_comments[entity]) for entity in entity_to_comments]
     key_points_results = await asyncio.gather(*tasks)
     key_points_results = [result for result in key_points_results if result is not None]
     for entity, key_points in key_points_results:
@@ -221,6 +243,27 @@ def combine_two_entities(entity_to_sentiment, entity_to_key_points, entity_1, en
 
     return entity_to_sentiment, entity_to_key_points
 
+def combine_synonyms(entity, synonyms, entity_to_sentiment, entity_to_key_points):
+    if entity in synonyms and entity in entity_to_key_points:
+            synonyms.remove(entity)
+            sentiments = [entity_to_sentiment[entity]]
+            key_points = ['\n'.join(entity_to_key_points[entity])]
+            
+            for synonym in synonyms:
+                if synonym in entity_to_key_points:
+                    sentiments.append(entity_to_sentiment[synonym])
+                    key_points.append('\n'.join(entity_to_key_points[synonym]))
+                    del entity_to_sentiment[synonym]
+                    del entity_to_key_points[synonym]
+            
+            if len(sentiments) > 1:
+                print('combining ', entity, ' with ', len(sentiments), ' synonyms')
+                combined_sentiment = sum(sentiments) / len(sentiments)
+                _, combined_key_points = get_key_points_of_entity(entity, ' \n '.join(key_points))
+                entity_to_sentiment[entity] = combined_sentiment
+                entity_to_key_points[entity] = combined_key_points
+    
+    return entity_to_sentiment, entity_to_key_points
 
 def combine_same_entities(entity_to_sentiment, entity_to_key_points):
     """Combine entities that refer to the same thing
@@ -230,11 +273,15 @@ def combine_same_entities(entity_to_sentiment, entity_to_key_points):
     print('inside combine_same_entities')
     for entity in list(entity_to_key_points.keys()):
         entity_lowercase = entity[0].lower() + entity[1:]
+        entity_complete_lowercase = entity.lower()
         entity_lowercase_plural = entity[0].lower() + entity[1:] + "s"
         entity_plural = entity + "s"
         
         if entity_lowercase in entity_to_key_points and entity != entity_lowercase:
             entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_lowercase)
+        
+        if entity_complete_lowercase in entity_to_key_points and entity != entity_lowercase:
+            entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_complete_lowercase)
         
         if entity_lowercase_plural in entity_to_key_points:
             entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_lowercase_plural)
@@ -242,25 +289,14 @@ def combine_same_entities(entity_to_sentiment, entity_to_key_points):
         if entity_plural in entity_to_key_points:
             entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_plural)
 
-        america_synonyms = ["USA", "US", "America", "america", "usa"]
-        if entity in america_synonyms and entity in entity_to_key_points:
-            america_synonyms.remove(entity)
-            sentiments = [entity_to_sentiment[entity]]
-            key_points = ['\n'.join(entity_to_key_points[entity])]
-            
-            for america_synonym in america_synonyms:
-                if america_synonym in entity_to_key_points:
-                    sentiments.append(entity_to_sentiment[america_synonym])
-                    key_points.append('\n'.join(entity_to_key_points[america_synonym]))
-                    del entity_to_sentiment[america_synonym]
-                    del entity_to_key_points[america_synonym]
-            
-            if len(sentiments) > 1:
-                print('combining ', entity, ' with ', len(sentiments), ' synonyms')
-                combined_sentiment = sum(sentiments) / len(sentiments)
-                _, combined_key_points = get_key_points_of_entity(entity, ' \n '.join(key_points))
-                entity_to_sentiment[entity] = combined_sentiment
-                entity_to_key_points[entity] = combined_key_points
+        america_synonyms = ["USA", "US", "America", "america", "usa", "The United States", "the United States", "the united states"]
+        elon_musk_synonyms = ["Musk", "Elon", "elon", "musk", "elon musk", "Elon Musk", "Elon musk"]
+        kamala_harris_synonyms = ["Kamala", "kamala harris", "kamala", "harris", "Harris"]
+        joe_biden_synonyms = ["biden", "Biden", "Joe Biden", "joe biden", "Joe biden"]
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, america_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, elon_musk_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, kamala_harris_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, joe_biden_synonyms, entity_to_sentiment, entity_to_key_points)
 
     return entity_to_sentiment, entity_to_key_points
 
