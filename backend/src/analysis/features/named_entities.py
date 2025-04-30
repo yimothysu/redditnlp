@@ -48,7 +48,9 @@ banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomor
                    'that year', 'the first year', 'time', 'a couple of years', 'a nice day', 'reader', 'nsfw', 'youtube', 'everyday', 'millions', 'billions', 'CMV', 
                    'Bob', 'RemindMeBot', 'million', 'billion', 'a century ago', 'sixteen', 'the turn of the century', 'now', 'a little more than nine months', 
                    'a hundred years ago', 'the end of the month', 'this month', 'the coming days', 'annual', 'every week', 'Monday to Friday', 'a work week', 'annually',
-                   'last friday', 'the last decade', 'the last decade or so', 'r', 'hundreds'}
+                   'last friday', 'the last decade', 'the last decade or so', 'r', 'hundreds', 'secondly', 'a day', 'many years later', 'a million', 'one million',
+                   'yearly', 'minute', 'a minute', 'late last year', 'at least today', 'August last year', 'just the last couple weeks', 'a month ago', 'every moment',
+                   'moment', 'a moment', 'decades ago', 'about half', 'that first year'}
 
 
 # Download required NLTK resources
@@ -293,11 +295,12 @@ def combine_same_entities(entity_to_sentiment, entity_to_key_points):
         elon_musk_synonyms = ["Musk", "Elon", "elon", "musk", "elon musk", "Elon Musk", "Elon musk"]
         kamala_harris_synonyms = ["Kamala", "kamala harris", "kamala", "harris", "Harris"]
         joe_biden_synonyms = ["biden", "Biden", "Joe Biden", "joe biden", "Joe biden"]
+        bitcoin_synonyms = ["bitcoin", "BTC"]
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, america_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, elon_musk_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, kamala_harris_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, joe_biden_synonyms, entity_to_sentiment, entity_to_key_points)
-
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, bitcoin_synonyms, entity_to_sentiment, entity_to_key_points)
     return entity_to_sentiment, entity_to_key_points
 
 
