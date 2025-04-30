@@ -81,15 +81,15 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
         {entities.map((entity: NamedEntity, index: number) => {
           const backgroundColor =
             entity.sentiment >= 0.6 && entity.sentiment <= 1
-              ? "#AFE1AF"
+              ? "#91CC91"
               : entity.sentiment >= 0.2 && entity.sentiment < 0.6
-              ? "#e2f4a5"
+              ? "#d3ea84"
               : entity.sentiment >= -0.2 && entity.sentiment < 0.2
-              ? "#FFFFC5"
+              ? "#ffffac"
               : entity.sentiment >= -0.6 && entity.sentiment < -0.2
-              ? "#FFD580"
+              ? "#ffc245"
               : entity.sentiment >= -1 && entity.sentiment < -0.6
-              ? "#ffb9b9"
+              ? "#ff9898"
               : "bg-gray-100";
           return (
             <div
@@ -97,14 +97,14 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
               className="pt-1 pb-1 grid [grid-template-columns:200px_350px_450px_100px] bg-white transition-all duration-200"
             >
                 {/* Column 1 */}
-                <div className="flex p-1 bg-gray-50 gap-3 justify-center items-center">
+                <div className="border-r border-gray-200 last:border-r-0 flex p-1 bg-gray-50 gap-3 justify-center items-center">
                   <h4 className="mt-3 text-[15px] font-bold text-gray-800">{entity.name}</h4>
                   <EntityPicture entity_name={entity.name}></EntityPicture>
                 </div>
                 {/* Column 2 */}
-                <div className="flex gap-2 justify-start items-center">
+                <div className="border-r border-gray-200 last:border-r-0  flex gap-2 justify-start items-center">
                   <div
-                    className="h-5 transition-colors duration-200"
+                    className="h-6 transition-colors duration-200"
                     style={{
                       backgroundColor: backgroundColor,
                       width: `${(((entity.sentiment + 1) / 2) * 350)}px`
@@ -116,7 +116,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
                   </div>
                 </div>
                 {/* Column 3  */}
-                <div className="p-2 bg-gray-50 text-left">
+                <div className="border-r border-gray-200 last:border-r-0  p-2 bg-gray-50 text-left">
                   {entity.key_points && (
                     <div className="">
                       <div className="text-[12px] text-gray-500">

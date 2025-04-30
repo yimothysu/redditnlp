@@ -23,11 +23,11 @@ export const ColorKey: React.FC = () => {
     return (
       <div className="mt-8 mb-8">
         <div className="flex border-1 border">
-          <div className="bg-[#AFE1AF] h-5 w-18"></div>
-          <div className="bg-[#e2f4a5] h-5 w-18"></div>
-          <div className="bg-[#FFFFC5] h-5 w-18"></div>
-          <div className="bg-[#FFD580] h-5 w-18"></div>
-          <div className="bg-[#ffb9b9] h-5 w-18"></div>
+          <div className="bg-[#ff9898] h-5 w-18"></div>
+          <div className="bg-[#ffc245] h-5 w-18"></div>
+          <div className="bg-[#ffffac] h-5 w-18"></div>
+          <div className="bg-[#d3ea84] h-5 w-18"></div>
+          <div className="bg-[#91CC91] h-5 w-18"></div>
         </div>
         <p className="text-sm text-center">
           left = positive consensus, right = negative consensus
@@ -38,11 +38,11 @@ export const ColorKey: React.FC = () => {
 
   return (
     <div className="ml-50 flex">
-      <ColorCodeBox backgroundColor="#ffb9b9"/>
-      <ColorCodeBox backgroundColor="#FFD580"/>
-      <ColorCodeBox backgroundColor="#FFFFC5"/>
-      <ColorCodeBox backgroundColor="#e2f4a5"/>
-      <ColorCodeBox backgroundColor="#AFE1AF"/>
+      <ColorCodeBox backgroundColor="#ff9898"/>
+      <ColorCodeBox backgroundColor="#ffc245"/>
+      <ColorCodeBox backgroundColor="#ffffac"/>
+      <ColorCodeBox backgroundColor="#d3ea84"/>
+      <ColorCodeBox backgroundColor="#91CC91"/>
     </div>
   );
 };
