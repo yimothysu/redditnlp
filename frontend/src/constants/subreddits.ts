@@ -43,7 +43,3 @@ export const subreddits = [
     "princeton",
     "ufl",
 ];
-
-export const entity_name_to_png: Record<string, string> = {
-   
-};
