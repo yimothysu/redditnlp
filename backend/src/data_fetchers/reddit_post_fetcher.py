@@ -86,12 +86,12 @@ async def fetch_post_data(post) -> Optional[RedditPost]:
         comment_objects.sort(key=lambda comment: comment.score)
         
         # sampling comments with the highest score if there's a large # of comments 
-        if len(post_comments) > 30 and len(post_comments) <= 60:
-            comment_objects = comment_objects[-25:] # most highly scored 25 comments 
-        if len(post_comments) > 60 and len(post_comments) <= 100:
-            comment_objects = comment_objects[-50:] # most highly scored 50 comments 
-        if len(post_comments) > 100:
-            comment_objects = comment_objects[-75:] # most highly scored 75 comments 
+        # if len(post_comments) > 30 and len(post_comments) <= 60:
+        #     comment_objects = comment_objects[-25:] # most highly scored 25 comments 
+        # if len(post_comments) > 60 and len(post_comments) <= 100:
+        #     comment_objects = comment_objects[-50:] # most highly scored 50 comments 
+        # if len(post_comments) > 100:
+        #     comment_objects = comment_objects[-75:] # most highly scored 75 comments 
 
         post_comments = [comment_object.text for comment_object in comment_objects]
         comment_scores = [comment_object.score for comment_object in comment_objects]
