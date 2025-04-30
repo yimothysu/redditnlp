@@ -39,10 +39,10 @@ def named_entities_to_dictionary(named_entities):
     # Add named entities to dictionary
     for entity_list in named_entities.values():        
         for entity in entity_list:
-            if entity[0] not in entities_to_freq:
-                entities_to_freq[entity[0]] = entity[1]
-            elif entity[0] in entities_to_freq:
-                entities_to_freq[entity[0]] += entity[1]
+            if entity.name not in entities_to_freq:
+                entities_to_freq[entity.name] = entity.count
+            elif entity.name in entities_to_freq:
+                entities_to_freq[entity.name] += entity.count
     
     return entities_to_freq
     
