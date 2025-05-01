@@ -16,6 +16,9 @@ export const EntityPicture = ({entity_name}: { entity_name: string }) => {
       else if (!entity_name.endsWith("s") && (entity_name + "s") in entity_name_to_png) {
         picture_file_name = entity_name_to_png[entity_name + "s"];
       }
+      else if (entity_name.endsWith("s") && (entity_name.slice(0, -1)) in entity_name_to_png) {
+        picture_file_name = entity_name_to_png[entity_name.slice(0, -1)];
+      }
     }
 
     if (picture_file_name != null) {
