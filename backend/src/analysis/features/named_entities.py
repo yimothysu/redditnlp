@@ -7,7 +7,7 @@ Provides functionality for:
 - Entity consolidation and filtering
 """
 
-import time, asyncio, random, re, math, nltk, numbers  # type: ignore
+import time, asyncio, random, re, math, nltk, numbers, os  # type: ignore
 from collections import Counter
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import spacy  # type: ignore
@@ -33,29 +33,13 @@ config = {
     "max_input_len_to_summarizer": 2500, # in characters 
 }
 
-banned_entities = {'one', 'two', 'first', 'second', 'yesterday', 'today', 'tomorrow', 'approx', 'half', 'idk', 'congrats', 'three', 'creepy', 'night',
-                   'day', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'month', 'months', 'day', 'days', 'week',
-                   'weeks', 'this year', 'next year', 'last year', 'year', 'a year', 'years', 'a couple years', 'the week', 'the summer', 'spring', 
-                   'summer', 'fall', 'winter', 'zero', 'one day', 'the next day', 'six', 'seven', 'eight', 'the years', 'every day', "n't", 'that day',
-                   'one year', 'each day', 'last week', 'all day', 'a couple of weeks', 'daily', 'some days', 'hours', 'a week', 'some days', 'the day', 
-                   'a few years', 'every morning', 'morning', 'an hour', 'a month', 'a year ago', 'most days', 'tonight', 'overnight', 'the end of the day', 
-                   'kinda', 'last month', 'a few minutes', 'dude', 'those years', 'n’t', 'lot', 'only two', 'ten', 'the morning', 'five years', 'op', 'a ton', 
-                   'a few years ago', 'decades', 'a few months', 'a few days', 'over a decade', 'this summer', 'a bad day', 'the days', 'these days', 'shit', 
-                   'fuck', 'ass', 'asshole', 'bitch', 'three years', 'two years', 'one year', 'every single day', 'this day', 'thousands', 'af', 'weekly', 'a decade', 
-                   'another day', 'each year', 'each week', 'ten years', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 
-                   'october', 'november', 'december', 'four', 'five', 'nine', 'this week', 'next week', 'a few more years', 'a new day', 'the other day', 'third', 
-                   'every night', 'max', 'nah', 'yeah', 'yea', 'rip', 'last night', 'six months', 'years later', 'about a week', 'more than one', 'depends', 
-                   'about a year', 'every night', 'monthly', 'each month', 'one night', 'the night', 'the year', 'a few weeks', 'nights', 'that night', 'a few hours', 
-                   'that year', 'the first year', 'time', 'a couple of years', 'a nice day', 'reader', 'nsfw', 'youtube', 'everyday', 'millions', 'billions', 'CMV', 
-                   'Bob', 'RemindMeBot', 'million', 'billion', 'a century ago', 'sixteen', 'the turn of the century', 'now', 'a little more than nine months', 
-                   'a hundred years ago', 'the end of the month', 'this month', 'the coming days', 'annual', 'every week', 'Monday to Friday', 'a work week', 'annually',
-                   'last friday', 'the last decade', 'the last decade or so', 'r', 'hundreds', 'secondly', 'a day', 'many years later', 'a million', 'one million',
-                   'yearly', 'minute', 'a minute', 'late last year', 'at least today', 'August last year', 'just the last couple weeks', 'a month ago', 'every moment',
-                   'moment', 'a moment', 'decades ago', 'about half', 'that first year', 'thousands of dollars', 'hundreds of dollars', 'millions of dollars', 'eating',
-                   'dad', 'mom', 'this age', 'the weekend', 'years ago', 'almost two', 'at least one', 'weekends', 'most nights', 'every single night', 'two cents',
-                   'mornings', 'under two', 'six year old', 'the weekend', 'that age', 'those summers', 'saturdays', 'half day', 'thirteen', 'many years', 'later at night',
-                   'all weekend', 'weekend', 'several hours', 'five year old', 'every summer', 'a day or so', 'a minute', 'a full day', 'this fall', 'minutes', 'the last year',
-                   'every month', 'three days', 'fridays', 'an extra day', 'several years', 'five days', 'many years ago', 'two days', 'every year', 'two years ago'}
+project_root = os.path.abspath(os.path.join(__file__, "../../../../"))
+banned_entities_path = os.path.join(project_root, "data", "banned_entities.txt")
+banned_entities = set()
+with open(banned_entities_path, "r") as f:
+    for line in f:
+        banned_entities.add(line.strip())
+print('len(banned_entities): ', len(banned_entities))
 
 
 # Download required NLTK resources
@@ -283,35 +267,63 @@ def combine_same_entities(entity_to_sentiment, entity_to_key_points):
     for entity in list(entity_to_key_points.keys()):
         entity_lowercase = entity[0].lower() + entity[1:]
         entity_complete_lowercase = entity.lower()
+        entity_complete_uppercase = entity.upper() 
         entity_lowercase_plural = entity[0].lower() + entity[1:] + "s"
         entity_plural = entity + "s"
         
         if entity_lowercase in entity_to_key_points and entity != entity_lowercase:
             entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_lowercase)
         
-        if entity_complete_lowercase in entity_to_key_points and entity != entity_lowercase:
+        if entity_complete_lowercase in entity_to_key_points and entity != entity_complete_lowercase:
             entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_complete_lowercase)
         
+        if entity_complete_uppercase in entity_to_key_points and entity != entity_complete_uppercase:
+            entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_complete_uppercase)
+
         if entity_lowercase_plural in entity_to_key_points:
             entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_lowercase_plural)
         
         if entity_plural in entity_to_key_points:
             entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_plural)
 
-        america_synonyms = ["USA", "US", "America", "america", "usa", "The United States", "the United States", "the united states"]
-        elon_musk_synonyms = ["Musk", "Elon", "elon", "musk", "elon musk", "Elon Musk", "Elon musk"]
-        kamala_harris_synonyms = ["Kamala", "kamala harris", "kamala", "harris", "Harris"]
-        joe_biden_synonyms = ["biden", "Biden", "Joe Biden", "joe biden", "Joe biden"]
+        
+        words = entity.split()
+        if len(words) == 2:
+            # Ex: "Donald Trump" --> "Donald", "Trump" both refer to "Donald Trump"
+            #     "Kamala Harris" --> "Kamala", "Harris"
+            #     "Joe Biden" --> "Joe", "Biden"
+            # very high probability that words[0] and words[1] refer to entity
+            if words[0] in entity_to_key_points or words[0].lower() in entity_to_key_points or words[1] in entity_to_key_points or words[1].lower() in entity_to_key_points:
+                variations = list({entity, words[0], words[1], words[0].lower(), words[1].lower()})
+                entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, variations, entity_to_sentiment, entity_to_key_points)
+
+        america_synonyms = ["USA", "US", "America", "america", "american", "americans", "usa", "The United States", "the United States", "the united states"]
+        russia_synonyms = ["russia", "russian", "Russia", "Russian"]
+        mexico_synonyms = ["mexico", "Mexico", "mexican", "Mexican"]
+        france_synonyms = ["france", "France", "French", "french"]
+        italy_synonyms = ["italy", "Italy", "italian", "Italian"]
+        canada_synonyms = ["canada", "Canada", "Canadian", "canadian"]
+        china_synonyms = ["china", "China", "Chinese", "chinese"]
+        korea_synonyms = ["korea", "korean", "Korean", "Korea"]
         bitcoin_synonyms = ["bitcoin", "BTC"]
         nicolas_cage_synonyms = ["nicolas cage", "nick cage", "nic cage"]
         tesla_synonyms = ["tesla", "TSLA"]
+        republican_synonyms = ["republican", "GOP", "republicans", "Republican", "Republicans"]
+        democrat_synonyms = ["DNC", "democrat", "Democrat", "Democrats", "democrats"]
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, america_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, elon_musk_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, kamala_harris_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, joe_biden_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, russia_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, mexico_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, france_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, italy_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, canada_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, china_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, korea_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, bitcoin_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, nicolas_cage_synonyms, entity_to_sentiment, entity_to_key_points)
         entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, tesla_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, republican_synonyms, entity_to_sentiment, entity_to_key_points)
+        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, democrat_synonyms, entity_to_sentiment, entity_to_key_points)
+
     return entity_to_sentiment, entity_to_key_points
 
 
