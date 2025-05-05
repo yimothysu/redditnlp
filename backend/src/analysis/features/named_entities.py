@@ -12,6 +12,7 @@ from collections import Counter
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import spacy  # type: ignore
 from src.utils.subreddit_classes import ( NamedEntity )
+from itertools import combinations
 
 # Load NLP models
 absa_model_name = "yangheng/deberta-v3-base-absa-v1.1"
@@ -26,21 +27,13 @@ TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 20}
 TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
 TIME_FILTER_TO_POST_URL_LIMIT = {'week': 1, 'year': 3, 'all': 3}
 TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 35, 'year': 50, 'all': 65}
+ALLOWED_LABELS = {"PERSON", "ORG", "GPE", "LOC", "FAC", "PRODUCT", "WORK_OF_ART", "LAW", "EVENT", "LANGUAGE", "NORP"}
 
 config = {
     "time_filter": "week",
     "max_absa_tokens": 2000,
     "max_input_len_to_summarizer": 2500, # in characters 
 }
-
-project_root = os.path.abspath(os.path.join(__file__, "../../../../"))
-banned_entities_path = os.path.join(project_root, "data", "banned_entities.txt")
-banned_entities = set()
-with open(banned_entities_path, "r") as f:
-    for line in f:
-        banned_entities.add(line.strip())
-print('len(banned_entities): ', len(banned_entities))
-
 
 # Download required NLTK resources
 nltk.download('stopwords')
@@ -123,12 +116,12 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
         tuple: (date, list of processed NamedEntity objects)
     """
     # Count and filter entities
-    entities = Counter([ent.text for ent in doc.ents])
+    useful_ents = [ent for ent in doc.ents if ent.label_ in ALLOWED_LABELS]
+    entities = Counter([ent.text for ent in useful_ents])
     filtered_entities = Counter()
     for name, count in entities.items():
-        # if count < 3: continue # not enough sentences to form a meaningful analysis of the entity 
         if not (isinstance(name, str) and filter_named_entity(name)): continue
-        if isinstance(name, numbers.Number) or name.isnumeric() or name.lower().strip() in banned_entities: continue
+        if isinstance(name, numbers.Number) or name.isnumeric(): continue
         filtered_entities[name] = count
 
     # Get top entities and analyze
@@ -166,7 +159,7 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
         entity_to_key_points: Dictionary mapping entity name to its key points
     """
     entity_to_sentiment  = dict() # Dictionary mapping entity name to its sentiment score [-1, 1]
-    entity_to_comments = dict() # Dictionary mapping entity name to a list of the comments its mentioned in 
+    entity_to_comments = dict() # Dictionary mapping entity name to a set of the comments its mentioned in 
     entity_to_flattened_comments = dict() # Dictionary mapping entity name to its flattened comments 
     entity_to_key_points = dict() # Dictionary mapping entity name to a list of its computed key points 
     for ent in doc.ents:
@@ -187,6 +180,9 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
             else:
                 print('could NOT find full_comment where named entity is mentioned')
     
+    # Combine entities that refer to the same thing 
+    entity_to_comments = combine_same_entities(entity_to_comments)
+
     for entity, comments in entity_to_comments.items():
         # comments is a list of tuples (comment, score)
         comments = sorted(comments, key=lambda x: x[1])
@@ -215,116 +211,74 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
     for entity, key_points in key_points_results:
         entity_to_key_points[entity] = key_points
     
-    entity_to_sentiment, entity_to_key_points = combine_same_entities(entity_to_sentiment, entity_to_key_points)
     return entity_to_sentiment, entity_to_key_points
 
 
-def combine_two_entities(entity_to_sentiment, entity_to_key_points, entity_1, entity_2):
-    """For 2 entities that refer to the same thing but have a slightly different spelling (Ex: US, USA), MERGE the 2 entities.
-        - Take the average of their sentiment scores 
-        - Combine their key points
-    """
-    print('combining ', entity_1, ' and ', entity_2)
-    combined_sentiment = (entity_to_sentiment[entity_1] + entity_to_sentiment[entity_2]) / 2
-    entity_to_sentiment[entity_1] = combined_sentiment
-    del entity_to_sentiment[entity_2]
-
-    combined_key_points = "\n".join(entity_to_key_points[entity_1]) + " \n " + "\n".join(entity_to_key_points[entity_2])
-    _, combined_key_points = get_key_points_of_entity(entity_1, combined_key_points)
-    entity_to_key_points[entity_1] = combined_key_points
-    del entity_to_key_points[entity_2]
-
-    return entity_to_sentiment, entity_to_key_points
-
-def combine_synonyms(entity, synonyms, entity_to_sentiment, entity_to_key_points):
-    if entity in synonyms and entity in entity_to_key_points:
-            synonyms.remove(entity)
-            sentiments = [entity_to_sentiment[entity]]
-            key_points = ['\n'.join(entity_to_key_points[entity])]
-            
+def load_synonym_map():
+    project_root = os.path.abspath(os.path.join(__file__, "../../../../"))
+    file_path = os.path.join(project_root, "data", "synonyms.txt")
+    synonym_map = {}
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line_number, line in enumerate(f):
+            # Split the line into synonyms
+            synonyms = [s.strip().lower() for s in line.strip().split('-')]
             for synonym in synonyms:
-                if synonym in entity_to_key_points:
-                    sentiments.append(entity_to_sentiment[synonym])
-                    key_points.append('\n'.join(entity_to_key_points[synonym]))
-                    del entity_to_sentiment[synonym]
-                    del entity_to_key_points[synonym]
+                if synonym:
+                    synonym_map[synonym] = line_number
+    return synonym_map
+
+
+def combine_same_entities(entity_to_comments):
+    # case insensitive combining 
+    entities = list(entity_to_comments.keys())
+    entities_lowercase = [entity.lower() for entity in entities]
+    synonym_map = load_synonym_map()
+    for i, x in combinations(range(len(entities_lowercase)), 2):
+        entity_1 = entities_lowercase[i]
+        entity_2 = entities_lowercase[x]
+        entities_are_equal_conditions = [
+            # the entities are the same if we make them both plural 
+            entity_1 == (entity_2 + "s") or (entity_1 + "s") == entity_2,
+            # the entities are the same if we make them both possessive plural 
+            entity_1 == (entity_2 + "s'") or (entity_1 + "s'") == entity_2,
+            # the entities are the same if we make them both possessive singular 
+            entity_1 == (entity_2 + "'s") or (entity_1 + "'s") == entity_2,
+            # the entities are the same if we make them both one word 
+            ''.join(entity_1.split()) == ''.join(entity_2.split()),
+            # the 2nd entity is a letter abbreviation of the 1st entity 
+            (len(entity_1.split()) >= 2 and ''.join([word[0] for word in entity_1.split()]) == entity_2),
+            # the 1st entity is a letter abbreviation of the 2nd entity 
+            (len(entity_2.split()) >= 2 and ''.join([word[0] for word in entity_2.split()]) == entity_1),
+            # the 2nd entity is just the first or last name of the full name 1st entity 
+            (len(entity_1.split()) == 2 and len(entity_2.split()) == 1 and 
+                (entity_1.split()[0] == entity_2 or entity_1.split()[1] == entity_2)),
+            # the 1st entity is just the first or last name of the full name 2nd entity 
+            (len(entity_2.split()) == 2 and len(entity_1.split()) == 1 and 
+                (entity_2.split()[0] == entity_1 or entity_2.split()[1] == entity_1)),
+            # the entities are both in the synonym map and are on the same line # 
+            entity_1 in synonym_map and entity_2 in synonym_map and 
+            synonym_map[entity_1] == synonym_map[entity_2]
             
-            if len(sentiments) > 1:
-                print('combining ', entity, ' with ', len(sentiments), ' synonyms')
-                combined_sentiment = sum(sentiments) / len(sentiments)
-                _, combined_key_points = get_key_points_of_entity(entity, ' \n '.join(key_points))
-                entity_to_sentiment[entity] = combined_sentiment
-                entity_to_key_points[entity] = combined_key_points
-    
-    return entity_to_sentiment, entity_to_key_points
+        ]
+        if any(entities_are_equal_conditions):
+            print("At least one equal condition is true! combining ", entities[i], " and ", entities[x])
+            entity_to_comments = combine_two_entities(entity_to_comments, entities[i], entities[x])
 
-def combine_same_entities(entity_to_sentiment, entity_to_key_points):
-    """Combine entities that refer to the same thing
-    Ex: (republican, republicans), (Democrat, democrats), (US, USA, America), (American, Americans) 
-    Any pair of entities that are the same if you lowercase the first letter —> Ex: China, china
-    """
-    print('inside combine_same_entities')
-    for entity in list(entity_to_key_points.keys()):
-        entity_lowercase = entity[0].lower() + entity[1:]
-        entity_complete_lowercase = entity.lower()
-        entity_complete_uppercase = entity.upper() 
-        entity_lowercase_plural = entity[0].lower() + entity[1:] + "s"
-        entity_plural = entity + "s"
-        
-        if entity_lowercase in entity_to_key_points and entity != entity_lowercase:
-            entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_lowercase)
-        
-        if entity_complete_lowercase in entity_to_key_points and entity != entity_complete_lowercase:
-            entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_complete_lowercase)
-        
-        if entity_complete_uppercase in entity_to_key_points and entity != entity_complete_uppercase:
-            entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_complete_uppercase)
+    return entity_to_comments 
 
-        if entity_lowercase_plural in entity_to_key_points:
-            entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_lowercase_plural)
-        
-        if entity_plural in entity_to_key_points:
-            entity_to_sentiment, entity_to_key_points = combine_two_entities(entity_to_sentiment, entity_to_key_points, entity, entity_plural)
 
-        
-        words = entity.split()
-        if len(words) == 2:
-            # Ex: "Donald Trump" --> "Donald", "Trump" both refer to "Donald Trump"
-            #     "Kamala Harris" --> "Kamala", "Harris"
-            #     "Joe Biden" --> "Joe", "Biden"
-            # very high probability that words[0] and words[1] refer to entity
-            if words[0] in entity_to_key_points or words[0].lower() in entity_to_key_points or words[1] in entity_to_key_points or words[1].lower() in entity_to_key_points:
-                variations = list({entity, words[0], words[1], words[0].lower(), words[1].lower()})
-                entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, variations, entity_to_sentiment, entity_to_key_points)
-
-        america_synonyms = ["USA", "US", "America", "america", "american", "americans", "usa", "The United States", "the United States", "the united states"]
-        russia_synonyms = ["russia", "russian", "Russia", "Russian"]
-        mexico_synonyms = ["mexico", "Mexico", "mexican", "Mexican"]
-        france_synonyms = ["france", "France", "French", "french"]
-        italy_synonyms = ["italy", "Italy", "italian", "Italian"]
-        canada_synonyms = ["canada", "Canada", "Canadian", "canadian"]
-        china_synonyms = ["china", "China", "Chinese", "chinese"]
-        korea_synonyms = ["korea", "korean", "Korean", "Korea"]
-        bitcoin_synonyms = ["bitcoin", "BTC"]
-        nicolas_cage_synonyms = ["nicolas cage", "nick cage", "nic cage"]
-        tesla_synonyms = ["tesla", "TSLA"]
-        republican_synonyms = ["republican", "GOP", "republicans", "Republican", "Republicans"]
-        democrat_synonyms = ["DNC", "democrat", "Democrat", "Democrats", "democrats"]
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, america_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, russia_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, mexico_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, france_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, italy_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, canada_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, china_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, korea_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, bitcoin_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, nicolas_cage_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, tesla_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, republican_synonyms, entity_to_sentiment, entity_to_key_points)
-        entity_to_sentiment, entity_to_key_points = combine_synonyms(entity, democrat_synonyms, entity_to_sentiment, entity_to_key_points)
-
-    return entity_to_sentiment, entity_to_key_points
+def combine_two_entities(entity_to_comments, entity_1, entity_2):
+    if entity_1 is not None and entity_2 is not None and entity_1 in entity_to_comments and entity_2 in entity_to_comments and entity_1 != entity_2:
+        # choose to keep the longer entity EXCEPT if the longer entity ends in s' or 's 
+        if len(entity_1) > len(entity_2) and not entity_1.endswith(("'s", "s'")):
+            entity_to_keep = entity_1 
+            entity_to_comments[entity_to_keep] = entity_to_comments[entity_to_keep] | entity_to_comments[entity_2]
+            del entity_to_comments[entity_2]
+        else:
+            entity_to_keep = entity_2 
+            entity_to_comments[entity_to_keep] = entity_to_comments[entity_to_keep] | entity_to_comments[entity_1]
+            del entity_to_comments[entity_1]
+    return entity_to_comments 
 
 
 def split_string_into_chunks(text, num_chunks):
