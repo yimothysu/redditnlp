@@ -191,9 +191,12 @@ export default function RedditAnalysisDisplay({
               <option value="top">Top Posts</option>
             </select>
           </div>
-          <div className="relative flex gap-4">
+          <div className="relative flex">
             {isBusy && !analysis && (
-              <div className={`absolute ${spinnerStyle} right-[-40px]`}></div>
+              <div className="">
+                <div className={`absolute right-[-30px] ${spinnerStyle}`}></div>
+                <h1 className="absolute text-sm text-blue-600 left-[50px] w-[150px]">this may take up to 20 seconds to load...</h1>
+              </div>
             )}
           </div>
         </div>
