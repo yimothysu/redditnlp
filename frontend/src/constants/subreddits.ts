@@ -3,6 +3,8 @@ export const subreddits = [
     "AskReddit",
     "technology",
     "politics",
+    "explainlikeimfive",
+    "NoStupidQuestions",
     "gaming",
     "science",
     "popculturechat",
