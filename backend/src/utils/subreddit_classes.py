@@ -3,8 +3,8 @@ Defines Pydantic models for handling subreddit data, analysis results, and metri
 """
 
 from pydantic import BaseModel
+from enum import Enum
 from typing import Dict, List, Tuple, Optional, Any
-
 
 class SubredditQuery(BaseModel):
     """Parameters for querying subreddit data."""
@@ -16,10 +16,24 @@ class SubredditQuery(BaseModel):
         """Generate a unique key for the query."""
         return f"{self.name}#{self.time_filter}#{self.sort_by}"
 
+class NamedEntityLabel(Enum):
+    PERSON = 0 # Named people (e.g., Elon Musk, Marie Curie)
+    ORG = 1 # Organizations (e.g., Google, UN, Harvard University)
+    GPE = 2 # Geopolitical Entities: countries, cities, states (e.g., France, New York)
+    LOC = 3 #  Non-GPE locations (e.g., Pacific Ocean, Mount Everest)
+    FAC = 4 # Facilities (e.g., Golden Gate Bridge, Statue of Liberty)
+    PRODUCT = 5 # Tangible products (e.g., iPhone, Tesla Model S)
+    WORK_OF_ART = 6 # Titles of creative works (e.g., The Mona Lisa, 1984)
+    LAW = 7 # Named documents or legal rules (e.g., Constitution, GDPR)
+    EVENT = 8 # Named events (e.g., World War II, Super Bowl)
+    LANGUAGE = 9 # Named languages (e.g., French, Mandarin)
+    NORP = 10 # Nationalities, religious and political groups (e.g., American, Buddhist, Democrat)
+ 
 
 class NamedEntity(BaseModel):
     """Named entity extracted from subreddit text with associated metrics."""
     name: str # Name of the entity 
+    label: NamedEntityLabel 
     count: int # Number of times the entity appears in the text 
     sentiment: Optional[float] = None # Sentiment score for the entity 
     key_points: Optional[List[str]] = None # Key discussion points about the entity 

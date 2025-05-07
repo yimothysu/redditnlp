@@ -11,7 +11,7 @@ import time, asyncio, random, re, math, nltk, numbers, os  # type: ignore
 from collections import Counter
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import spacy  # type: ignore
-from src.utils.subreddit_classes import ( NamedEntity )
+from src.utils.subreddit_classes import ( NamedEntity, NamedEntityLabel )
 from itertools import combinations
 
 # Load NLP models
@@ -103,6 +103,16 @@ def filter_named_entity(name: str) -> bool:
     return True
 
 
+def load_banned_entities():
+    project_root = os.path.abspath(os.path.join(__file__, "../../../../"))
+    file_path = os.path.join(project_root, "data", "banned_entities.txt")
+    banned_entities = set()
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line_number, line in enumerate(f):
+            banned_entities.add(line.strip().lower())
+    return banned_entities
+
+
 async def postprocess_named_entities(date, doc, comment_and_score_pairs):
     """Process and analyze named entities from a spaCy document.
     
@@ -117,11 +127,17 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
     """
     # Count and filter entities
     useful_ents = [ent for ent in doc.ents if ent.label_ in ALLOWED_LABELS]
+    entity_name_to_label = dict()
+    for ent in useful_ents:
+        entity_name_to_label[ent.text] = NamedEntityLabel[ent.label_]
     entities = Counter([ent.text for ent in useful_ents])
+    banned_entities = load_banned_entities()
     filtered_entities = Counter()
     for name, count in entities.items():
         if not (isinstance(name, str) and filter_named_entity(name)): continue
         if isinstance(name, numbers.Number) or name.isnumeric(): continue
+        if len(name) == 1: continue
+        if name in banned_entities: continue 
         filtered_entities[name] = count
 
     # Get top entities and analyze
@@ -135,6 +151,7 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
     for i in range(len(top_entities)):
         entity = NamedEntity(
             name = top_entities[i][0],
+            label = entity_name_to_label[top_entities[i][0]],
             count = top_entities[i][1]
         )
         if entity.name in entity_to_sentiment and entity.name in entity_to_key_points:
