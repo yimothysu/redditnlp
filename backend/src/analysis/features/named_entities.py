@@ -151,7 +151,7 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
     for i in range(len(top_entities)):
         entity = NamedEntity(
             name = top_entities[i][0],
-            label = entity_name_to_label[top_entities[i][0]],
+            label = entity_name_to_label[top_entities[i][0]].name, # mongodb doesn't let you store enums
             count = top_entities[i][1]
         )
         if entity.name in entity_to_sentiment and entity.name in entity_to_key_points:
@@ -423,7 +423,8 @@ def get_post_urls(date_to_posts, date_to_entities):
             for post in date_to_posts[date]:
                 post_content = post.title + ' ' + post.description + ' '.join(post.comments)
                 if entity.name in post_content: 
-                    posts_that_mention_entity.append((post.url, post_content.count(entity.name), post.score))
+                    post_url = "https://www.reddit.com" + post.permalink
+                    posts_that_mention_entity.append((post_url, post_content.count(entity.name), post.score))
             # Time to pick which posts to feature 
             # sort posts_that_mention_entity by post_content.count(entity_name) * score 
             posts_that_mention_entity.sort(key=lambda post: post[1] * post[2])
