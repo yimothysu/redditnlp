@@ -1,7 +1,6 @@
 """Data models for subreddit analysis and queries.
 Defines Pydantic models for handling subreddit data, analysis results, and metrics.
 """
-
 from pydantic import BaseModel
 from enum import Enum
 from typing import Dict, List, Tuple, Optional, Any
@@ -15,6 +14,7 @@ class SubredditQuery(BaseModel):
     def to_composite_key(self) -> str:
         """Generate a unique key for the query."""
         return f"{self.name}#{self.time_filter}#{self.sort_by}"
+
 
 class NamedEntityLabel(Enum):
     PERSON = 0 # Named people (e.g., Elon Musk, Marie Curie)
@@ -33,7 +33,7 @@ class NamedEntityLabel(Enum):
 class NamedEntity(BaseModel):
     """Named entity extracted from subreddit text with associated metrics."""
     name: str # Name of the entity 
-    label: str # the NamedEntityLabel of the entity (converted to string because mongodb doesn't support enums)
+    label: Optional[str] = None # the NamedEntityLabel of the entity (converted to string because mongodb doesn't support enums)
     count: int # Number of times the entity appears in the text 
     sentiment: Optional[float] = None # Sentiment score for the entity 
     key_points: Optional[List[str]] = None # Key discussion points about the entity 
