@@ -3,11 +3,11 @@
 Provides data models and functions for retrieving post content, comments,
 and associated metadata from Reddit using asyncpraw.
 """
-
+from __future__ import annotations
 import asyncpraw
 from pydantic import BaseModel
 from typing import Optional
-
+from typing import List
 
 class Comment(BaseModel):
     """Data model for a Reddit comment.
@@ -15,9 +15,11 @@ class Comment(BaseModel):
     Attributes:
         text: The comment's content
         score: The comment's score (upvotes - downvotes)
+        replies: The comment's replies 
     """
-    text: str
-    score: int 
+    text: Optional[str] = None 
+    score: Optional[int] = None 
+    replies: Optional[List[Comment]] = None 
 
 
 class RedditPost(BaseModel):
@@ -30,8 +32,8 @@ class RedditPost(BaseModel):
         url: URL of the post
         created_utc: Post creation timestamp in UTC
         num_comments: Total number of comments
-        comments: List of comment texts
-        comment_scores: List of comment scores
+        top_level_comments: List of top level comment texts
+        comment_scores: List of top level comment scores
     """
     title: str
     description: str 
@@ -39,12 +41,32 @@ class RedditPost(BaseModel):
     url: str
     created_utc: float
     num_comments: int
-    comments: list[str]
-    comment_scores: list[int]
+    top_level_comments: list[Comment]
+    top_level_comment_scores: list[int]
     
     def to_dict(self):
         """Convert the post data to a dictionary format."""
         return self.model_dump()
+
+
+def get_comment_replies(comment):
+    # comment is of type praw.models.Comment
+    # the replies field is of type praw.models.comment_forest.CommentForest
+    replies = [] 
+    for reply in comment.replies:
+        reply_object = Comment() 
+        if hasattr(reply, "body"):
+             reply_object.text = reply.body 
+             print('reply_object had a body!')
+        else:
+            print('comment had no body')
+            continue 
+        if hasattr(reply, "replies"):
+             reply_object.replies = get_comment_replies(reply)
+        else:
+            reply_object.replies = []
+        replies.append(reply_object)
+    return replies 
 
 
 async def fetch_post_data(post) -> Optional[RedditPost]:
@@ -66,34 +88,32 @@ async def fetch_post_data(post) -> Optional[RedditPost]:
     try:
         # Fetch comments
         comments = await post.comments()
-        post_comments = []  
+        comment_objects = []
         comment_scores = []
         
         # Extract comment text and scores, skipping MoreComments objects
         for comment in comments:
             if isinstance(comment, asyncpraw.models.MoreComments):
                 continue
+            comment_object = Comment() 
             if hasattr(comment, "body"):
-                post_comments.append(comment.body)
+                comment_object.text = comment.body 
+                print('top level comment has a body!')
+            else: 
+                print('top level comment doesnt have a body')
+                continue 
             if hasattr(comment, "score"):
+                comment_object.score = comment.score 
                 comment_scores.append(comment.score)
+            if hasattr(comment, "replies"):
+                print('top level comment has replies!')
+                comment_object.replies = get_comment_replies(comment)
+            else:
+                comment_object.replies = []
+            comment_objects.append(comment_object)
 
-        # Create Comment objects and sort by score
-        comment_objects = [
-            Comment(text=text, score=score) 
-            for text, score in zip(post_comments, comment_scores)
-        ]
+        print('got ', len(comment_objects), '/', len(comments), ' for post')
         comment_objects.sort(key=lambda comment: comment.score)
-        
-        # sampling comments with the highest score if there's a large # of comments 
-        # if len(post_comments) > 30 and len(post_comments) <= 60:
-        #     comment_objects = comment_objects[-25:] # most highly scored 25 comments 
-        # if len(post_comments) > 60 and len(post_comments) <= 100:
-        #     comment_objects = comment_objects[-50:] # most highly scored 50 comments 
-        # if len(post_comments) > 100:
-        #     comment_objects = comment_objects[-75:] # most highly scored 75 comments 
-
-        post_comments = [comment_object.text for comment_object in comment_objects]
         comment_scores = [comment_object.score for comment_object in comment_objects]
         return RedditPost(
             title=post.title,
@@ -102,8 +122,8 @@ async def fetch_post_data(post) -> Optional[RedditPost]:
             url=post.url,
             created_utc=post.created_utc,
             num_comments=post.num_comments,
-            comments=post_comments,
-            comment_scores=comment_scores
+            top_level_comments=comment_objects,
+            top_level_comment_scores=comment_scores
         )
     except Exception as e:
         print(f'Error fetching post data: {e}')
