@@ -423,8 +423,12 @@ def get_post_urls(date_to_posts, date_to_entities):
             for post in date_to_posts[date]:
                 post_content = post.title + ' ' + post.description + ' '.join(post.comments)
                 if entity.name in post_content: 
-                    post_url = "https://www.reddit.com" + post.permalink
-                    posts_that_mention_entity.append((post_url, post_content.count(entity.name), post.score))
+                    try:
+                        post_url = "https://www.reddit.com" + post.permalink
+                        print('got the post permalink!')
+                        posts_that_mention_entity.append((post_url, post_content.count(entity.name), post.score))
+                    except Exception as e:
+                        print('couldnt get the post permalink because: ', e)
             # Time to pick which posts to feature 
             # sort posts_that_mention_entity by post_content.count(entity_name) * score 
             posts_that_mention_entity.sort(key=lambda post: post[1] * post[2])
