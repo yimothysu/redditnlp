@@ -18,6 +18,8 @@ class Comment(BaseModel):
         replies: The comment's replies 
     """
     text: Optional[str] = None 
+    # the context needed (title & description for top level comments) to resolve the pronouns in the comment 
+    context: Optional[str] = None 
     score: Optional[int] = None 
     replies: Optional[List[Comment]] = None 
 

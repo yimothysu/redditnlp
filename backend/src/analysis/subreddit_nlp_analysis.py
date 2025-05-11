@@ -1,18 +1,21 @@
 """Module for performing comprehensive NLP analysis on subreddit content.
 Includes functionality for post collection, text analysis, and feature extraction."""
 
-import time, asyncio, asyncpraw, os, random  # type: ignore
+import time, asyncio, asyncpraw, os, random, string, re  # type: ignore
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from typing import List
 from dotenv import load_dotenv # type: ignore
 load_dotenv()
 from datetime import datetime
 
-from src.data_fetchers.reddit_topic_extractor import ( fetch_post_data )
+from src.data_fetchers.reddit_post_fetcher import ( fetch_post_data, Comment )
 from src.utils.subreddit_classes import ( SubredditQuery, SubredditAnalysis )
 from src.analysis.features.named_entities import ( get_top_entities )
 from src.analysis.features.n_grams import ( get_top_ngrams )
 from src.analysis.features.readability import ( get_readability_metrics )
 from src.analysis.features.word_embeddings import ( get_2d_embeddings )
 from src.analysis.features.word_cloud import ( generate_word_cloud )
+from src.analysis.coreference_resolution import ( resolve_pronouns_for_post )
 
 # Configuration maps for different time filters
 TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'week': 1000}
@@ -65,6 +68,20 @@ def group_posts_by_date(posts):
     posts_grouped_by_date = {i: posts_grouped_by_date[i] for i in sorted_months}
     return posts_grouped_by_date
 
+def ends_in_punctuation(s):
+    return s and s[-1] in string.punctuation
+    
+def get_flattened_text_for_comment(comment, indent):
+    return (indent * 4) + comment.text + "\n" + [get_flattened_text_for_comment(reply, indent + 4) for reply in comment.replies]
+
+# Assuming coreference resolution has already been performed when this function gets called 
+def get_flattened_text_for_post(post, post_idx):
+    flattened_text = " ========== " + " Post " + post_idx + " ========== "
+    flattened_text += "Title: " + post.title + "\n" + "Description: " + post.description 
+    for top_level_comment in post.top_level_comments:
+        flattened_text += " " + get_flattened_text_for_comment(top_level_comment, indent = 0)
+    return flattened_text 
+
 
 async def get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_grouped_by_date):
     """Perform NLP analysis on grouped posts.
@@ -76,14 +93,17 @@ async def get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_
     """
     post_content_grouped_by_date = dict() 
     for date, posts in posts_grouped_by_date.items():
-        post_content = ' '.join([post.title + ' ' + post.description + ' '.join(post.comments) for post in posts])
-        if len(post_content) >= config['max_post_len']:
-            # randomly sample the comments if the post content is too long 
-            comments = []
-            for post in posts:
-                half_of_comments = random.sample(post.comments, k=len(comments) // 2)
-                comments.extend(half_of_comments)
-            post_content = ' '.join([post.title + ' ' + post.description + ' '.join(comments)])
+        post_content = '\n'.join([get_flattened_text_for_post(post, post_idx) for post, post_idx in enumerate(posts)])
+        # Can write post_content to a text file so I can inspect it 
+        with open('post_content.txt', 'w', encoding='utf-8') as f:
+            f.write(post_content)
+        # if len(post_content) >= config['max_post_len']:
+        #     # randomly sample the comments if the post content is too long 
+        #     comments = []
+        #     for post in posts:
+        #         half_of_comments = random.sample([top_level_comment.text for top_level_comment in post.top_level_comments], k=len(comments) // 2)
+        #         comments.extend(half_of_comments)
+        #     post_content = ' '.join([post.title + ' ' + post.description + ' '.join(comments)])
         post_content_grouped_by_date[date] = post_content
     
     top_n_grams = get_top_ngrams(post_content_grouped_by_date)
@@ -99,6 +119,31 @@ async def get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_
     
     return top_n_grams, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud
 
+
+'''
+    total words = length of the comment and length of comment's replies 
+'''
+def calculate_total_words_of_comment(comment: Comment):
+    # comment is of type Comment (has the fields 'text' and 'replies')
+    total_words_of_comment = len(comment.text.split()) 
+    comment_replies = comment.replies 
+    for reply in comment_replies:
+        total_words_of_comment += calculate_total_words_of_comment(reply)
+    return total_words_of_comment
+
+
+def print_comments(comments: List[Comment], indent: int = 0):
+    for comment in comments:
+        if comment.text:
+            print(" " * indent + comment.text)
+        if comment.replies:
+            print_comments(comment.replies, indent + 4)
+
+
+def print_post_tree(post):
+    print('title: ', post.title)
+    print('description: ', post.description)
+    print_comments(post.top_level_comments)
 
 async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     """Main function to perform comprehensive analysis on a subreddit.
@@ -164,7 +209,17 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     # Calculate total words across all content
     total_words = 0
     for post in posts_list:
-        total_words += len(post.title.split()) + len(post.description.split()) + sum([len(comment.split()) for comment in post.comments])
+        total_words += len(post.title.split()) + len(post.description.split()) + sum([calculate_total_words_of_comment(top_level_comment) for top_level_comment in post.top_level_comments])
+    print('total words: ', total_words)
+    print_post_tree(posts_list[0])
+
+    # Perform coreference resolution on all the posts text in posts_list 
+    for i in range(len(posts_list)):
+        start_coref_res = time.time() 
+        post = posts_list[i]
+        posts_list[i] = resolve_pronouns_for_post(post) 
+        end_coref_res = time.time() 
+        print("coref resolution for post " + str(i) + " took: ", end_coref_res - start_coref_res)
 
     # Perform various analyses
     posts_grouped_by_date = group_posts_by_date(posts_list)
@@ -173,10 +228,10 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
         # very unlikely that 2 comments mentioning an entity will be EXACTLY the same 
         comment_and_score_pairs = dict() # across all posts in this date 
         for post in posts:
-            for i in range(len(post.comments)):
-                comment = post.comments[i]
-                comment_score = post.comment_scores[i]
-                comment_and_score_pairs[comment] = comment_score 
+            for i in range(len(post.top_level_comments)):
+                comment = post.top_level_comments[i]
+                comment_score = post.top_level_comment_scores[i]
+                comment_and_score_pairs[comment.text] = comment_score 
         comment_and_score_pairs_grouped_by_date[date] = comment_and_score_pairs
     readability_metrics = get_readability_metrics(posts_list)
     top_n_grams, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud = await get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_grouped_by_date)

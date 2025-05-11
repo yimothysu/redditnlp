@@ -1,3 +1,4 @@
+fastcoref==2.1.6
 aiofiles==24.1.0
 aiohappyeyeballs==2.6.1
 aiohttp==3.11.16
