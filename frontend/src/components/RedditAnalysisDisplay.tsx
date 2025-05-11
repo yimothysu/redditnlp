@@ -103,8 +103,10 @@ export default function RedditAnalysisDisplay({
 
     const timestamp = analysis.timestamp
     const now = new Date(); 
+    console.log("timestamp: ", timestamp * 1000)
+    console.log("24 hours ago: ", now.getTime() - (24 * 60 * 60 * 1000))
     if(timeFilter == "week") {
-      const isMoreThanADayOld = timestamp > new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const isMoreThanADayOld = timestamp * 1000 < now.getTime() - (24 * 60 * 60 * 1000);
       if(isMoreThanADayOld) {
         return (
           <div className="mb-4">
@@ -129,7 +131,7 @@ export default function RedditAnalysisDisplay({
       }
     }
     if(timeFilter == "year" || timeFilter == "all") {
-      const isMoreThanAMonthOld = timestamp > new Date(now.getTime() - 720 * 60 * 60 * 1000);
+      const isMoreThanAMonthOld = timestamp * 1000 < now.getTime() - (720 * 60 * 60 * 1000);
       if(isMoreThanAMonthOld) {
         return (
           <div className="mb-4">
