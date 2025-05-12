@@ -26,7 +26,7 @@ export const EntityPicture = ({entity_name}: { entity_name: string }) => {
         <div className="shadow-xs rounded-sm p-1">
           <img
             src={"/named_entity_pics/" + picture_file_name}
-            className="w-8 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
+            className="w-11 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
           />
         </div>
       );
