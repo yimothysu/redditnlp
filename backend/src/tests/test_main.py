@@ -29,7 +29,6 @@ def test_analysis_invalid_time_filter():
         "/analysis/",
         json={
             "name": "AskReddit",
-            "sort_by": "top",
             "time_filter": "decade"
         }
     )
@@ -45,8 +44,7 @@ def test_analysis_invalid_sort_method():
         "/analysis/",
         json={
             "name": "AskReddit",
-            "sort_by": "trending",
-            "time_filter": "week"
+            "time_filter": "meow"
         }
     )
     assert response.status_code == 400

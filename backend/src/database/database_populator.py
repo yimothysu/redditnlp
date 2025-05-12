@@ -64,8 +64,7 @@ async def fetch_subreddit_data(subreddit, time_filter):
     """
     subreddit_query = SubredditQuery(
             name=subreddit,
-            time_filter=time_filter,
-            sort_by="top"
+            time_filter=time_filter
     )
 
     analysis = await perform_subreddit_analysis(subreddit_query)

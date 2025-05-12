@@ -6,7 +6,6 @@ const API_BASE_URL =
 export interface SubredditQuery {
   name: string;
   time_filter: string;
-  sort_by: string;
 }
 
 export interface Subreddit {

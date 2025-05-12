@@ -87,11 +87,6 @@ async def fetch_subreddit_analysis_from_db(
             status_code=BAD_REQUEST,
             detail=f"Invalid time filter. Must be one of {TIME_FILTERS}.",
         )
-    if subreddit_query.sort_by not in SORT_METHODS:
-        raise HTTPException(
-            status_code=BAD_REQUEST,
-            detail=f"Invalid sort method. Must be one of {SORT_METHODS}.",
-        )
     
     analysis = fetch_subreddit_analysis(subreddit_query)
     if not analysis:

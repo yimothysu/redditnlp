@@ -22,7 +22,6 @@ export default function RedditAnalysisDisplay({
   const [analysis, setAnalysis] = useState<any | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [timeFilter, setTimeFilter] = useState("week");
-  const [sortBy, setSortBy] = useState("top");
   const [subredditMenu, setSubredditMenu] = useState("Trends");
   const isMounted = useRef(true);
 
@@ -45,8 +44,7 @@ export default function RedditAnalysisDisplay({
     try {
       const analysis = await fetchSubredditAnalysis({
         name: name.trim(),
-        time_filter: timeFilter,
-        sort_by: sortBy,
+        time_filter: timeFilter
       });
       setError(null);
       setAnalysis(analysis);

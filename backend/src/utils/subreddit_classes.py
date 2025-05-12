@@ -9,11 +9,10 @@ class SubredditQuery(BaseModel):
     """Parameters for querying subreddit data."""
     name: str # Name of the subreddit
     time_filter: str # Time period to analyze ('week', 'year', 'all')
-    sort_by: str # Post sorting method (e.g., 'top')
 
     def to_composite_key(self) -> str:
         """Generate a unique key for the query."""
-        return f"{self.name}#{self.time_filter}#{self.sort_by}"
+        return f"{self.name}#{self.time_filter}"
 
 
 class NamedEntityLabel(Enum):

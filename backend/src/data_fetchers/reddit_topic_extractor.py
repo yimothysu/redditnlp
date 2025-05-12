@@ -101,24 +101,20 @@ def slice_posts_list(posts_list, time_filter):
     return sorted_slice_to_posts
 
 
-async def get_subreddit_data(subreddit_name, time_filter='week', sort_by='top'):
+async def get_subreddit_data(subreddit_name, time_filter='week'):
     """Fetch and organize posts from a subreddit.
     
     Args:
         subreddit_name: Name of the subreddit to analyze
         time_filter: Time period to fetch posts from (default: 'week')
-        sort_by: How to sort posts ('top' or 'controversial', default: 'top')
     Returns:
         dict: Posts organized by time slices
     Raises:
-        ValueError: If time_filter or sort_by is invalid
+        ValueError: If time_filter is invalid
     """
     if time_filter not in ['hour', 'day', 'week', 'month', 'year', 'all']:
         raise ValueError(f"Invalid time filter. Must be one of ['hour', 'day', 'week', 'month', 'year', 'all'].")
-    
-    if sort_by not in ['top', 'controversial']:
-        raise ValueError(f"Invalid sort method. Must be one of ['top', 'controversial'].")
-    
+
     # Initialize Reddit API client
     reddit = asyncpraw.Reddit(
         client_id=os.environ["REDDIT_CLIENT_ID"],
@@ -131,13 +127,8 @@ async def get_subreddit_data(subreddit_name, time_filter='week', sort_by='top'):
         
         # Get subreddit instance
         subreddit_instance = await reddit.subreddit(subreddit_name)
-        
-        # Get posts based on sort method
-        if sort_by == 'top':
-            posts = [post async for post in subreddit_instance.top(limit=post_limit, time_filter=time_filter)]
-        else:  # controversial
-            posts = [post async for post in subreddit_instance.controversial(limit=post_limit, time_filter=time_filter)]
-        
+        posts = [post async for post in subreddit_instance.top(limit=post_limit, time_filter=time_filter)]
+    
         # Fetch post data concurrently
         posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
         posts_list = [post for post in posts_list if post is not None]  # Filter out None values
