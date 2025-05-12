@@ -17,6 +17,17 @@ interface TopNamedEntitiesForDateProps {
   timeFilter: string;
 }
 
+function GroupEntitiesByLabel({entities}: { entities: NamedEntity[] }) {
+  const label_to_entities: Record<string, NamedEntity[]> = {};
+  for(const entity of entities) {
+    if (!label_to_entities[entity.label]) {
+      label_to_entities[entity.label] = [];
+    }
+    label_to_entities[entity.label].push(entity);
+  }
+  return label_to_entities 
+}
+
 const SummarizedSentimentBulletPoints: React.FC<{
   key_points: string[];
 }> = ({ key_points }) => {
@@ -71,70 +82,116 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
   date,
   entities,
 }) => {
+  const label_to_entities = GroupEntitiesByLabel({entities})
+
+  const EntityLabel = ({label}: {label: string}) => {
+    let displayed_label = ""
+    if(label === "PERSON") {
+      displayed_label = "People"
+    }
+    else if(label === "ORG") {
+      displayed_label = "Organizations"
+    }
+    else if(label === "GPE") {
+      displayed_label = "Geopolitical Locations"
+    }
+    else if(label === "LOC") {
+      displayed_label = "Non-Geopolitical Locations"
+    }
+    else if(label === "FAC") {
+      displayed_label = "Facilities"
+    }
+    else if(label === "PRODUCT") {
+      displayed_label = "Products"
+    }
+    else if(label === "WORK_OF_ART") {
+      displayed_label = "Creative Works"
+    }
+    else if(label === "LAW") {
+      displayed_label = "Named documents or legal rules"
+    }
+    else if(label === "EVENT") {
+      displayed_label = "Named events"
+    }
+    else if(label === "LANGUAGE") {
+      displayed_label = "Named Languages"
+    }
+    else if(label === "NORP") {
+      displayed_label = "Nationalities, religious and political groups"
+    }
+    return (
+      <h1 className="bg-indigo-100 text-[18px] font-semibold text-center p-2">{displayed_label}</h1>
+    )
+  };
 
   return (
     <div
       key={date}
       className="flex-grow flex-1 mb-6 bg-white overflow-hidden"
-    >
-      <div className="grid grid-cols-1 gap-0.5 bg-gray-100">
-        {entities.map((entity: NamedEntity, index: number) => {
-          const backgroundColor =
-            entity.sentiment >= 0.6 && entity.sentiment <= 1
-              ? "#91CC91"
-              : entity.sentiment >= 0.2 && entity.sentiment < 0.6
-              ? "#d3ea84"
-              : entity.sentiment >= -0.2 && entity.sentiment < 0.2
-              ? "#ffffac"
-              : entity.sentiment >= -0.6 && entity.sentiment < -0.2
-              ? "#ffc245"
-              : entity.sentiment >= -1 && entity.sentiment < -0.6
-              ? "#ff9898"
-              : "bg-gray-100";
-          return (
-            <div
-              key={index}
-              className="pt-1 pb-1 grid [grid-template-columns:200px_350px_450px_100px] bg-white transition-all duration-200"
-            >
-                {/* Column 1 */}
-                <div className="border-r border-gray-200 last:border-r-0 flex p-1 bg-gray-50 gap-3 justify-center items-center">
-                  <h4 className="mt-3 text-[15px] font-bold text-gray-800">{entity.name}</h4>
-                  <EntityPicture entity_name={entity.name}></EntityPicture>
-                </div>
-                {/* Column 2 */}
-                <div className="border-r border-gray-200 last:border-r-0  flex gap-2 justify-start items-center">
-                  <div
-                    className="h-6 transition-colors duration-200"
-                    style={{
-                      backgroundColor: backgroundColor,
-                      width: `${(((entity.sentiment + 1) / 2) * 350)}px`
-                    }}
-                  >
+      >
+      {Object.entries(label_to_entities).map(([label, entities_for_label]) => (
+      <>
+        <EntityLabel label={label}></EntityLabel>
+        <div className="grid grid-cols-1 gap-0.5 bg-gray-100">
+          {entities_for_label.map((entity: NamedEntity, index: number) => {
+            const backgroundColor =
+              entity.sentiment >= 0.6 && entity.sentiment <= 1
+                ? "#91CC91"
+                : entity.sentiment >= 0.2 && entity.sentiment < 0.6
+                ? "#d3ea84"
+                : entity.sentiment >= -0.2 && entity.sentiment < 0.2
+                ? "#ffffac"
+                : entity.sentiment >= -0.6 && entity.sentiment < -0.2
+                ? "#ffc245"
+                : entity.sentiment >= -1 && entity.sentiment < -0.6
+                ? "#ff9898"
+                : "bg-gray-100";
+            return (
+              <div
+                key={index}
+                className="pt-1 pb-1 grid [grid-template-columns:200px_350px_450px_100px] bg-white transition-all duration-200"
+              >
+                  {/* Column 1 */}
+                  <div className="border-r border-gray-200 last:border-r-0 flex p-1 bg-gray-50 gap-3 justify-center items-center">
+                    <h4 className="mt-3 text-[15px] font-semibold text-gray-800">{entity.name}</h4>
+                    <EntityPicture entity_name={entity.name}></EntityPicture>
                   </div>
-                  <div className="text-gray-700 text-xs font-semibold italic">
-                    {entity.sentiment.toFixed(2)}
-                  </div>
-                </div>
-                {/* Column 3  */}
-                <div className="border-r border-gray-200 last:border-r-0  p-2 bg-gray-50 text-left">
-                  {entity.key_points && (
-                    <div className="">
-                      <div className="text-[12px] text-gray-500">
-                        <SummarizedSentimentBulletPoints key_points={entity.key_points} />
-
-                      </div>
+                  {/* Column 2 */}
+                  <div className="border-r border-gray-200 last:border-r-0  flex gap-2 justify-start items-center">
+                    <div
+                      className="h-6 transition-colors duration-200"
+                      style={{
+                        backgroundColor: backgroundColor,
+                        width: `${(((entity.sentiment + 1) / 2) * 350)}px`
+                      }}
+                    >
                     </div>
-                  )}
+                    <div className="text-gray-700 text-xs font-semibold italic">
+                      {entity.sentiment.toFixed(2)}
+                    </div>
+                  </div>
+                  {/* Column 3  */}
+                  <div className="border-r border-gray-200 last:border-r-0  p-2 bg-gray-50 text-left">
+                    {entity.key_points && (
+                      <div className="">
+                        <div className="text-[12px] text-gray-500">
+                          <SummarizedSentimentBulletPoints key_points={entity.key_points} />
+
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                                  {/* Column 4 */}
+                                  <div className="p-2 bg-white">
+                    <LinksForEntity entity={entity} /> 
+                  </div>
                 </div>
-                                {/* Column 4 */}
-                                <div className="p-2 bg-white">
-                   <LinksForEntity entity={entity} /> 
-                </div>
-              </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        </>
+      ))}
       </div>
-    </div>
   );
 };
 
