@@ -32,7 +32,7 @@ ALLOWED_LABELS = {"PERSON", "ORG", "GPE", "LOC", "FAC", "PRODUCT", "WORK_OF_ART"
 config = {
     "time_filter": "week",
     "max_absa_tokens": 2000,
-    "max_input_len_to_summarizer": 2500, # in characters 
+    "max_input_len_to_summarizer": 2000, # in characters 
 }
 
 # Download required NLTK resources
@@ -162,6 +162,12 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
         else:
             top_entities[i] = None
     top_entities = [top_entity for top_entity in top_entities if top_entity is not None]
+    
+    # make possessive entities (ends in 's or s') non-possessive
+    for i in range(len(top_entities)):
+        if top_entities[i].name.endswith(("'s", "s'")):
+            top_entities[i].name = top_entities[i].name[:-2]
+
     return (date, top_entities)
 
 
@@ -380,40 +386,45 @@ def get_sentiment_of_entity(entity, flattened_sentences):
 
 
 def get_key_points_of_entity(entity, flattened_comments):
-    """Get the key points of an entity from a list of comments."""
-    summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
-    key_points_limit = TIME_FILTER_TO_KEY_POINTS_LIMIT[config['time_filter']]
-    if len(flattened_comments) > config['max_input_len_to_summarizer']:
-        # highly likely to exceed facebook/bart-large-cnn token limit of 1024, so analyze each chunk seperately
-        t1 = time.time()
-        chunks = [flattened_comments[i:i + config['max_input_len_to_summarizer']] for i in range(0, len(flattened_comments), config['max_input_len_to_summarizer'])]
-        key_points = []
-        for chunk in chunks:
-            tokenized = summarizer_tokenizer.encode(chunk, truncation=True, max_length=1024)
-            truncated_chunk = summarizer_tokenizer.decode(tokenized)
-            model_output = summarizer(truncated_chunk, max_length=100, min_length=20, do_sample=False)
+    try:
+        """Get the key points of an entity from a list of comments."""
+        summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
+        key_points_limit = TIME_FILTER_TO_KEY_POINTS_LIMIT[config['time_filter']]
+        if len(flattened_comments) > config['max_input_len_to_summarizer']:
+            # highly likely to exceed facebook/bart-large-cnn token limit of 1024, so analyze each chunk seperately
+            t1 = time.time()
+            chunks = [flattened_comments[i:i + config['max_input_len_to_summarizer']] for i in range(0, len(flattened_comments), config['max_input_len_to_summarizer'])]
+            key_points = []
+            for chunk in chunks:
+                tokenized = summarizer_tokenizer.encode(chunk, truncation=True, max_length=1024)
+                truncated_chunk = summarizer_tokenizer.decode(tokenized)
+                model_output = summarizer(truncated_chunk, max_length=100, min_length=20, do_sample=False)
+                model_summary_text = model_output[0]['summary_text']
+                relevant_sentences = [sentence for sentence in nltk.sent_tokenize(model_summary_text) if entity in sentence] # Only keep the sentences in summary_text which mention the entity 
+                key_points.extend(relevant_sentences)
+            if len(key_points) > key_points_limit and len(key_points) <= key_points_limit + 5:
+                key_points = random.sample(key_points, key_points_limit)
+            elif len(key_points) > key_points_limit + 5: # happens for an entity that is mentioned in A LOT of comments 
+                _, key_points = get_key_points_of_entity(entity, "\n".join(key_points))
+            t2 = time.time()
+            print('Computing key points of ', entity, ' took: ', t2 - t1)
+            return (entity, key_points)
+        else:
+            t1 = time.time()
+            tokenized = summarizer_tokenizer.encode(flattened_comments, truncation=True, max_length=1024)
+            truncated_flattened_comments = summarizer_tokenizer.decode(tokenized) 
+            model_output = summarizer(truncated_flattened_comments, max_length=100, min_length=5, do_sample=False)
             model_summary_text = model_output[0]['summary_text']
-            relevant_sentences = [sentence for sentence in nltk.sent_tokenize(model_summary_text) if entity in sentence] # Only keep the sentences in summary_text which mention the entity 
-            key_points.extend(relevant_sentences)
-        if len(key_points) > key_points_limit and len(key_points) <= key_points_limit + 5:
-            key_points = random.sample(key_points, key_points_limit)
-        elif len(key_points) > key_points_limit + 5: # happens for an entity that is mentioned in A LOT of comments 
-            _, key_points = get_key_points_of_entity(entity, "\n".join(key_points))
-        t2 = time.time()
-        print('Computing key points of ', entity, ' took: ', t2 - t1)
-        return (entity, key_points)
-    else:
-        t1 = time.time()
-        tokenized = summarizer_tokenizer.encode(flattened_comments, truncation=True, max_length=1024)
-        truncated_flattened_comments = summarizer_tokenizer.decode(tokenized) 
-        model_output = summarizer(truncated_flattened_comments, max_length=100, min_length=5, do_sample=False)
-        model_summary_text = model_output[0]['summary_text']
-        key_points = [sentence for sentence in nltk.sent_tokenize(model_summary_text) if entity in sentence] # Only keep the sentences in summary_text which mention the entity 
-        if len(key_points) > key_points_limit:
-            key_points = random.sample(key_points, key_points_limit)
-        t2 = time.time()
-        print('Computing key points of ', entity, ' took: ', t2 - t1)
-        return (entity, key_points)
+            key_points = [sentence for sentence in nltk.sent_tokenize(model_summary_text) if entity in sentence] # Only keep the sentences in summary_text which mention the entity 
+            if len(key_points) > key_points_limit:
+                key_points = random.sample(key_points, key_points_limit)
+            t2 = time.time()
+            print('Computing key points of ', entity, ' took: ', t2 - t1)
+            return (entity, key_points)
+    except Exception as e:
+        print("ERROR: could not get key points of entity")
+        print("Error message: ", e)
+        return None 
 
 def get_flattened_text_for_comment(comment, indent):
     return (" " * indent) + comment.text + "\n" + "".join([get_flattened_text_for_comment(reply, indent + 4) for reply in comment.replies])
