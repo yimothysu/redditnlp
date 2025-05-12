@@ -42,7 +42,13 @@ function SubredditsCached() {
           {Object.entries(category_to_subreddits).map(([category, subreddits_in_category]) => (
             <div className="pt-10">
               <hr className="border-1 border-white"></hr>
-              <h1 className="text-center tracking-wide items-center justify-center rounded-sm shadow-sm mx-auto font-semibold text-md pb-1.5 pt-1.5 bg-gray-200">{category}</h1>
+              <div className="gap-4 items-center justify-center text-center flex flex-row bg-gray-200 rounded-sm shadow-sm mx-auto pb-2 pt-2">
+                <h1 className="mt-2 tracking-wide font-semibold text-md">{category}</h1>
+                <img
+                  src={"category_pics/" + category.toLowerCase() + ".png"}
+                  className="shadow-md rounded-sm w-8 h-8 object-cover"
+                />
+              </div>
               <hr className="border-1 border-white"></hr>
               <div className="mt-3 flex flex-wrap gap-3 md:gap-5">
                 {subreddits_in_category.map((subreddit) => (
@@ -163,10 +169,6 @@ export default function Home() {
             window.open("https://github.com/yimothysu/redditnlp", "_blank")
           }
         />
-        {/* <img
-                    src={"discord_logo.png"}
-                    className="rounded-full w-9 h-9 mr-4 object-cover"
-                /> */}
       </div>
       <div className="w-full h-4"></div>
     </Template>

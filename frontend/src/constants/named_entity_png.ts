@@ -1337,4 +1337,8 @@ export const entity_name_to_png: Record<string, string> = {
 "CSU": "colorado_state_university.png",
 "colorado state university": "colorado_state_university.png",
 "colorado state": "colorado_state_university.png",
+"globalx": "globalx.png",
+"openstack": "openstack.png",
+"DEA": "drug_enforcement_administration.png",
+"drug enforcement administration": "drug_enforcement_administration.png",
 };
