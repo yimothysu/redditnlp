@@ -46,7 +46,7 @@ function SubredditsCached() {
                 <h1 className="mt-2 tracking-wide font-semibold text-md">{category}</h1>
                 <img
                   src={"category_pics/" + category.toLowerCase() + ".png"}
-                  className="shadow-md rounded-sm w-8 h-8 object-cover"
+                  className="rounded-sm w-8 bg-gray-200"
                 />
               </div>
               <hr className="border-1 border-white"></hr>
