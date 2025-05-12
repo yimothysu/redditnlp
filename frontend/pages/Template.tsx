@@ -6,9 +6,9 @@ export default function Template(props: any) {
     <div className="min-h-screen bg-gray-200">
       <div className="flex p-2">
         <a href="/" className="text-black!">
-          <div className="flex ml-3 mt-2 ">
-          <HomeIcon className="w-7 h-7 text-gray-800" />
-          <b className="ml-1 mt-1">Home</b>
+          <div className="flex ml-3 mt-2 gap-1 pt-1 pb-1 pl-2 pr-2 rounded-lg">
+            <HomeIcon className="w-7 shadow-md h-7 rounded-full text-white bg-indigo-600 p-1" />
+            <h1 className="ml-1 mt-1">Home</h1>
           </div>
         </a>
       </div>
