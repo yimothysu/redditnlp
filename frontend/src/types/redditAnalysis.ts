@@ -6,6 +6,7 @@ export interface NGram {
 export interface NamedEntity {
   name: string, 
   count: number,
+  label: string,
   sentiment: number,
   key_points: string[],
   urls: string[]
