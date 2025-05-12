@@ -26,7 +26,7 @@ summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
 TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 20}
 TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
 TIME_FILTER_TO_POST_URL_LIMIT = {'week': 1, 'year': 3, 'all': 3}
-TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 35, 'year': 50, 'all': 65}
+TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 40, 'year': 60, 'all': 80}
 ALLOWED_LABELS = {"PERSON", "ORG", "GPE", "LOC", "FAC", "PRODUCT", "WORK_OF_ART", "LAW", "EVENT", "LANGUAGE", "NORP"}
 
 config = {
@@ -137,6 +137,7 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
         if not (isinstance(name, str) and filter_named_entity(name)): continue
         if isinstance(name, numbers.Number) or name.isnumeric(): continue
         if len(name) == 1: continue
+        if count == 1: continue 
         if name in banned_entities: continue 
         filtered_entities[name] = count
 
@@ -182,27 +183,30 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
     for ent in doc.ents:
         ent_text = ent.text 
         if ent_text in top_entity_names:
-            sent_text = ent.sent.text 
+            sent_text = ent.sent.text.strip() 
             # Figure out the full comment that the entity appeared in (for context)
             full_comment = None
             for comment_text in comment_and_score_pairs.keys():
-                if sent_text in comment_text:
+                if sent_text.lower() in comment_text.lower():
                     full_comment = comment_text 
                     break
             if full_comment is not None:
                 print('found full_comment where named entity is mentioned')
                 if ent_text not in entity_to_comments: 
                     entity_to_comments[ent_text] = set()
-                entity_to_comments[ent_text].add((full_comment, comment_and_score_pairs[full_comment]))
+                if (full_comment, comment_and_score_pairs[full_comment]) not in entity_to_comments[ent_text]:
+                    entity_to_comments[ent_text].add((full_comment, comment_and_score_pairs[full_comment]))
             else:
                 print('could NOT find full_comment where named entity is mentioned')
     
+    # Only keep entities which are mentioned in more than 1 comment 
+    entity_to_comments = {entity: comments for entity, comments in entity_to_comments.items() if len(comments) > 1}
     # Combine entities that refer to the same thing 
     entity_to_comments = combine_same_entities(entity_to_comments)
 
     for entity, comments in entity_to_comments.items():
         # comments is a list of tuples (comment, score)
-        comments = sorted(comments, key=lambda x: x[1])
+        comments = sorted(comments, key=lambda comment: comment[1])
         max_num_comments = TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT[config['time_filter']]
         comments = comments[-max_num_comments:] 
         entity_to_comments[entity] = [comment[0] for comment in comments]
@@ -285,16 +289,18 @@ def combine_same_entities(entity_to_comments):
 
 
 def combine_two_entities(entity_to_comments, entity_1, entity_2):
-    if entity_1 is not None and entity_2 is not None and entity_1 in entity_to_comments and entity_2 in entity_to_comments and entity_1 != entity_2:
-        # choose to keep the longer entity EXCEPT if the longer entity ends in s' or 's 
-        if len(entity_1) > len(entity_2) and not entity_1.endswith(("'s", "s'")):
-            entity_to_keep = entity_1 
-            entity_to_comments[entity_to_keep] = entity_to_comments[entity_to_keep] | entity_to_comments[entity_2]
-            del entity_to_comments[entity_2]
-        else:
-            entity_to_keep = entity_2 
-            entity_to_comments[entity_to_keep] = entity_to_comments[entity_to_keep] | entity_to_comments[entity_1]
-            del entity_to_comments[entity_1]
+    if entity_1 is None or entity_2 is None or entity_1 not in entity_to_comments or entity_2 not in entity_to_comments:
+        return entity_to_comments
+    
+    if len(entity_1) >= len(entity_2): longer, shorter = entity_1, entity_2
+    else: longer, shorter = entity_2, entity_1
+
+    if longer == shorter + 's' or longer == shorter + "s'": 
+        entity_to_comments[shorter] = entity_to_comments[shorter] | entity_to_comments[longer]
+        del entity_to_comments[longer]
+    else:
+        entity_to_comments[longer] = entity_to_comments[longer] | entity_to_comments[shorter]
+        del entity_to_comments[shorter]
     return entity_to_comments 
 
 
@@ -409,6 +415,15 @@ def get_key_points_of_entity(entity, flattened_comments):
         print('Computing key points of ', entity, ' took: ', t2 - t1)
         return (entity, key_points)
 
+def get_flattened_text_for_comment(comment, indent):
+    return (" " * indent) + comment.text + "\n" + "".join([get_flattened_text_for_comment(reply, indent + 4) for reply in comment.replies])
+
+# Assuming coreference resolution has already been performed when this function gets called 
+def get_flattened_text_for_post(post):
+    flattened_text = "Title: " + post.title + "\n" + "Description: " + post.description 
+    for top_level_comment in post.top_level_comments:
+        flattened_text += " " + get_flattened_text_for_comment(top_level_comment, indent = 0)
+    return flattened_text 
 
 def get_post_urls(date_to_posts, date_to_entities):
     """Get the top post urls for each named entity so users can reference the posts."""
@@ -421,7 +436,7 @@ def get_post_urls(date_to_posts, date_to_entities):
         for entity in entities:
             posts_that_mention_entity = [] # idxs of the posts 
             for post in date_to_posts[date]:
-                post_content = post.title + ' ' + post.description + ' '.join(post.comments)
+                post_content = get_flattened_text_for_post(post)
                 if entity.name in post_content: 
                     try:
                         post_url = "https://www.reddit.com" + post.permalink
