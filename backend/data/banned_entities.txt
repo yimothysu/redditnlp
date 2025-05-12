@@ -8,3 +8,9 @@ grandma
 grandpa 
 uncle 
 aunt 
+people 
+bro
+dawg
+shame
+girl
+boy 
