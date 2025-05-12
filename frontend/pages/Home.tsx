@@ -6,7 +6,7 @@ import { SubredditCard } from "../src/components/SubredditCard.tsx";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
 import { requestSubreddit } from "../src/lib/api.ts";
-import { subreddits } from "../src/constants/subreddits.ts";
+import { category_to_subreddits } from "../src/constants/subreddits.ts";
 
 function SubredditsCached() {
   return (
@@ -38,12 +38,21 @@ function SubredditsCached() {
           Below are some of the most popular subreddit communities right now.
           Explore NLP for them.
         </p>
-        <div className="flex flex-wrap gap-3 md:gap-5 mt-8">
-          {subreddits.map((subreddit) => (
-            <SubredditCard key={subreddit} subredditName={subreddit} />
+        <div className="">
+          {Object.entries(category_to_subreddits).map(([category, subreddits_in_category]) => (
+            <div className="pt-10">
+              <hr className="border-1 border-white"></hr>
+              <h1 className="text-center tracking-wide items-center justify-center rounded-sm shadow-sm mx-auto font-semibold text-md pb-1.5 pt-1.5 bg-gray-200">{category}</h1>
+              <hr className="border-1 border-white"></hr>
+              <div className="mt-3 flex flex-wrap gap-3 md:gap-5">
+                {subreddits_in_category.map((subreddit) => (
+                <SubredditCard key={subreddit} subredditName={subreddit} />
+                ))}
+              </div>
+            </div>
           ))}
         </div>
-      </div>
+        </div>
     </>
   );
 }
