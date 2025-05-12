@@ -4,7 +4,7 @@ Provides data models and functions for retrieving post content, comments,
 and associated metadata from Reddit using asyncpraw.
 """
 from __future__ import annotations
-import asyncpraw
+import asyncpraw, string 
 from pydantic import BaseModel
 from typing import Optional
 from typing import List
@@ -40,16 +40,20 @@ class RedditPost(BaseModel):
     title: str
     description: str 
     score: int
-    url: str
+    permalink: str
     created_utc: float
     num_comments: int
     top_level_comments: list[Comment]
-    top_level_comment_scores: list[int]
     
     def to_dict(self):
         """Convert the post data to a dictionary format."""
         return self.model_dump()
 
+def ensure_ending_punctuation(text):
+    ends_in_punctuation = text and text[-1] in string.punctuation
+    if(not ends_in_punctuation):
+        text = text.strip() + "."
+    return text
 
 def get_comment_replies(comment):
     # comment is of type praw.models.Comment
@@ -57,13 +61,15 @@ def get_comment_replies(comment):
     replies = [] 
     for reply in comment.replies:
         reply_object = Comment() 
-        if hasattr(reply, "body"):
-             reply_object.text = reply.body 
-             print('reply_object had a body!')
+        if hasattr(reply, "body") and reply.body is not None and reply.body:
+             reply_object.text = ensure_ending_punctuation(reply.body)
         else:
-            print('comment had no body')
             continue 
-        if hasattr(reply, "replies"):
+        if hasattr(reply, "score") and reply.score is not None and reply.score > 0:
+                reply_object.score = reply.score
+        else:
+            continue 
+        if hasattr(reply, "replies") and reply.replies is not None and len(reply.replies) > 0:
              reply_object.replies = get_comment_replies(reply)
         else:
             reply_object.replies = []
@@ -91,41 +97,35 @@ async def fetch_post_data(post) -> Optional[RedditPost]:
         # Fetch comments
         comments = await post.comments()
         comment_objects = []
-        comment_scores = []
-        
+
         # Extract comment text and scores, skipping MoreComments objects
         for comment in comments:
             if isinstance(comment, asyncpraw.models.MoreComments):
                 continue
             comment_object = Comment() 
-            if hasattr(comment, "body"):
-                comment_object.text = comment.body 
-                print('top level comment has a body!')
+            if hasattr(comment, "body") and comment.body is not None and comment.body:
+                comment_object.text = ensure_ending_punctuation(comment.body) 
             else: 
-                print('top level comment doesnt have a body')
                 continue 
-            if hasattr(comment, "score"):
+            if hasattr(comment, "score") and comment.score is not None and comment.score > 0:
                 comment_object.score = comment.score 
-                comment_scores.append(comment.score)
-            if hasattr(comment, "replies"):
-                print('top level comment has replies!')
+            else:
+                continue 
+            if hasattr(comment, "replies") and comment.replies is not None and len(comment.replies) > 0:
                 comment_object.replies = get_comment_replies(comment)
             else:
                 comment_object.replies = []
             comment_objects.append(comment_object)
 
         print('got ', len(comment_objects), '/', len(comments), ' for post')
-        comment_objects.sort(key=lambda comment: comment.score)
-        comment_scores = [comment_object.score for comment_object in comment_objects]
         return RedditPost(
-            title=post.title,
-            description=post.selftext,
+            title=ensure_ending_punctuation(post.title),
+            description=ensure_ending_punctuation(post.selftext),
             score=post.score,
-            url=post.url,
+            permalink=post.permalink,
             created_utc=post.created_utc,
             num_comments=post.num_comments,
             top_level_comments=comment_objects,
-            top_level_comment_scores=comment_scores
         )
     except Exception as e:
         print(f'Error fetching post data: {e}')
