@@ -3,6 +3,7 @@ from fastcoref import spacy_component
 import spacy # type: ignore
 import nltk # type: ignore
 import queue
+import re
 
 nlp = spacy.load("en_core_web_sm")
 nlp.add_pipe("fastcoref")
@@ -56,7 +57,14 @@ def resolve_pronouns_for_post(post):
         for comment, doc in zip(flattened_context_plus_comments, docs):
             try:
                 if doc is not None and doc._.resolved_text:
-                    resolved_comments.append(doc._.resolved_text)
+                    # weird bug during coreference resolution process where fastcoref makes an already 
+                    # possessive entities possessive --> Ex: Musk's's
+                    if re.search(r"\b\w+'s's\b", doc._.resolved_text):
+                        print("Found a word ending in 's's!")
+                        # Replace all occurrences of "'s's" at the end of a word with "'s"
+                        resolved_comments.append(re.sub(r"'s's\b", "'s", doc.resolved_text))
+                    else:
+                        resolved_comments.append(doc._.resolved_text)
                 else:
                     resolved_comments.append(comment)
             except Exception as e:
