@@ -1,6 +1,5 @@
 from fastcoref import FCoref
 from fastcoref import spacy_component
-import string 
 import spacy # type: ignore
 import nltk # type: ignore
 import queue
@@ -10,12 +9,6 @@ nlp.add_pipe("fastcoref")
 nltk.download('punkt')
 
 seperator = " ==== " # divides the context of a comment and the body of a comment 
-
-def ensure_ending_punctuation(text):
-    ends_in_punctuation = text and text[-1] in string.punctuation
-    if(not ends_in_punctuation):
-        text = text.strip() + "."
-    return text
 
 '''
     Recursive helper function for set_context_for_post_comments 
@@ -34,19 +27,15 @@ def set_context_for_comment(comment, context):
     context DOESN'T include the comment's text, so there's no need to add a seperator in context 
 '''
 def set_context_for_post_comments(post):
-    # first, make sure that post.title and post.description end in punctuation 
-    post.title = ensure_ending_punctuation(post.title)
-    post.description = ensure_ending_punctuation(post.description)
-
-    # then, resolve the pronouns in post.title and post.description 
+    # resolve the pronouns in post.title and post.description 
     post_title_and_description = post.title + seperator + post.description
     try:
         doc = nlp(post_title_and_description, component_cfg={"fastcoref": {'resolve_text': True}})
         if doc is not None:
             post_title_and_description = doc._.resolved_text
-            seperator_idx = post_title_and_description.find(seperator) + len(seperator)
+            seperator_idx = post_title_and_description.find(seperator) # the idx that the seperator STARTS 
             post.title = post_title_and_description[:seperator_idx]
-            post.description = post_title_and_description[seperator_idx:]
+            post.description = post_title_and_description[seperator_idx + len(seperator):]
     except Exception as e:
         print(f"[FATAL] Failed during NLP pipeline execution for post title & description.")
         print(f"Error: {e}")
@@ -54,7 +43,6 @@ def set_context_for_post_comments(post):
     # set the context field for all the post's comments 
     top_level_comment_context = post.title + " " + post.description 
     for i in range(len(post.top_level_comments)):
-        post.top_level_comments[i].text = ensure_ending_punctuation(post.top_level_comments[i].text)
         post.top_level_comments[i] = set_context_for_comment(post.top_level_comments[i], top_level_comment_context)
     return post 
 
@@ -86,8 +74,9 @@ def resolve_pronouns_for_post(post):
     # remove the context and seperator from each resolved comment in resolved_comments 
     for i in range(len(resolved_comments)):
         if seperator in resolved_comments[i]:
-            _, comment = resolved_comments[i].split(seperator, 1)
-            resolved_comments[i] = comment.strip() 
+            if seperator in resolved_comments[i]:
+                _, comment = resolved_comments[i].split(seperator, 1)
+                resolved_comments[i] = comment.strip() 
 
     unvisited = queue.Queue()
     for x in range(len(post.top_level_comments)):
