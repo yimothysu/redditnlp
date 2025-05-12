@@ -31,16 +31,22 @@ function SubredditsCached() {
         </script>
       </Helmet>
       <div className="bg-gray-100 p-4 md:p-7">
-        <h1 className="font-bold text-xl mb-1">
-          Explore NLP For Popular Communities
-        </h1>
+        <div className="flex gap-4">
+          <h1 className="font-bold text-xl mb-1 mt-4">
+            Explore NLP For Popular Communities
+          </h1>
+          <img
+            src={"NLP.png"}
+            className="w-13"
+          />
+        </div>
         <p className="pt-2">
           Below are some of the most popular subreddit communities right now.
           Explore NLP for them.
         </p>
         <div className="">
           {Object.entries(category_to_subreddits).map(([category, subreddits_in_category]) => (
-            <div className="pt-10">
+            <div className="pt-8">
               <hr className="border-1 border-white"></hr>
               <div className="gap-4 items-center justify-center text-center flex flex-row bg-gray-200 rounded-sm shadow-sm mx-auto pb-2 pt-2">
                 <h1 className="mt-2 tracking-wide font-semibold text-md">{category}</h1>
@@ -103,13 +109,13 @@ function RequestAnalysisForSpecificSubreddit() {
 
   return (
     <div className="p-7 flex flex-col justify-center items-center">
-      <h1 className="font-bold text-xl mt-8 mb-4">Submit a Request</h1>
+      <h1 className="font-bold text-xl mt-5 mb-4">Submit a Request</h1>
+      <img src={"email.png"} className="w-13 mb-3 mt-1"/>
       <h1 className="mb-4">
         {" "}
         Have a subreddit you want to analyze that's not on our website? Submit
         up to one request/day.
       </h1>
-
       {error && <div className="text-red-600 mb-2">{error}</div>}
       {submitted && (
         <div className="text-green-600 mb-2">
