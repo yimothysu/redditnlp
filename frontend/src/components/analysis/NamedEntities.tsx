@@ -64,7 +64,7 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
   } else {
     return (
       <div className="">
-        {Object.entries(entity.urls).map(([idx, link]) => (
+        {Object.entries(entity.urls).map(([_, link]) => (
           <div
             onClick={() => window.open(link, "_blank")}
             className="w-20 m-1 bg-[#fa6f4d] hover:bg-gray-100 transition-colors duration-200 p-2 text-sm font-medium rounded-lg text-white text-center flex items-center justify-center cursor-pointer border border-gray-100"
