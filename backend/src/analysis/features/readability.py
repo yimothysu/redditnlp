@@ -22,7 +22,7 @@ def get_readability_metrics(posts):
     """
     total_num_words_title = 0
     total_num_words_description = 0
-    num_posts_over_100_words = 0
+    num_posts_analyzed = 0 
     readability_metrics = {
         "flesch_grade_level": 0.0,
         "dale_chall_grade_levels": defaultdict(int)
@@ -35,23 +35,21 @@ def get_readability_metrics(posts):
         total_num_words_title += num_words_title
         total_num_words_description += num_words_description
         
-        # Only analyze readability for posts with substantial content
-        if num_words_description >= 100:
-            num_posts_over_100_words += 1
-            try:
-                r = Readability(post.description)
-                flesch_kincaid = r.flesch_kincaid()
-                readability_metrics["flesch_grade_level"] = float(flesch_kincaid.grade_level) + float(readability_metrics.get("flesch_grade_level", 0))
-                dale_chall = r.dale_chall()
-                for level in dale_chall.grade_levels:
-                    readability_metrics["dale_chall_grade_levels"][level] += 1
-            except:
-                print("An error occurred while generating readability metrics")
+        try:
+            r = Readability(post.title + post.description + "\n".join([top_level_comment.text for top_level_comment in post.top_level_comments[:10]]))
+            flesch_kincaid = r.flesch_kincaid()
+            readability_metrics["flesch_grade_level"] = float(flesch_kincaid.grade_level) + float(readability_metrics.get("flesch_grade_level", 0))
+            dale_chall = r.dale_chall()
+            for level in dale_chall.grade_levels:
+                readability_metrics["dale_chall_grade_levels"][level] += 1
+            num_posts_analyzed += 1 
+        except:
+            print("An error occurred while generating readability metrics")
     
     # Calculate averages
     avg_num_words_title = total_num_words_title / len(posts) if len(posts) != 0 else None
     avg_num_words_description = total_num_words_description / len(posts) if len(posts) != 0 else None
-    avg_flesch_grade_level = readability_metrics.get("flesch_grade_level", 0) / num_posts_over_100_words if num_posts_over_100_words != 0 else -1
+    avg_flesch_grade_level = readability_metrics.get("flesch_grade_level", 0) / num_posts_analyzed if num_posts_analyzed != 0 else -1
     
     return {
         "avg_num_words_title": avg_num_words_title,
