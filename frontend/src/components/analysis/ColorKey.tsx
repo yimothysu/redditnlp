@@ -21,17 +21,17 @@ const ColorCodeBox: React.FC<ColorCodeBoxProps> = ({
 export const ColorKey: React.FC = () => {
   if (window.innerWidth < 500) {
     return (
-      <div className="mt-8 mb-8">
-        <div className="flex border-1 border">
-          <div className="bg-[#ff9898] h-5 w-18"></div>
-          <div className="bg-[#ffc245] h-5 w-18"></div>
-          <div className="bg-[#ffffac] h-5 w-18"></div>
-          <div className="bg-[#d3ea84] h-5 w-18"></div>
-          <div className="bg-[#91CC91] h-5 w-18"></div>
-        </div>
-        <p className="text-sm text-center">
-          left = positive consensus, right = negative consensus
+      <div className="mb-4">
+        <p className="text-[12px] whitespace-pre-wrap text-center mb-1">
+        <span className="text-red-600"><b>-1 (min) | negative consensus </b></span>                  <span className="text-green-600"><b>positive consensus | 1 (max)</b></span>
         </p>
+        <div className="flex">
+          <div className="bg-[#ff9898] h-5 w-20"></div>
+          <div className="bg-[#ffc245] h-5 w-20"></div>
+          <div className="bg-[#ffffac] h-5 w-20"></div>
+          <div className="bg-[#d3ea84] h-5 w-20"></div>
+          <div className="bg-[#91CC91] h-5 w-20"></div>
+        </div>
       </div>
     );
   }

@@ -149,7 +149,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
             return (
               <div
                 key={index}
-                className="pt-1 pb-1 grid [grid-template-columns:200px_350px_450px_100px] bg-white transition-all duration-200"
+                className="pt-1 pb-1 grid md:[grid-template-columns:200px_350px_450px_100px] bg-white transition-all duration-200"
               >
                   {/* Column 1 */}
                   <div className="border-r border-gray-200 last:border-r-0 flex p-1 bg-gray-50 gap-3 justify-center items-center">
@@ -159,7 +159,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
                   {/* Column 2 */}
                   <div className="border-r border-gray-200 last:border-r-0  flex gap-2 justify-start items-center">
                     <div
-                      className="h-6 transition-colors duration-200"
+                      className="h-5 md:h-6 transition-colors duration-200"
                       style={{
                         backgroundColor: backgroundColor,
                         width: `${(((entity.sentiment + 1) / 2) * 350)}px`

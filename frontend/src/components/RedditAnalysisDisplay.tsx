@@ -157,14 +157,14 @@ export default function RedditAnalysisDisplay({
 
   return (
     <div>
-      <div className="ml-2 mr-2 mt-4 mb-4 p-5 bg-white rounded-md shadow-sm">
+      <div className="ml-2 mr-2 mt-4 mb-4 pt-5 md:p-5 bg-white rounded-md shadow-sm">
         <div className="flex flex-col items-center mb-6">
           <SubredditAvatar subredditName={name ?? ""} />
           <a target="_blank" href={`https://reddit.com/r/` + name}>
             <h1 className="text-lg font-bold">r/{name}</h1>
           </a>
         </div>
-        <div className="flex justify-center items-center gap-4 mb-2">
+        <div className="flex flex-col md:flex-row justify-center items-center gap-4 mb-2">
           <div>
             <label className="block text-sm text-center font-medium text-gray-700">
               Time Filter
@@ -181,9 +181,9 @@ export default function RedditAnalysisDisplay({
           </div>
           <div className="relative flex">
             {isBusy && !analysis && (
-              <div className="">
-                <div className={`absolute right-[-30px] ${spinnerStyle}`}></div>
-                <h1 className="absolute text-sm text-blue-600 left-[50px] w-[150px]">this may take up to 20 seconds to load...</h1>
+              <div className="flex gap-4">
+                <div className={`md:absolute md:right-[-30px] ${spinnerStyle}`}></div>
+                <h1 className="md:absolute text-sm text-blue-600 md:left-[50px] w-[150px]">this may take up to 20 seconds to load...</h1>
               </div>
             )}
           </div>
@@ -201,7 +201,7 @@ export default function RedditAnalysisDisplay({
 
         {!error && analysis && (
           <div className="mt-4">
-            <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
+            <hr className="my-4 border-t border-gray-400 mx-auto w-[100%] md:w-[97%]" />
             <div className="flex items-center justify-center">
               <div className="flex flex-col m-2 text-[15px] items-center justify-center text-center">
                   <DisplayOutdatedOrNot></DisplayOutdatedOrNot>
@@ -220,7 +220,7 @@ export default function RedditAnalysisDisplay({
                 </h1>
               </div>
             </div>
-            <hr className="my-4 border-t border-gray-400 mx-auto w-[97%]" />
+            <hr className="my-4 border-t border-gray-400 mx-auto w-[100%] md:w-[97%]" />
             <div className="flex flex-col">
               <AnalysisMenu
                 timeFilter={timeFilter}
