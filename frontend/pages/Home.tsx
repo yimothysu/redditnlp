@@ -31,16 +31,12 @@ function SubredditsCached() {
         </script>
       </Helmet>
       <div className="bg-gray-100 p-4 md:p-7">
-        <div className="flex gap-4">
-          <h1 className="font-bold text-xl mb-1 mt-4">
+        <div className="flex gap-4 items-center justify-center">
+          <h1 className="font-bold text-xl mb-1 mt-4 text-center">
             Explore NLP For Popular Communities
           </h1>
-          <img
-            src={"NLP.png"}
-            className="w-13"
-          />
         </div>
-        <p className="pt-2">
+        <p className="pt-2 text-center">
           Below are some of the most popular subreddit communities right now.
           Explore NLP for them.
         </p>
