@@ -63,14 +63,14 @@ const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
     );
   } else {
     return (
-      <div className="mt-4">
+      <div className="">
         {Object.entries(entity.urls).map(([idx, link]) => (
           <div
             onClick={() => window.open(link, "_blank")}
-            className="m-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 p-3 text-sm font-medium rounded-lg text-gray-700 text-center flex items-center justify-center cursor-pointer border border-gray-100"
+            className="w-20 m-1 bg-[#fa6f4d] hover:bg-gray-100 transition-colors duration-200 p-2 text-sm font-medium rounded-lg text-white text-center flex items-center justify-center cursor-pointer border border-gray-100"
           >
-            #{Number(idx) + 1} Top Post discussing "{entity.name}"
-            <ChevronRight className="w-5 h-5 ml-2 text-gray-500" />
+            post
+            <ChevronRight className="w-5 h-5 ml-2 text-white" />
           </div>
         ))}
       </div>
