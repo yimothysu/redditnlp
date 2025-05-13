@@ -138,7 +138,7 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
         if isinstance(name, numbers.Number) or name.isnumeric(): continue
         if len(name) == 1: continue
         if count == 1: continue 
-        if name in banned_entities: continue 
+        if name.lower() in banned_entities: continue 
         filtered_entities[name] = count
 
     # Get top entities and analyze
@@ -165,7 +165,7 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
     
     # make possessive entities (ends in 's or s') non-possessive
     for i in range(len(top_entities)):
-        if top_entities[i].name.endswith(("'s", "s'")):
+        if top_entities[i].name.endswith(("'s", "s'", "’s", "s’")):
             top_entities[i].name = top_entities[i].name[:-2]
 
     return (date, top_entities)
@@ -268,8 +268,10 @@ def combine_same_entities(entity_to_comments):
             entity_1 == (entity_2 + "s") or (entity_1 + "s") == entity_2,
             # the entities are the same if we make them both possessive plural 
             entity_1 == (entity_2 + "s'") or (entity_1 + "s'") == entity_2,
+            entity_1 == (entity_2 + "s’") or (entity_1 + "s’") == entity_2,
             # the entities are the same if we make them both possessive singular 
             entity_1 == (entity_2 + "'s") or (entity_1 + "'s") == entity_2,
+            entity_1 == (entity_2 + "s’") or (entity_1 + "s’") == entity_2,
             # the entities are the same if we make them both one word 
             ''.join(entity_1.split()) == ''.join(entity_2.split()),
             # the 2nd entity is a letter abbreviation of the 1st entity 
@@ -301,7 +303,7 @@ def combine_two_entities(entity_to_comments, entity_1, entity_2):
     if len(entity_1) >= len(entity_2): longer, shorter = entity_1, entity_2
     else: longer, shorter = entity_2, entity_1
 
-    if longer == shorter + 's' or longer == shorter + "s'": 
+    if longer == shorter + "'s" or longer == shorter + "s'" or longer == shorter + "’s" or longer == shorter + "s’": 
         entity_to_comments[shorter] = entity_to_comments[shorter] | entity_to_comments[longer]
         del entity_to_comments[longer]
     else:
