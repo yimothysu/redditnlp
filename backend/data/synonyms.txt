@@ -7,8 +7,18 @@ italy - italian - italia
 cali - california 
 philly - philadelphia 
 met gala - the met gala 
+joe - biden 
+google - goog 
+rocket lab - rocketlab - rklb 
+jerome powell - powell - jpow 
+ufp technologies - ufpt 
+warren buffet - warren buffett - buffet - buffett 
+hitler - adolf
+coca cola - cola - coca-cola company 
+usmc - marine corps - us marine corps - u.s. marine corps - marine 
 canada - canadian - the great white north
 china - chinese - people's republic of china - prc - mainland china
+baldur - balder's gate - baldurs gate - baldur's gate 
 korea - korean
 bitcoin - btc
 nicolas cage - nick cage - nic cage
@@ -18,6 +28,11 @@ elon - musk
 donald - trump 
 constitution - the constitution - the constitution of the united states - the us constitution - us constitution - the constitution of the us 
 dnc - democrat - democrats - dems 
+microsoft - msft 
+australia - australian - aussie 
+jennifer lawrence - jlaw 
+anakin - skywalker 
+obi wan - obi-wan kenobi - kenobi 
 south america - south american 
 north america - north american 
 africa - african 
@@ -243,3 +258,4 @@ the walt disney company - disney
 american telephone and telegraph company - at&t
 general electric company - ge
 united states congress - us congress - u.s. congress - congress
+nintendo of america - nintendo 
