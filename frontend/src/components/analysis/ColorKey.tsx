@@ -23,7 +23,7 @@ export const ColorKey: React.FC = () => {
     return (
       <div className="mb-4">
         <p className="text-[12px] whitespace-pre-wrap text-center mb-1">
-        <span className="text-red-600"><b>-1 (min) | negative consensus </b></span>                  <span className="text-green-600"><b>positive consensus | 1 (max)</b></span>
+        <span className="text-red-600"><b>-1 (min) | negative consensus </b></span>            <span className="text-green-600"><b>positive consensus | 1 (max)</b></span>
         </p>
         <div className="flex">
           <div className="bg-[#ff9898] h-5 w-20"></div>
