@@ -74,9 +74,9 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
         </div>
       <br />
       <div className="flex flex-col align-center items-center">
-        <Metric name="Avg Word Count Per Title" metric={analysis.readability_metrics["avg_num_words_title"]}/>
-        <Metric name="Avg Word Count Per Description" metric={analysis.readability_metrics["avg_num_words_description"]}/>
-        <Metric name="Avg Flesch Grade Level" metric={analysis.readability_metrics["avg_flesch_grade_level"] == -1 ? "No Data Available": analysis.readability_metrics["avg_flesch_grade_level"]}/>
+        <Metric name="Avg Word Count Per Title" metric={analysis.readability_metrics["avg_num_words_title"].toFixed(0)}/>
+        <Metric name="Avg Word Count Per Description" metric={analysis.readability_metrics["avg_num_words_description"].toFixed(0)}/>
+        <Metric name="Avg Flesch Grade Level" metric={analysis.readability_metrics["avg_flesch_grade_level"] == -1 ? "No Data Available": analysis.readability_metrics["avg_flesch_grade_level"].toFixed(0)}/>
         <div className="border bg-white border-gray-200 rounded-lg shadow-md m-2 sm:w-7/8 p-3">
           <p className="text-center text-gray-500">
             <b>Distribution of Grade Levels (Dale Chall)</b>
