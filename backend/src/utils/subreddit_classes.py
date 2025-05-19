@@ -50,12 +50,12 @@ class SubredditAnalysis(BaseModel):
     num_words: int # Total word count analyzed 
     subreddit: str # Name of the subreddit 
     #  key = date
-    top_n_grams: Dict[str, List[NGram]] # Top n-grams by date 
+    top_n_grams: Optional[Dict[str, List[NGram]]] = None # Top n-grams by date 
     # key = date 
-    top_named_entities: Dict[str, List[NamedEntity]] # Top named entities by date 
-    top_named_entities_embeddings: Dict[str, Tuple[float, float]] # Embeddings of the top named entities by date 
-    top_named_entities_wordcloud: str # Wordcloud of the top named entities by date 
-    readability_metrics: Dict[str, Any] # Readability metrics by date 
+    top_named_entities: Optional[Dict[str, List[NamedEntity]]] = None # Top named entities by date 
+    top_named_entities_embeddings: Optional[Dict[str, Tuple[float, float]]] = None # Embeddings of the top named entities by date 
+    top_named_entities_wordcloud: Optional[str] = None # Wordcloud of the top named entities by date 
+    readability_metrics: Optional[Dict[str, Any]] = None # Readability metrics by date 
 
     # For subreddit ranking
     toxicity_score: Optional[float] = None # [0, 1] --> 0 = not toxic at all, 1 = all toxic 
