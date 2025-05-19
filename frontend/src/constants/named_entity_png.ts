@@ -1111,7 +1111,6 @@ export const entity_name_to_png: Record<string, string> = {
 "the trade desk": "the_trade_desk.png",
 "thetradedesk": "the_trade_desk.png",
 "usps": "USPS.png",
-"statefarm": "statefarm.png",
 "xi": "xi_jinping.png",
 "xi jinping": "xi_jinping.png",
 "waymo": "waymo.png",
