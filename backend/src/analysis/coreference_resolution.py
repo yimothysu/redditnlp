@@ -63,12 +63,17 @@ def resolve_pronouns_for_post(post):
                         print("Found a word ending in 's's!")
                         # Replace all occurrences of "'s's" at the end of a word with "'s"
                         resolved_comments.append(re.sub(r"'s's\b", "'s", doc.resolved_text))
+                    elif re.search(r"\b\w+’s’s\b", doc._.resolved_text):
+                        print("Found a word ending in ’s’s!")
+                        # Replace all occurrences of "’s’s" at the end of a word with "’s"
+                        resolved_comments.append(re.sub(r"’s’s\b", "’s", doc.resolved_text))
                     else:
                         resolved_comments.append(doc._.resolved_text)
+                    print("successfully resolved comment! ^~^")
                 else:
                     resolved_comments.append(comment)
             except Exception as e:
-                print(f"[WARNING] Failed to resolve pronouns for comment: {comment}")
+                print(f"[WARNING] Failed to resolve pronouns for comment")
                 print(f"Error: {e}")
                 resolved_comments.append(comment)
     except Exception as e:
@@ -82,9 +87,8 @@ def resolve_pronouns_for_post(post):
     # remove the context and seperator from each resolved comment in resolved_comments 
     for i in range(len(resolved_comments)):
         if seperator in resolved_comments[i]:
-            if seperator in resolved_comments[i]:
-                _, comment = resolved_comments[i].split(seperator, 1)
-                resolved_comments[i] = comment.strip() 
+            seperator_idx = resolved_comments[i].find(seperator) # the idx that the seperator STARTS 
+            resolved_comments[i] = resolved_comments[i][seperator_idx + len(seperator):].strip() 
 
     unvisited = queue.Queue()
     for x in range(len(post.top_level_comments)):
