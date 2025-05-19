@@ -9,8 +9,10 @@ philly - philadelphia
 met gala - the met gala 
 joe - biden 
 google - goog 
+christian - christianity 
 rocket lab - rocketlab - rklb 
 jerome powell - powell - jpow 
+kanye - ye - kanye west 
 ufp technologies - ufpt 
 warren buffet - warren buffett - buffet - buffett 
 hitler - adolf
@@ -23,11 +25,11 @@ korea - korean
 bitcoin - btc
 nicolas cage - nick cage - nic cage
 tesla - tsla
-republican - GOP - republicans
+republican - GOP - republicans - the republican party - republican party 
 elon - musk 
 donald - trump 
 constitution - the constitution - the constitution of the united states - the us constitution - us constitution - the constitution of the us 
-dnc - democrat - democrats - dems 
+dnc - democrat - democrats - dems - the democratic party - democratic party 
 microsoft - msft 
 australia - australian - aussie 
 jennifer lawrence - jlaw 
