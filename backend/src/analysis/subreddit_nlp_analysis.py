@@ -1,8 +1,7 @@
 """Module for performing comprehensive NLP analysis on subreddit content.
 Includes functionality for post collection, text analysis, and feature extraction."""
 
-import time, asyncio, asyncpraw, os, random, string, re, queue  # type: ignore
-from concurrent.futures import ProcessPoolExecutor, as_completed
+import time, asyncio, asyncpraw, os, queue  # type: ignore
 from typing import List
 from dotenv import load_dotenv # type: ignore
 load_dotenv()
@@ -19,7 +18,7 @@ from src.analysis.coreference_resolution import ( resolve_pronouns_for_post )
 
 # Configuration maps for different time filters
 TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'week': 1000}
-TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'week': 75}
+TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'week': 50}
 TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 12, 'year': 10, 'week': 8}
 TIME_FILTER_TO_DATE_FORMAT = {'all': '%y', 'year': '%m-%y', 'week': '%m-%d'}
 
@@ -27,23 +26,6 @@ config = {
     "time_filter": "week",
     "max_post_len": 1000000 # in characters 
 }
-
-
-async def get_post_title_and_description(post):
-    """Extract title and description text from a Reddit post.
-    
-    Args:
-        post: Reddit post object
-    Returns:
-        tuple: (combined post text, upvotes)
-    """
-    try:
-        flattened_post_text = str(post.title) + "\n" + str(post.selftext)
-        upvotes = post.score
-        return (flattened_post_text, upvotes)
-    except Exception as e:
-        print('could not get post title and description: ', e)
-
 
 def group_posts_by_date(posts):
     """Group Reddit posts by their creation date.
@@ -102,13 +84,6 @@ async def get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_
         # Can write post_content to a text file so I can inspect it 
         with open('post_content.txt', 'w', encoding='utf-8') as f:
             f.write(post_content)
-        # if len(post_content) >= config['max_post_len']:
-        #     # randomly sample the comments if the post content is too long 
-        #     comments = []
-        #     for post in posts:
-        #         half_of_comments = random.sample([top_level_comment.text for top_level_comment in post.top_level_comments], k=len(comments) // 2)
-        #         comments.extend(half_of_comments)
-        #     post_content = ' '.join([post.title + ' ' + post.description + ' '.join(comments)])
         post_content_grouped_by_date[date] = post_content
     
     top_n_grams = get_top_ngrams(post_content_grouped_by_date)
