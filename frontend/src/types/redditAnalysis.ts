@@ -9,6 +9,7 @@ export interface NamedEntity {
   label: string,
   sentiment: number,
   key_points: string[],
+  num_comments_summarized: number,
   urls: string[]
 };
 

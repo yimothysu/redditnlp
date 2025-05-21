@@ -36,6 +36,7 @@ class NamedEntity(BaseModel):
     count: int # Number of times the entity appears in the text 
     sentiment: Optional[float] = None # Sentiment score for the entity 
     key_points: Optional[List[str]] = None # Key discussion points about the entity 
+    num_comments_summarized: Optional[int] = None # How many comments synthesized into key_points 
     urls: Optional[List[str]] = None # Related URLs
 
 
