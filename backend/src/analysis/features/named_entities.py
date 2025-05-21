@@ -12,6 +12,8 @@ from collections import Counter
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import spacy  # type: ignore
 from src.utils.subreddit_classes import ( NamedEntity, NamedEntityLabel )
+import hdbscan # type: ignore
+from sklearn.feature_extraction.text import TfidfVectorizer
 from itertools import combinations
 
 # Load NLP models
@@ -23,10 +25,10 @@ summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
 summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
 
 # Configuration constants
-TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 20}
-TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
+#TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 20}
+#TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
 TIME_FILTER_TO_POST_URL_LIMIT = {'week': 1, 'year': 3, 'all': 3}
-TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 40, 'year': 60, 'all': 80}
+TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 40, 'year': 80, 'all': 150}
 ALLOWED_LABELS = {"PERSON", "ORG", "GPE", "LOC", "FAC", "PRODUCT", "WORK_OF_ART", "LAW", "EVENT", "LANGUAGE", "NORP"}
 
 config = {
@@ -42,6 +44,11 @@ nltk.download('punkt_tab')
 nltk.download('wordnet')
 nltk.download('vader_lexicon')
 
+nlp = spacy.load("en_core_web_trf", disable=["parser", "tagger"])
+nlp.add_pipe('sentencizer')
+
+dep_parsing_nlp = spacy.load("en_core_web_trf", disable=["tagger"])
+
 async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date):
     """Extract and analyze top named entities from grouped post content.
     
@@ -55,18 +62,23 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
     config["time_filter"] = time_filter 
     dates = list(post_content_grouped_by_date.keys())
     post_content = list(post_content_grouped_by_date.values())
-    
+    post_content_safe = [] # safe meaning it won't exceed the models limit of 1000000 characters per text 
+    # max length that post_content can be is 1000000 characters
+    for post in post_content:
+        if len(post) >= 950000:
+            chunks = [post[i:i+950000] for i in range(0, len(post), 950000)]
+            post_content_safe.extend(chunks)
+            print("split a post's content into ", str(len(chunks)), " 950000 character chunks!")
+        else:
+            post_content_safe.append(post)
+
     # for each entity, get: 
     #    - sentiment score
     #    - key points
     #    - top post urls
     t1 = time.time()
-    print('start loading en_core_web_trf')
-    nlp = spacy.load("en_core_web_trf", disable=["parser", "tagger"])
-    print('finishing loading en_core_web_trf')
-    nlp.add_pipe('sentencizer')
     top_named_entities = dict()
-    for date, doc in zip(dates, nlp.pipe(post_content, batch_size=50)):
+    for date, doc in zip(dates, nlp.pipe(post_content_safe, batch_size=50)):
         top_named_entities[date] = doc
     t2 = time.time()
     print('Computing top named entities using nlp.pipe took: ', t2-t1)
@@ -142,10 +154,13 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
         filtered_entities[name] = count
 
     # Get top entities and analyze
-    top_entities = filtered_entities.most_common(TIME_FILTER_TO_NAMED_ENTITIES_LIMIT[config['time_filter']])
+    #top_entities = filtered_entities.most_common(TIME_FILTER_TO_NAMED_ENTITIES_LIMIT[config['time_filter']])
+    top_entities = [(entity_name, count) for entity_name, count in filtered_entities.items()]
     top_entity_names = set([entity[0] for entity in top_entities])
+    print('len(top_entity_names): ', len(top_entity_names))
+    print('top_entity_names: ', top_entity_names)
     t1 = time.time()
-    entity_to_sentiment, entity_to_key_points = await get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs)
+    entity_to_sentiment, entity_to_key_points, entity_to_comments = await get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs)
     t2 = time.time()
     print('Computing sentiment + key points of named entities in ', date, ' took: ', t2 - t1)
 
@@ -155,9 +170,10 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
             label = entity_name_to_label[top_entities[i][0]].name, # mongodb doesn't let you store enums
             count = top_entities[i][1]
         )
-        if entity.name in entity_to_sentiment and entity.name in entity_to_key_points:
+        if entity.name in entity_to_sentiment and entity.name in entity_to_key_points and entity.name in entity_to_comments:
             entity.sentiment = round(entity_to_sentiment[entity.name], 2)
             entity.key_points = entity_to_key_points[entity.name]
+            entity.num_comments_summarized = len(entity_to_comments[entity.name])
             top_entities[i] = entity 
         else:
             top_entities[i] = None
@@ -169,6 +185,87 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
             top_entities[i].name = top_entities[i].name[:-2]
 
     return (date, top_entities)
+
+
+def is_meaningful_mention(sentence, entity_name):
+    entity_name_words = entity_name.split()
+    doc = dep_parsing_nlp(sentence)
+    for token in doc:
+        if entity_name_words[-1] in token.text:
+            print("token.dep_: ", token.dep_)
+            if token.dep_ in {"nsubj", "nsubjpass", "dobj", "agent"}:
+                return True
+    return False
+
+
+def cluster_comments(comment_list):
+    if len(comment_list) >= 5:
+        vectorizer = TfidfVectorizer(stop_words='english')
+        X = vectorizer.fit_transform(comment_list)
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=2)
+        cluster_labels = clusterer.fit_predict(X)
+
+        # -1 means noise/unclustered
+        cluster_label_to_comments = dict() 
+        for i, label in enumerate(cluster_labels):
+            if label not in cluster_label_to_comments:
+                cluster_label_to_comments[label] = []
+            cluster_label_to_comments[label].append(comment_list[i])
+        
+        return cluster_label_to_comments 
+    else:
+        return {'1': comment_list}
+
+
+def get_relevant_parts_of_full_comment(entity_name, sent_text, full_comment):
+    '''
+        we don't want to use the full_comment if for example, the comment is super long
+        and the entity is only mentioned once in the comment. This will confuse the 
+        summarizer and the absa model. 
+        
+        split full_comment up into its sentences 
+        search left to the sentence and right to sentence 
+        stop searching left once we reach a sentence that doesn't mention the entity OR its the last sentence
+        stop searching right once we reach a sentence that doesn't mention the entity OR its the first sentence 
+        
+        Example: 
+        ENTITY = "Trump", SENTENCE = "Trump recently imposed tariffs"
+        I've spoken at length about this before. But here's my thoughts again. Trump has orange hair. 
+        Trump recently imposed tariffs. These new tariffs were pretty controversial. I personally don't 
+        agree with them 
+        
+        the sentences we would keep in the comment are:
+        But here's my thoughts again. Trump has orange hair. 
+        Trump recently imposed tariffs. These new tariffs were pretty controversial. I personally don't 
+        agree with them 
+    '''
+    full_comment_sentences_keeping = []
+    full_comment_sentences = nltk.sent_tokenize(full_comment)
+    for x in range(len(full_comment_sentences)):
+        sentence = full_comment_sentences[x]
+        if sent_text.lower().strip() in sentence.lower().strip() or sentence.lower().strip() in sent_text.lower().strip():
+            full_comment_sentences_keeping.append(sent_text)
+            # search left 
+            if x > 0:
+                # range (x, y, z) = start of range (inclusive), end of range (exclusive), incremental value
+                for i in range(x - 1, -1, -1):
+                    full_comment_sentences_keeping.insert(0, full_comment_sentences[i])
+                    if entity_name.lower() not in full_comment_sentences[i]:
+                        break
+
+            # search right 
+            if x < len(full_comment_sentences) - 1:
+                for i in range(x + 1, len(full_comment_sentences)):
+                    full_comment_sentences_keeping.append(full_comment_sentences[i])
+                    if entity_name.lower() not in full_comment_sentences[i]:
+                        break
+            print(f"kept {len(full_comment_sentences_keeping)}/{len(full_comment_sentences)} sentences in full_comment!")
+            break
+        
+    if len(full_comment_sentences_keeping) == 0:
+        print("hmm thats weird... couldn't find sent_text in sentence tokenized full_comment")
+        return full_comment 
+    return " ".join(full_comment_sentences_keeping)
 
 
 async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs):
@@ -183,30 +280,38 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
         entity_to_key_points: Dictionary mapping entity name to its key points
     """
     entity_to_sentiment  = dict() # Dictionary mapping entity name to its sentiment score [-1, 1]
-    entity_to_comments = dict() # Dictionary mapping entity name to a set of the comments its mentioned in 
-    entity_to_flattened_comments = dict() # Dictionary mapping entity name to its flattened comments 
+    entity_to_comments = dict() # Dictionary mapping entity name to a set of the comments its mentioned in
+    entity_to_clustered_comments = dict() # Dictionary mapping entity name to a dict where key = cluster_label 
+                                          # and value = list of comments within cluster_label 
+    entity_to_clustered_flattened_comments = dict() # Dictionary mapping entity name to a list of flattened comments for each cluster 
     entity_to_key_points = dict() # Dictionary mapping entity name to a list of its computed key points 
     for ent in doc.ents:
         ent_text = ent.text 
         if ent_text in top_entity_names:
             sent_text = ent.sent.text.strip() 
-            # Figure out the full comment that the entity appeared in (for context)
+            if not is_meaningful_mention(sent_text, ent_text):
+                print(f"discarded {ent_text} in the sentence: {sent_text}")
+                continue
+            else:
+                print(f"kept {ent_text} in the sentence: {sent_text}")
             full_comment = None
+            parsed_full_comment = None 
             for comment_text in comment_and_score_pairs.keys():
                 if sent_text.lower() in comment_text.lower():
                     full_comment = comment_text 
+                    parsed_full_comment = get_relevant_parts_of_full_comment(ent_text, sent_text, full_comment)
                     break
-            if full_comment is not None:
-                print('found full_comment where named entity is mentioned')
+            if parsed_full_comment is not None:
+                print('found parsed_full_comment')
                 if ent_text not in entity_to_comments: 
                     entity_to_comments[ent_text] = set()
-                if (full_comment, comment_and_score_pairs[full_comment]) not in entity_to_comments[ent_text]:
-                    entity_to_comments[ent_text].add((full_comment, comment_and_score_pairs[full_comment]))
+                if (parsed_full_comment, comment_and_score_pairs[full_comment]) not in entity_to_comments[ent_text]:
+                    entity_to_comments[ent_text].add((parsed_full_comment, comment_and_score_pairs[full_comment]))
             else:
-                print('could NOT find full_comment where named entity is mentioned')
+                print('could NOT find parsed_full_comment')
     
-    # Only keep entities which are mentioned in more than 1 comment 
-    entity_to_comments = {entity: comments for entity, comments in entity_to_comments.items() if len(comments) > 1}
+    # Only keep entities which are mentioned in atleast 3 comments 
+    entity_to_comments = {entity: comments for entity, comments in entity_to_comments.items() if len(comments) >= 3}
     # Combine entities that refer to the same thing 
     entity_to_comments = combine_same_entities(entity_to_comments)
 
@@ -219,26 +324,49 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
         print('kept ', len(comments), ' comments for ', entity)
 
     for entity, comments in entity_to_comments.items():
-        flattened_comments = "Comments regarding the entity \"" + entity + "\": \n"
-        count = 1
-        for comment in comments:
-            flattened_comments += str(count) + ".) " + comment.strip() + "\n"
-            count += 1
-        entity_to_flattened_comments[entity] = flattened_comments
+        entity_to_clustered_comments[entity] = cluster_comments(comments)
+
+    for entity, cluster_label_to_comments in entity_to_clustered_comments.items():
+        for cluster_label, comments in cluster_label_to_comments.items():
+            flattened_comments = " ".join(comments)
+            if entity not in entity_to_clustered_flattened_comments:
+                entity_to_clustered_flattened_comments[entity] = dict() 
+            entity_to_clustered_flattened_comments[entity][cluster_label] = flattened_comments
     
-    tasks = [asyncio.to_thread(get_sentiment_of_entity, entity, entity_to_flattened_comments[entity]) for entity in entity_to_comments]
+    tasks = [asyncio.to_thread(get_sentiment_of_entity, entity, entity_to_clustered_flattened_comments[entity]) for entity in entity_to_comments]
     sentiment_results = await asyncio.gather(*tasks)
     sentiment_results = [sentiment_result for sentiment_result in sentiment_results if sentiment_result is not None]
     for entity, sentiment_score in sentiment_results:
         entity_to_sentiment[entity] = sentiment_score
     
-    tasks = [asyncio.to_thread(get_key_points_of_entity, entity, entity_to_flattened_comments[entity]) for entity in entity_to_comments]
+    tasks = [asyncio.to_thread(get_key_points_of_entity, entity, entity_to_clustered_flattened_comments[entity]) for entity in entity_to_comments]
     key_points_results = await asyncio.gather(*tasks)
     key_points_results = [result for result in key_points_results if result is not None]
     for entity, key_points in key_points_results:
         entity_to_key_points[entity] = key_points
     
-    return entity_to_sentiment, entity_to_key_points
+    # Print out a few of the key-value pairs in entity_to_comments to [entity].txt so I can inspect it 
+    for entity_name, clustered_comments in entity_to_clustered_comments.items():
+        print_entity_to_txt_file(entity_name, clustered_comments, entity_to_sentiment[entity_name], entity_to_key_points[entity_name])
+
+    return entity_to_sentiment, entity_to_key_points, entity_to_comments
+
+
+def print_entity_to_txt_file(entity_name, clustered_comments, sentiment_score, key_points):
+    # Create and write to a file named [entity_name].txt
+    with open(f"{entity_name}.txt", "w") as file:
+        file.write(f"ENTITY NAME: {entity_name}\n\n")
+        file.write(f"SENTIMENT SCORE: {sentiment_score}\n\n")
+        file.write("KEY POINTS: \n")
+        for key_point in key_points:
+            file.write(f"- {key_point}\n")
+        file.write("-" * 40 + "\n")
+        file.write("COMMENTS: \n")
+        for cluster_label, comments in clustered_comments.items():
+            file.write(f"cluster_label: {cluster_label}\n")
+            for x in range(len(comments)):
+                file.write(f"{x}.) {comments[x]}\n")
+            file.write("\n")
 
 
 def load_synonym_map():
@@ -327,7 +455,16 @@ def split_string_into_chunks(text, num_chunks):
     return [chunk for chunk in chunks if chunk]
 
 
-def get_sentiment_of_entity(entity, flattened_sentences):
+def get_sentiment_of_entity(entity_name: str, cluster_label_to_flattened_comments: dict[str, str]):
+    cluster_sentiment_scores = []
+    for cluster_label, flattened_comments in cluster_label_to_flattened_comments.items():
+        sentiment_of_cluster = get_sentiment_of_cluster(entity_name, flattened_comments)
+        cluster_sentiment_scores.append(sentiment_of_cluster)
+    averaged_sentiment_score = sum(cluster_sentiment_scores) / len(cluster_sentiment_scores)
+    return (entity_name, averaged_sentiment_score)
+
+
+def get_sentiment_of_cluster(entity_name: str, cluster_flattened_comments: str):
     """Calculate sentiment score for an entity using ABSA.
     
     Handles long texts by splitting into chunks and averaging scores.
@@ -339,19 +476,18 @@ def get_sentiment_of_entity(entity, flattened_sentences):
         tuple: (entity name, sentiment score) or None if analysis fails
     """
     absa_tokenizer = AutoTokenizer.from_pretrained(absa_model_name)
-    tokens = absa_tokenizer(flattened_sentences, truncation=False)
+    tokens = absa_tokenizer(cluster_flattened_comments, truncation=False)
     if(len(tokens['input_ids']) >= config['max_absa_tokens']):
-        t1 = time.time()
         num_chunks = math.ceil(len(tokens['input_ids']) / 2000)
-        chunks = split_string_into_chunks(flattened_sentences, num_chunks)
+        chunks = split_string_into_chunks(cluster_flattened_comments, num_chunks)
         averaged_sentiment_score = 0
         
         for chunk in chunks:
             tokens = absa_tokenizer(chunk, truncation=False)
             try:
-                sentiment = classifier(chunk, text_pair=entity)
+                sentiment = classifier(chunk, text_pair=entity_name)
             except:
-                print('couldnt get the sentiment score of ', entity) 
+                print('couldnt get the sentiment score of ', entity_name) 
                 return None 
 
             sentiment_score = 0
@@ -360,76 +496,75 @@ def get_sentiment_of_entity(entity, flattened_sentences):
             elif(sentiment[0]['label'] == 'Negative'):
                 sentiment_score = (-1) * sentiment[0]['score']
             averaged_sentiment_score += sentiment_score 
-        
         averaged_sentiment_score = averaged_sentiment_score / num_chunks 
-        t2 = time.time() 
-        print('getting sentiment of the entity ', entity, ' with ', num_chunks, ' chunks took ', t2 - t1)
     else:
-        tokens = absa_tokenizer(flattened_sentences, truncation=False)
-        print("Number of tokens:", len(tokens['input_ids']))
-        t1 = time.time()
+        tokens = absa_tokenizer(cluster_flattened_comments, truncation=False)
         try:
-            sentiment = classifier(flattened_sentences, text_pair=entity)
+            sentiment = classifier(cluster_flattened_comments, text_pair=entity_name)
         except:
-            print('couldnt get the sentiment score of ', entity) 
+            print('couldnt get the sentiment score of ', entity_name) 
             return None 
-        t2 = time.time()
-        print('getting sentiment of the entity ', entity, ' with 1 chunk took ', t2 - t1)
     
-    # sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
-    # label = 'Positive', 'Neutral', or 'Negative' 
-    # score = value in range [0, 1]
+    '''
+        sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
+        label = 'Positive', 'Neutral', or 'Negative' 
+        score = value in range [0, 1]
+    '''
     sentiment_score = 0
     if(sentiment[0]['label'] == 'Positive'):
         sentiment_score = sentiment[0]['score']
     elif(sentiment[0]['label'] == 'Negative'):
         sentiment_score = (-1) * sentiment[0]['score']
-    return (entity, sentiment_score)
+    return sentiment_score
 
 
-def get_key_points_of_entity(entity, flattened_comments):
+def get_key_points_of_entity(entity_name: str, cluster_label_to_flattened_comments: dict[str, str]):
+    all_key_points = set()
+    for cluster_label, flattened_comments in cluster_label_to_flattened_comments.items():
+        cluster_key_points = get_key_points_of_cluster(entity_name, flattened_comments)
+        all_key_points.update(cluster_key_points)
+    return (entity_name, list(all_key_points))
+
+
+def get_key_points_of_cluster(entity_name: str, cluster_flattened_comments: str, summary_max_token_len=70):
     try:
         """Get the key points of an entity from a list of comments."""
         summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
-        key_points_limit = TIME_FILTER_TO_KEY_POINTS_LIMIT[config['time_filter']]
-        if len(flattened_comments) > config['max_input_len_to_summarizer']:
+        if len(cluster_flattened_comments) > config['max_input_len_to_summarizer']:
             # highly likely to exceed facebook/bart-large-cnn token limit of 1024, so analyze each chunk seperately
-            t1 = time.time()
-            chunks = [flattened_comments[i:i + config['max_input_len_to_summarizer']] for i in range(0, len(flattened_comments), config['max_input_len_to_summarizer'])]
-            key_points = []
-            for chunk in chunks:
+            chunks = [cluster_flattened_comments[i:i + config['max_input_len_to_summarizer']] for i in range(0, len(cluster_flattened_comments), config['max_input_len_to_summarizer'])]
+            key_points = set() 
+            for chunk in chunks: # max one key point per chunk 
                 tokenized = summarizer_tokenizer.encode(chunk, truncation=True, max_length=1024)
                 truncated_chunk = summarizer_tokenizer.decode(tokenized)
-                model_output = summarizer(truncated_chunk, max_length=100, min_length=20, do_sample=False)
+                model_output = summarizer(truncated_chunk, max_length=summary_max_token_len, min_length=7, do_sample=False)
                 model_summary_text = model_output[0]['summary_text']
-                relevant_sentences = [sentence for sentence in nltk.sent_tokenize(model_summary_text) if entity in sentence] # Only keep the sentences in summary_text which mention the entity 
-                key_points.extend(relevant_sentences)
-            if len(key_points) > key_points_limit and len(key_points) <= key_points_limit + 5:
-                key_points = random.sample(key_points, key_points_limit)
-            elif len(key_points) > key_points_limit + 5: # happens for an entity that is mentioned in A LOT of comments 
-                _, key_points = get_key_points_of_entity(entity, "\n".join(key_points))
-            t2 = time.time()
-            print('Computing key points of ', entity, ' took: ', t2 - t1)
-            return (entity, key_points)
+                if len(model_summary_text) >= 200:
+                    model_summary_text = " ".join(get_key_points_of_cluster(entity_name, model_summary_text, summary_max_token_len=40))
+                # discard model_summary_text if it doesn't even mention the entity 
+                if entity_name not in model_summary_text: 
+                    continue  
+                key_points.add(model_summary_text)
+            return list(key_points)
         else:
-            t1 = time.time()
-            tokenized = summarizer_tokenizer.encode(flattened_comments, truncation=True, max_length=1024)
+            tokenized = summarizer_tokenizer.encode(cluster_flattened_comments, truncation=True, max_length=1024)
             truncated_flattened_comments = summarizer_tokenizer.decode(tokenized) 
-            model_output = summarizer(truncated_flattened_comments, max_length=100, min_length=5, do_sample=False)
+            model_output = summarizer(truncated_flattened_comments, max_length=summary_max_token_len, min_length=5, do_sample=False)
             model_summary_text = model_output[0]['summary_text']
-            key_points = [sentence for sentence in nltk.sent_tokenize(model_summary_text) if entity in sentence] # Only keep the sentences in summary_text which mention the entity 
-            if len(key_points) > key_points_limit:
-                key_points = random.sample(key_points, key_points_limit)
-            t2 = time.time()
-            print('Computing key points of ', entity, ' took: ', t2 - t1)
-            return (entity, key_points)
+            if len(model_summary_text) >= 200:
+                    model_summary_text = " ".join(get_key_points_of_cluster(entity_name, model_summary_text, summary_max_token_len=40))
+            if entity_name not in model_summary_text:
+                return [] # discard model_summary_text if it doesn't even mention the entity 
+            return [model_summary_text]
     except Exception as e:
         print("ERROR: could not get key points of entity")
         print("Error message: ", e)
         return None 
 
+
 def get_flattened_text_for_comment(comment, indent):
     return (" " * indent) + comment.text + "\n" + "".join([get_flattened_text_for_comment(reply, indent + 4) for reply in comment.replies])
+
 
 # Assuming coreference resolution has already been performed when this function gets called 
 def get_flattened_text_for_post(post):
@@ -453,7 +588,6 @@ def get_post_urls(date_to_posts, date_to_entities):
                 if entity.name in post_content: 
                     try:
                         post_url = "https://www.reddit.com" + post.permalink
-                        print('got the post permalink!')
                         posts_that_mention_entity.append((post_url, post_content.count(entity.name), post.score))
                     except Exception as e:
                         print('couldnt get the post permalink because: ', e)
