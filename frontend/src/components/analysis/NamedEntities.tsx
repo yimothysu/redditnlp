@@ -29,13 +29,44 @@ function GroupEntitiesByLabel({entities}: { entities: NamedEntity[] }) {
 }
 
 const SummarizedSentimentBulletPoints: React.FC<{
-  key_points: string[];
-}> = ({ key_points }) => {
+  entity_name: string, highlight_color: string, key_points: string[];
+}> = ({ entity_name, highlight_color, key_points }) => {
   if (!key_points) return null;
+
+  function lightenHighlightColor(hex: string, percent: number) {
+    const num = parseInt(hex.replace("#", ""), 16);
+    const r = (num >> 16) + Math.round((255 - (num >> 16)) * percent);
+    const g = ((num >> 8) & 0x00FF) + Math.round((255 - ((num >> 8) & 0x00FF)) * percent);
+    const b = (num & 0x0000FF) + Math.round((255 - (num & 0x0000FF)) * percent);
+    return `rgb(${r}, ${g}, ${b})`;
+  }
+
+  const lightened_highlight_color = lightenHighlightColor(highlight_color, 0.4);
+
+  const HighlightedKeyPoint = ({key_point}: { key_point: string}) => {
+    const regex = new RegExp(`(${entity_name})`, "gi"); // 'gi' for global + case-insensitive
+  
+    const parts = key_point.split(regex);
+    console.log("parts: ", parts)
+    return (
+      <li className="pb-5 leading-relaxed">
+        {parts.map((part, index) =>
+          part === entity_name ? (
+            <span key={index} className="px-1 rounded" style={{ backgroundColor: lightened_highlight_color }}>
+              {part}
+            </span>
+          ) : (
+            <span key={index}>{part}</span>
+          )
+        )}
+      </li>
+    );
+  };
+
   return (
     <ul className="list-disc pl-4 max-w-[450px]">
-      {key_points.map((sentence: string, index: number) => (
-        <li className="pb-1" key={index}>{sentence.trim()}</li>
+      {key_points.map((sentence: string, _: number) => (
+        <HighlightedKeyPoint key_point={sentence.trim()}></HighlightedKeyPoint>
       ))}
     </ul>
   );
@@ -171,11 +202,12 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
                     </div>
                   </div>
                   {/* Column 3  */}
-                  <div className="border-r border-gray-200 last:border-r-0  p-2 bg-gray-50 text-left">
+                  <div className="border-r border-gray-200 last:border-r-0 p-2 bg-gray-50 text-left">
+                    <h1 className="mb-2 mx-auto text-gray-600 text-[13px] pb-1 text-center font-semibold">Summary of <span className="font-bold text-red-600">{entity.num_comments_summarized}</span> comments regarding {entity.name}</h1>
                     {entity.key_points && (
                       <div className="">
                         <div className="text-[12px] text-gray-500">
-                          <SummarizedSentimentBulletPoints key_points={entity.key_points} />
+                          <SummarizedSentimentBulletPoints entity_name={entity.name} highlight_color={backgroundColor} key_points={entity.key_points} />
 
                         </div>
                       </div>
