@@ -529,7 +529,6 @@ export const entity_name_to_png: Record<string, string> = {
 "germany" : "germany.png",
 "german" : "germany.png",
 "google" : "google.png",
-"google search" : "google.png",
 "the office": "the_office.png",
 "breaking bad": "breaking_bad.png",
 "seinfeld": "seinfeld.png",
