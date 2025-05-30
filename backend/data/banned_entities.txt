@@ -220,3 +220,11 @@ papa
 mama
 suburbs 
 game
+gramp 
+gramps 
+teacher 
+student 
+son
+daughter 
+quitting 
+clown 
