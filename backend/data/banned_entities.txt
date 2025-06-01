@@ -2,6 +2,7 @@ remindmebot
 mom 
 dad
 sister
+bud
 sis
 brother
 cousin 
@@ -9,11 +10,17 @@ grandma
 grandpa 
 uncle 
 aunt 
+incoming student
+incoming freshman 
+freshman 
+destiny 
 people 
 bro
 dawg
 shame
 girl
+fiance 
+nephew 
 boy 
 western 
 eastern 
@@ -49,7 +56,6 @@ state
 states 
 friend
 new 
-john 
 hand 
 tldr
 tysm 
@@ -173,6 +179,11 @@ chad
 bob
 joe
 john
+work crush 
+limerance 
+yoursefl
+yourself 
+soldier 
 jane
 dude
 bro

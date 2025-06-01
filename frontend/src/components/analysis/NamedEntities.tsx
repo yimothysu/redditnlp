@@ -195,8 +195,8 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
                       </div>
                     )}
                   </div>
-                                  {/* Column 4 */}
-                                  <div className="p-2 bg-white">
+                  {/* Column 4 */}
+                  <div className="p-2 bg-white">
                     <LinksForEntity entity={entity} /> 
                   </div>
                 </div>

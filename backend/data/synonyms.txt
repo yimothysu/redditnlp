@@ -16,8 +16,11 @@ nvda - nvidia
 california - ca 
 christian - christianity 
 rocket lab - rocketlab - rklb 
+dwayne johnson - the rock 
 jerome powell - powell - jpow 
 kanye - ye - kanye west 
+nazi - nazism 
+google maps - google maps transit 
 ufp technologies - ufpt 
 warren buffet - warren buffett - buffet - buffett 
 hitler - adolf
@@ -266,3 +269,4 @@ american telephone and telegraph company - at&t
 general electric company - ge
 united states congress - us congress - u.s. congress - congress
 nintendo of america - nintendo 
+justin bieber - justin beiber 

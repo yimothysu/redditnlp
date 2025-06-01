@@ -340,6 +340,7 @@ def combine_same_entities(entity_to_comments):
         entity_1 = entities_lowercase[i]
         entity_2 = entities_lowercase[x]
         entities_are_equal_conditions = [
+            entity_1 == entity_2,
             # the entities are the same if we make them both plural 
             entity_1 == (entity_2 + "s") or (entity_1 + "s") == entity_2,
             # the entities are the same if we make them both possessive plural 
@@ -356,6 +357,11 @@ def combine_same_entities(entity_to_comments):
             entity_1 == (entity_2 + "’re") or (entity_1 + "’re") == entity_2,
             entity_1 == (entity_2 + "n't") or (entity_1 + "n't") == entity_2,
             entity_1 == (entity_2 + "n’t") or (entity_1 + "n’t") == entity_2,
+            entity_1 == (entity_2 + "'ll") or (entity_1 + "'ll") == entity_2,
+            entity_1 == (entity_2 + "’ll") or (entity_1 + "’ll") == entity_2,
+            entity_1 == ("the " + entity_2) or ("the " + entity_1) == entity_2,
+            entity_1 == ("a " + entity_2) or ("a " + entity_1) == entity_2,
+            entity_1 == ("an " + entity_2) or ("an " + entity_1) == entity_2,
             # the entities are the same if we make them both one word 
             ''.join(entity_1.split()) == ''.join(entity_2.split()),
             # the 2nd entity is a letter abbreviation of the 1st entity 
@@ -392,7 +398,8 @@ def combine_two_entities(entity_to_comments, entity_1, entity_2):
         longer == shorter + "'d" or longer == shorter + "’d" or 
         longer == shorter + "'ve" or longer == shorter + "’ve" or
         longer == shorter + "'re" or longer == shorter + "’re" or
-        longer == shorter + "n't" or longer == shorter + "n’t"): 
+        longer == shorter + "n't" or longer == shorter + "n’t" or 
+        longer == shorter + "'ll" or longer == shorter + "’ll"): 
         entity_to_comments[shorter] = entity_to_comments[shorter] | entity_to_comments[longer]
         del entity_to_comments[longer]
     else:
