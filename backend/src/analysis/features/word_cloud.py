@@ -40,9 +40,9 @@ def named_entities_to_dictionary(named_entities):
     for entity_list in named_entities.values():        
         for entity in entity_list:
             if entity.name not in entities_to_freq:
-                entities_to_freq[entity.name] = entity.count
+                entities_to_freq[entity.name] = entity.num_comments_summarized
             elif entity.name in entities_to_freq:
-                entities_to_freq[entity.name] += entity.count
+                entities_to_freq[entity.name] += entity.num_comments_summarized
     
     return entities_to_freq
     
