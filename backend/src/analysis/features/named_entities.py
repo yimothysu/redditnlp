@@ -7,11 +7,13 @@ Provides functionality for:
 - Entity consolidation and filtering
 """
 
-import time, asyncio, random, re, math, nltk, numbers, os  # type: ignore
+import time, asyncio, random, re, math, nltk, numbers, os, string  # type: ignore
 from collections import Counter
 from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
 import spacy  # type: ignore
 from src.utils.subreddit_classes import ( NamedEntity, NamedEntityLabel )
+from src.analysis.fix_pronoun_overresolution import ( make_text_natural_sounding )
+from src.analysis.summarize_subreddit_comments import ( summarize_comments )
 import hdbscan # type: ignore
 from sklearn.feature_extraction.text import TfidfVectorizer
 from itertools import combinations
@@ -28,13 +30,14 @@ summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
 #TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 20}
 #TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
 TIME_FILTER_TO_POST_URL_LIMIT = {'week': 1, 'year': 3, 'all': 3}
-TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 40, 'year': 80, 'all': 150}
+TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 100, 'year': 300, 'all': 500}
 ALLOWED_LABELS = {"PERSON", "ORG", "GPE", "LOC", "FAC", "PRODUCT", "WORK_OF_ART", "LAW", "EVENT", "LANGUAGE", "NORP"}
 
 config = {
     "time_filter": "week",
     "max_absa_tokens": 2000,
     "max_input_len_to_summarizer": 2000, # in characters 
+    "subreddit": "",
 }
 
 # Download required NLTK resources
@@ -49,7 +52,7 @@ nlp.add_pipe('sentencizer')
 
 dep_parsing_nlp = spacy.load("en_core_web_trf", disable=["tagger"])
 
-async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date):
+async def get_top_entities(subreddit, time_filter, post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date):
     """Extract and analyze top named entities from grouped post content.
     
     Args:
@@ -59,6 +62,7 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
     Returns:
         dict: Mapping of dates to lists of analyzed NamedEntity objects
     """
+    config["subreddit"] = subreddit 
     config["time_filter"] = time_filter 
     dates = list(post_content_grouped_by_date.keys())
     post_content = list(post_content_grouped_by_date.values())
@@ -72,22 +76,15 @@ async def get_top_entities(time_filter, post_content_grouped_by_date, posts_grou
         else:
             post_content_safe.append(post)
 
-    # for each entity, get: 
-    #    - sentiment score
-    #    - key points
-    #    - top post urls
     t1 = time.time()
     top_named_entities = dict()
     for date, doc in zip(dates, nlp.pipe(post_content_safe, batch_size=50)):
         top_named_entities[date] = doc
     t2 = time.time()
     print('Computing top named entities using nlp.pipe took: ', t2-t1)
-    
-    # Process entities in parallel
-    tasks = [asyncio.create_task(postprocess_named_entities(date, doc, comment_and_score_pairs_grouped_by_date[date])) for _, (date, doc) in enumerate(top_named_entities.items())]
-    results = await asyncio.gather(*tasks)
-    for date, entities in results:
-        top_named_entities[date] = entities
+
+    for date, doc in top_named_entities.items():
+        top_named_entities[date] = postprocess_named_entities(date, doc, comment_and_score_pairs_grouped_by_date[date])
     top_named_entities = get_post_urls(posts_grouped_by_date, top_named_entities)
     t3 = time.time()
     print('NER analysis took: ', t3-t2)
@@ -125,7 +122,7 @@ def load_banned_entities():
     return banned_entities
 
 
-async def postprocess_named_entities(date, doc, comment_and_score_pairs):
+def postprocess_named_entities(date, doc, comment_and_score_pairs):
     """Process and analyze named entities from a spaCy document.
     
     Filters entities, calculates frequencies, and enriches with
@@ -160,9 +157,9 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
     print('len(top_entity_names): ', len(top_entity_names))
     print('top_entity_names: ', top_entity_names)
     t1 = time.time()
-    entity_to_sentiment, entity_to_key_points, entity_to_comments = await get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs)
+    entity_to_key_points, entity_to_comments = get_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs, entity_name_to_label)
     t2 = time.time()
-    print('Computing sentiment + key points of named entities in ', date, ' took: ', t2 - t1)
+    print('Computing key points of named entities in ', date, ' took: ', t2 - t1)
 
     for i in range(len(top_entities)):
         entity = NamedEntity(
@@ -170,8 +167,7 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
             label = entity_name_to_label[top_entities[i][0]].name, # mongodb doesn't let you store enums
             count = top_entities[i][1]
         )
-        if entity.name in entity_to_sentiment and entity.name in entity_to_key_points and entity.name in entity_to_comments:
-            entity.sentiment = round(entity_to_sentiment[entity.name], 2)
+        if entity.name in entity_to_key_points and entity.name in entity_to_comments:
             entity.key_points = entity_to_key_points[entity.name]
             entity.num_comments_summarized = len(entity_to_comments[entity.name])
             top_entities[i] = entity 
@@ -184,7 +180,7 @@ async def postprocess_named_entities(date, doc, comment_and_score_pairs):
         if top_entities[i].name.endswith(("'s", "s'", "’s", "s’")):
             top_entities[i].name = top_entities[i].name[:-2]
 
-    return (date, top_entities)
+    return top_entities 
 
 
 def is_meaningful_mention(sentence, entity_name):
@@ -196,26 +192,6 @@ def is_meaningful_mention(sentence, entity_name):
             if token.dep_ in {"nsubj", "nsubjpass", "dobj", "agent"}:
                 return True
     return False
-
-
-def cluster_comments(comment_list):
-    if len(comment_list) >= 5:
-        vectorizer = TfidfVectorizer(stop_words='english')
-        X = vectorizer.fit_transform(comment_list)
-        clusterer = hdbscan.HDBSCAN(min_cluster_size=2)
-        cluster_labels = clusterer.fit_predict(X)
-
-        # -1 means noise/unclustered
-        cluster_label_to_comments = dict() 
-        for i, label in enumerate(cluster_labels):
-            if label not in cluster_label_to_comments:
-                cluster_label_to_comments[label] = []
-            cluster_label_to_comments[label].append(comment_list[i])
-        
-        return cluster_label_to_comments 
-    else:
-        return {'1': comment_list}
-
 
 def get_relevant_parts_of_full_comment(entity_name, sent_text, full_comment):
     '''
@@ -268,7 +244,7 @@ def get_relevant_parts_of_full_comment(entity_name, sent_text, full_comment):
     return " ".join(full_comment_sentences_keeping)
 
 
-async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs):
+def get_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs, entity_name_to_label):
     """Get sentiment and key points for top entities from a spaCy document.
     
     Args:
@@ -279,11 +255,7 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
         entity_to_sentiment: Dictionary mapping entity name to its sentiment score
         entity_to_key_points: Dictionary mapping entity name to its key points
     """
-    entity_to_sentiment  = dict() # Dictionary mapping entity name to its sentiment score [-1, 1]
     entity_to_comments = dict() # Dictionary mapping entity name to a set of the comments its mentioned in
-    entity_to_clustered_comments = dict() # Dictionary mapping entity name to a dict where key = cluster_label 
-                                          # and value = list of comments within cluster_label 
-    entity_to_clustered_flattened_comments = dict() # Dictionary mapping entity name to a list of flattened comments for each cluster 
     entity_to_key_points = dict() # Dictionary mapping entity name to a list of its computed key points 
     for ent in doc.ents:
         ent_text = ent.text 
@@ -322,44 +294,20 @@ async def get_sentiment_and_key_points_of_top_entities(top_entity_names, doc, co
         comments = comments[-max_num_comments:] 
         entity_to_comments[entity] = [comment[0] for comment in comments]
         print('kept ', len(comments), ' comments for ', entity)
-
-    for entity, comments in entity_to_comments.items():
-        entity_to_clustered_comments[entity] = cluster_comments(comments)
-
-    for entity, cluster_label_to_comments in entity_to_clustered_comments.items():
-        for cluster_label, comments in cluster_label_to_comments.items():
-            flattened_comments = " ".join(comments)
-            if entity not in entity_to_clustered_flattened_comments:
-                entity_to_clustered_flattened_comments[entity] = dict() 
-            entity_to_clustered_flattened_comments[entity][cluster_label] = flattened_comments
     
-    tasks = [asyncio.to_thread(get_sentiment_of_entity, entity, entity_to_clustered_flattened_comments[entity]) for entity in entity_to_comments]
-    sentiment_results = await asyncio.gather(*tasks)
-    sentiment_results = [sentiment_result for sentiment_result in sentiment_results if sentiment_result is not None]
-    for entity, sentiment_score in sentiment_results:
-        entity_to_sentiment[entity] = sentiment_score
-    
-    tasks = [asyncio.to_thread(get_key_points_of_entity, entity, entity_to_clustered_flattened_comments[entity]) for entity in entity_to_comments]
-    key_points_results = await asyncio.gather(*tasks)
-    key_points_results = [result for result in key_points_results if result is not None]
-    for entity, key_points in key_points_results:
-        entity_to_key_points[entity] = key_points
-    
-    # Print out a few of the key-value pairs in entity_to_comments to [entity].txt so I can inspect it 
-    for entity_name, clustered_comments in entity_to_clustered_comments.items():
-        print_entity_to_txt_file(entity_name, clustered_comments, entity_to_sentiment[entity_name], entity_to_key_points[entity_name])
-
-    return entity_to_sentiment, entity_to_key_points, entity_to_comments
+    for entity in entity_to_comments:
+        entity_to_key_points[entity] = summarize_comments(entity, config['subreddit'], entity_to_comments[entity])
+        time.sleep(5)  # Wait for 5 seconds so we don't exceed Groq's free api rate limit 
+    return entity_to_key_points, entity_to_comments
 
 
-def print_entity_to_txt_file(entity_name, clustered_comments, sentiment_score, key_points):
+def print_entity_to_txt_file(entity_name, clustered_comments, key_points):
     # Create and write to a file named [entity_name].txt
     with open(f"{entity_name}.txt", "w") as file:
         file.write(f"ENTITY NAME: {entity_name}\n\n")
-        file.write(f"SENTIMENT SCORE: {sentiment_score}\n\n")
         file.write("KEY POINTS: \n")
-        for key_point in key_points:
-            file.write(f"- {key_point}\n")
+        for key_point, sentiment_score in key_points:
+            file.write(f"- sentiment score = {sentiment_score} \n {key_point}\n")
         file.write("-" * 40 + "\n")
         file.write("COMMENTS: \n")
         for cluster_label, comments in clustered_comments.items():
@@ -400,6 +348,14 @@ def combine_same_entities(entity_to_comments):
             # the entities are the same if we make them both possessive singular 
             entity_1 == (entity_2 + "'s") or (entity_1 + "'s") == entity_2,
             entity_1 == (entity_2 + "s’") or (entity_1 + "s’") == entity_2,
+            entity_1 == (entity_2 + "'d") or (entity_1 + "'d") == entity_2,
+            entity_1 == (entity_2 + "’d") or (entity_1 + "’d") == entity_2,
+            entity_1 == (entity_2 + "'ve") or (entity_1 + "'ve") == entity_2,
+            entity_1 == (entity_2 + "’ve") or (entity_1 + "’ve") == entity_2,
+            entity_1 == (entity_2 + "'re") or (entity_1 + "'re") == entity_2,
+            entity_1 == (entity_2 + "’re") or (entity_1 + "’re") == entity_2,
+            entity_1 == (entity_2 + "n't") or (entity_1 + "n't") == entity_2,
+            entity_1 == (entity_2 + "n’t") or (entity_1 + "n’t") == entity_2,
             # the entities are the same if we make them both one word 
             ''.join(entity_1.split()) == ''.join(entity_2.split()),
             # the 2nd entity is a letter abbreviation of the 1st entity 
@@ -431,135 +387,18 @@ def combine_two_entities(entity_to_comments, entity_1, entity_2):
     if len(entity_1) >= len(entity_2): longer, shorter = entity_1, entity_2
     else: longer, shorter = entity_2, entity_1
 
-    if longer == shorter + "'s" or longer == shorter + "s'" or longer == shorter + "’s" or longer == shorter + "s’": 
+    if (longer == shorter + "'s" or longer == shorter + "s'" or 
+        longer == shorter + "’s" or longer == shorter + "s’" or 
+        longer == shorter + "'d" or longer == shorter + "’d" or 
+        longer == shorter + "'ve" or longer == shorter + "’ve" or
+        longer == shorter + "'re" or longer == shorter + "’re" or
+        longer == shorter + "n't" or longer == shorter + "n’t"): 
         entity_to_comments[shorter] = entity_to_comments[shorter] | entity_to_comments[longer]
         del entity_to_comments[longer]
     else:
         entity_to_comments[longer] = entity_to_comments[longer] | entity_to_comments[shorter]
         del entity_to_comments[shorter]
     return entity_to_comments 
-
-
-def split_string_into_chunks(text, num_chunks):
-    """Split text into roughly equal chunks for processing.
-    
-    Args:
-        text: Text to split
-        num_chunks: Number of chunks to create
-    Returns:
-        list: Non-empty text chunks
-    """
-    words = text.split()
-    avg = math.ceil(len(words) / num_chunks)
-    chunks = [" ".join(words[i * avg:(i + 1) * avg]) for i in range(num_chunks)]
-    return [chunk for chunk in chunks if chunk]
-
-
-def get_sentiment_of_entity(entity_name: str, cluster_label_to_flattened_comments: dict[str, str]):
-    cluster_sentiment_scores = []
-    for cluster_label, flattened_comments in cluster_label_to_flattened_comments.items():
-        sentiment_of_cluster = get_sentiment_of_cluster(entity_name, flattened_comments)
-        cluster_sentiment_scores.append(sentiment_of_cluster)
-    averaged_sentiment_score = sum(cluster_sentiment_scores) / len(cluster_sentiment_scores)
-    return (entity_name, averaged_sentiment_score)
-
-
-def get_sentiment_of_cluster(entity_name: str, cluster_flattened_comments: str):
-    """Calculate sentiment score for an entity using ABSA.
-    
-    Handles long texts by splitting into chunks and averaging scores.
-    
-    Args:
-        entity: Entity name to analyze
-        flattened_sentences: Combined sentences mentioning the entity
-    Returns:
-        tuple: (entity name, sentiment score) or None if analysis fails
-    """
-    absa_tokenizer = AutoTokenizer.from_pretrained(absa_model_name)
-    tokens = absa_tokenizer(cluster_flattened_comments, truncation=False)
-    if(len(tokens['input_ids']) >= config['max_absa_tokens']):
-        num_chunks = math.ceil(len(tokens['input_ids']) / 2000)
-        chunks = split_string_into_chunks(cluster_flattened_comments, num_chunks)
-        averaged_sentiment_score = 0
-        
-        for chunk in chunks:
-            tokens = absa_tokenizer(chunk, truncation=False)
-            try:
-                sentiment = classifier(chunk, text_pair=entity_name)
-            except:
-                print('couldnt get the sentiment score of ', entity_name) 
-                return None 
-
-            sentiment_score = 0
-            if(sentiment[0]['label'] == 'Positive'):
-                sentiment_score = sentiment[0]['score']
-            elif(sentiment[0]['label'] == 'Negative'):
-                sentiment_score = (-1) * sentiment[0]['score']
-            averaged_sentiment_score += sentiment_score 
-        averaged_sentiment_score = averaged_sentiment_score / num_chunks 
-    else:
-        tokens = absa_tokenizer(cluster_flattened_comments, truncation=False)
-        try:
-            sentiment = classifier(cluster_flattened_comments, text_pair=entity_name)
-        except:
-            print('couldnt get the sentiment score of ', entity_name) 
-            return None 
-    
-    '''
-        sentiment object example: [{'label': 'Positive', 'score': 0.9967294931411743}]
-        label = 'Positive', 'Neutral', or 'Negative' 
-        score = value in range [0, 1]
-    '''
-    sentiment_score = 0
-    if(sentiment[0]['label'] == 'Positive'):
-        sentiment_score = sentiment[0]['score']
-    elif(sentiment[0]['label'] == 'Negative'):
-        sentiment_score = (-1) * sentiment[0]['score']
-    return sentiment_score
-
-
-def get_key_points_of_entity(entity_name: str, cluster_label_to_flattened_comments: dict[str, str]):
-    all_key_points = set()
-    for cluster_label, flattened_comments in cluster_label_to_flattened_comments.items():
-        cluster_key_points = get_key_points_of_cluster(entity_name, flattened_comments)
-        all_key_points.update(cluster_key_points)
-    return (entity_name, list(all_key_points))
-
-
-def get_key_points_of_cluster(entity_name: str, cluster_flattened_comments: str, summary_max_token_len=70):
-    try:
-        """Get the key points of an entity from a list of comments."""
-        summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
-        if len(cluster_flattened_comments) > config['max_input_len_to_summarizer']:
-            # highly likely to exceed facebook/bart-large-cnn token limit of 1024, so analyze each chunk seperately
-            chunks = [cluster_flattened_comments[i:i + config['max_input_len_to_summarizer']] for i in range(0, len(cluster_flattened_comments), config['max_input_len_to_summarizer'])]
-            key_points = set() 
-            for chunk in chunks: # max one key point per chunk 
-                tokenized = summarizer_tokenizer.encode(chunk, truncation=True, max_length=1024)
-                truncated_chunk = summarizer_tokenizer.decode(tokenized)
-                model_output = summarizer(truncated_chunk, max_length=summary_max_token_len, min_length=7, do_sample=False)
-                model_summary_text = model_output[0]['summary_text']
-                if len(model_summary_text) >= 200:
-                    model_summary_text = " ".join(get_key_points_of_cluster(entity_name, model_summary_text, summary_max_token_len=40))
-                # discard model_summary_text if it doesn't even mention the entity 
-                if entity_name not in model_summary_text: 
-                    continue  
-                key_points.add(model_summary_text)
-            return list(key_points)
-        else:
-            tokenized = summarizer_tokenizer.encode(cluster_flattened_comments, truncation=True, max_length=1024)
-            truncated_flattened_comments = summarizer_tokenizer.decode(tokenized) 
-            model_output = summarizer(truncated_flattened_comments, max_length=summary_max_token_len, min_length=5, do_sample=False)
-            model_summary_text = model_output[0]['summary_text']
-            if len(model_summary_text) >= 200:
-                    model_summary_text = " ".join(get_key_points_of_cluster(entity_name, model_summary_text, summary_max_token_len=40))
-            if entity_name not in model_summary_text:
-                return [] # discard model_summary_text if it doesn't even mention the entity 
-            return [model_summary_text]
-    except Exception as e:
-        print("ERROR: could not get key points of entity")
-        print("Error message: ", e)
-        return None 
 
 
 def get_flattened_text_for_comment(comment, indent):
