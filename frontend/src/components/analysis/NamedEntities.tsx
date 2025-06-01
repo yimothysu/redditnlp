@@ -180,8 +180,8 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
                 className="pt-1 pb-1 grid md:[grid-template-columns:200px_800px_100px] bg-white transition-all duration-200"
               >
                   {/* Column 1 */}
-                  <div className="border-r border-gray-200 last:border-r-0 flex p-1 gap-3 justify-center items-center">
-                    <h4 className="mt-3 text-[15px] font-semibold text-gray-800">{entity.name}</h4>
+                  <div className="border-r border-gray-200 last:border-r-0 flex flex-col p-1 gap-3 justify-center items-center">
+                    <h4 className="mt-3 text-[17px] mb-3 font-bold text-gray-600">{entity.name}</h4>
                     <EntityPicture entity_name={entity.name}></EntityPicture>
                   </div>
                   {/* Column 2 */}
