@@ -24,7 +24,8 @@ TIME_FILTER_TO_DATE_FORMAT = {'all': '%y', 'year': '%m-%y', 'week': '%m-%d'}
 
 config = {
     "time_filter": "week",
-    "max_post_len": 1000000 # in characters 
+    "max_post_len": 1000000, # in characters 
+    "subreddit": ""
 }
 
 def group_posts_by_date(posts):
@@ -87,7 +88,7 @@ async def get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_
         post_content_grouped_by_date[date] = post_content
     
     top_n_grams = get_top_ngrams(post_content_grouped_by_date)
-    top_named_entities = await get_top_entities(config['time_filter'], post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date)
+    top_named_entities = await get_top_entities(config['subreddit'], config['time_filter'], post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date)
     
     # Generate embeddings and word cloud for named entities
     entity_set = set()
@@ -135,6 +136,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     Returns:
         SubredditAnalysis: Complete analysis results
     """
+    config['subreddit'] = subreddit_query.name
     config['time_filter'] = subreddit_query.time_filter
 
     reddit = asyncpraw.Reddit(
