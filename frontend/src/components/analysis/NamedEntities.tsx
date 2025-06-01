@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { SubredditAnalysis, NamedEntity } from "../../types/redditAnalysis";
 import ButtonPopover from "../ButtonPopover";
-import { ColorKey } from "./ColorKey";
 import { formatDate } from "../../utils/dateUtils";
 import { ChevronRight } from "lucide-react";
 import { EntityPicture } from "./EntityPicture";
@@ -29,12 +28,12 @@ function GroupEntitiesByLabel({entities}: { entities: NamedEntity[] }) {
 }
 
 const SummarizedSentimentBulletPoints: React.FC<{
-  entity_name: string, date: string, num_comments_summarized: string, key_points: string;
+  entity_name: string, date: string, num_comments_summarized: number, key_points: string;
 }> = ({ entity_name, date, num_comments_summarized, key_points }) => {
   if (!key_points) return null;
   const trimmed_key_points = key_points.replace("Here is the summary:", "");
   if(trimmed_key_points != null) {
-    const sentences = trimmed_key_points.match(/[^.!?]+[.!?]+[\])'"`’”]*|\s*$/g).map(s => s.trim());
+    const sentences = (trimmed_key_points.match(/[^.!?]+[.!?]+[\])'"`’”]*|\s*$/g) ?? []).map(s => s.trim());
     const cleaned_sentences = sentences.filter(sentence => sentence.trim() !== "");    
     const sentiment_values = new Map([
       ["very positive", "very_positive.png"],

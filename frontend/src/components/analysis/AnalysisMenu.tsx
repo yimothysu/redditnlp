@@ -35,7 +35,7 @@ export const AnalysisMenu: React.FC<AnalysisMenuProps> = ({
   // List of different NLP analyses
   const tabs = [
     ...(timeFilter === "all" ? [{ label: "Ranking" }] : []),
-    { label: "Trends" },
+    // { label: "Trends" },
     { label: "Named Entities" },
     { label: "Bi-Grams" },
     { label: "Word Embeddings" },

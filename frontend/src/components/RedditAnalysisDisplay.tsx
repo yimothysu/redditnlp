@@ -9,7 +9,7 @@ import { WordEmbeddings } from "./analysis/WordEmbeddings";
 import { NGrams } from "./analysis/NGrams";
 import { ComparativeAnalysis } from "./analysis/ComparativeAnalysis";
 import { NamedEntities } from "./analysis/NamedEntities";
-import { Trends } from "./analysis/Trends";
+// import { Trends } from "./analysis/Trends";
 
 // This component is in charge of displaying all aspects of subreddit analysis and allowing users to filter subreddit
 export default function RedditAnalysisDisplay({
@@ -22,7 +22,7 @@ export default function RedditAnalysisDisplay({
   const [analysis, setAnalysis] = useState<any | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [timeFilter, setTimeFilter] = useState("week");
-  const [subredditMenu, setSubredditMenu] = useState("Trends");
+  const [subredditMenu, setSubredditMenu] = useState("Named Entities");
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -66,8 +66,8 @@ export default function RedditAnalysisDisplay({
     if (!analysis) return null;
 
     switch (currentMenuItem === undefined ? subredditMenu : currentMenuItem) {
-      case "Trends":
-        return <Trends analysis={analysis}/>;
+      // case "Trends":
+      //   return <Trends analysis={analysis}/>;
       case "Ranking":
         return timeFilter === "all" ? (
           <ComparativeAnalysis analysis={analysis} />
