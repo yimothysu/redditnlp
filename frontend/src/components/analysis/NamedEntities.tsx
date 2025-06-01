@@ -29,47 +29,57 @@ function GroupEntitiesByLabel({entities}: { entities: NamedEntity[] }) {
 }
 
 const SummarizedSentimentBulletPoints: React.FC<{
-  entity_name: string, highlight_color: string, key_points: string[];
-}> = ({ entity_name, highlight_color, key_points }) => {
+  entity_name: string, date: string, num_comments_summarized: string, key_points: string;
+}> = ({ entity_name, date, num_comments_summarized, key_points }) => {
   if (!key_points) return null;
+  const trimmed_key_points = key_points.replace("Here is the summary:", "");
+  if(trimmed_key_points != null) {
+    const sentences = trimmed_key_points.match(/[^.!?]+[.!?]+[\])'"`’”]*|\s*$/g).map(s => s.trim());
+    const cleaned_sentences = sentences.filter(sentence => sentence.trim() !== "");    
+    const sentiment_values = new Map([
+      ["very positive", "very_positive.png"],
+      ["positive leaning", "positive_leaning.png"],
+      ["neutral", "neutral.png"],
+      ["mixed", "neutral.png"],
+      ["very negative", "very_negative.png"],
+      ["negative leaning", "negative_leaning.png"]
+    ]);
+    
+    const firstSentence = cleaned_sentences[0].toLowerCase(); 
+    const sentiment_value = Array.from(sentiment_values.keys()).find(sentiment_value =>
+      firstSentence.includes(sentiment_value));
 
-  function lightenHighlightColor(hex: string, percent: number) {
-    const num = parseInt(hex.replace("#", ""), 16);
-    const r = (num >> 16) + Math.round((255 - (num >> 16)) * percent);
-    const g = ((num >> 8) & 0x00FF) + Math.round((255 - ((num >> 8) & 0x00FF)) * percent);
-    const b = (num & 0x0000FF) + Math.round((255 - (num & 0x0000FF)) * percent);
-    return `rgb(${r}, ${g}, ${b})`;
+    if(sentiment_value != null) {
+      const outline_color =
+      sentiment_value == "very positive" ? "#91CC91" :
+      sentiment_value == "positive leaning" ? "#d3ea84" :
+      sentiment_value == "neutral" ? "#ffffac" :
+      sentiment_value == "mixed" ? "#ffffac" :
+      sentiment_value == "negative leaning" ? "#ffc245" :
+      sentiment_value == "very negative" ? "#ff9898" :
+      "bg-gray-100";
+      return (
+        <div>
+          <div className="border border-3 p-0.5 border-gray-100 rounded-md mb-5">
+            <div className="flex flex-col shadow rounded-sm bg-white"
+            style={{ outline: `2px solid ${outline_color}`}}>
+              <div className="flex flex-row gap-3 pb-3 items-center justify-center font-semibold pt-3">
+                <div className="text-[14.5px] mt-3 text-center text-black">This subreddit's overall opinion towards {entity_name} on {date}: {sentiment_value}</div>
+                <img
+                  src={"/moods/" + sentiment_values.get(sentiment_value)}
+                  className="w-9 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
+                />
+              </div>
+              <h1 className="mb-4 text-[13px] pb-2 text-center font-semibold pt-2 text-black">(Summary of <span className="font-bold text-red-600">{num_comments_summarized}</span> comments regarding {entity_name})</h1>
+            </div>
+          </div>
+          {cleaned_sentences.slice(1).map((sentence, index) => (
+            <li className="text-[14px] pb-3 leading-loose" key={index}>{sentence}</li>
+          ))}
+        </div>
+      );
+    }
   }
-
-  const lightened_highlight_color = lightenHighlightColor(highlight_color, 0.4);
-
-  const HighlightedKeyPoint = ({key_point}: { key_point: string}) => {
-    const regex = new RegExp(`(${entity_name})`, "gi"); // 'gi' for global + case-insensitive
-  
-    const parts = key_point.split(regex);
-    console.log("parts: ", parts)
-    return (
-      <li className="pb-5 leading-relaxed">
-        {parts.map((part, index) =>
-          part === entity_name ? (
-            <span key={index} className="px-1 rounded" style={{ backgroundColor: lightened_highlight_color }}>
-              {part}
-            </span>
-          ) : (
-            <span key={index}>{part}</span>
-          )
-        )}
-      </li>
-    );
-  };
-
-  return (
-    <ul className="list-disc pl-4 max-w-[450px]">
-      {key_points.map((sentence: string, _: number) => (
-        <HighlightedKeyPoint key_point={sentence.trim()}></HighlightedKeyPoint>
-      ))}
-    </ul>
-  );
 };
 
 const LinksForEntity = ({ entity }: { entity: NamedEntity }) => {
@@ -165,49 +175,22 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
         <EntityLabel label={label}></EntityLabel>
         <div className="grid grid-cols-1 gap-0.5 bg-gray-100">
           {entities_for_label.map((entity: NamedEntity, index: number) => {
-            const backgroundColor =
-              entity.sentiment >= 0.6 && entity.sentiment <= 1
-                ? "#91CC91"
-                : entity.sentiment >= 0.2 && entity.sentiment < 0.6
-                ? "#d3ea84"
-                : entity.sentiment >= -0.2 && entity.sentiment < 0.2
-                ? "#ffffac"
-                : entity.sentiment >= -0.6 && entity.sentiment < -0.2
-                ? "#ffc245"
-                : entity.sentiment >= -1 && entity.sentiment < -0.6
-                ? "#ff9898"
-                : "bg-gray-100";
             return (
               <div
                 key={index}
-                className="pt-1 pb-1 grid md:[grid-template-columns:200px_350px_450px_100px] bg-white transition-all duration-200"
+                className="pt-1 pb-1 grid md:[grid-template-columns:200px_800px_100px] bg-white transition-all duration-200"
               >
                   {/* Column 1 */}
-                  <div className="border-r border-gray-200 last:border-r-0 flex p-1 bg-gray-50 gap-3 justify-center items-center">
+                  <div className="border-r border-gray-200 last:border-r-0 flex p-1 gap-3 justify-center items-center">
                     <h4 className="mt-3 text-[15px] font-semibold text-gray-800">{entity.name}</h4>
                     <EntityPicture entity_name={entity.name}></EntityPicture>
                   </div>
                   {/* Column 2 */}
-                  <div className="border-r border-gray-200 last:border-r-0  flex gap-2 justify-start items-center">
-                    <div
-                      className="h-5 md:h-6 transition-colors duration-200"
-                      style={{
-                        backgroundColor: backgroundColor,
-                        width: `${(((entity.sentiment + 1) / 2) * 350)}px`
-                      }}
-                    >
-                    </div>
-                    <div className="text-gray-700 text-xs font-semibold italic">
-                      {entity.sentiment.toFixed(2)}
-                    </div>
-                  </div>
-                  {/* Column 3  */}
-                  <div className="border-r border-gray-200 last:border-r-0 p-2 bg-gray-50 text-left">
-                    <h1 className="mb-2 mx-auto text-gray-600 text-[13px] pb-1 text-center font-semibold">Summary of <span className="font-bold text-red-600">{entity.num_comments_summarized}</span> comments regarding {entity.name}</h1>
+                  <div className="p-5 border-r border-gray-200 last:border-r-0 p-2 bg-gray-50 text-left">
                     {entity.key_points && (
                       <div className="">
                         <div className="text-[12px] text-gray-500">
-                          <SummarizedSentimentBulletPoints entity_name={entity.name} highlight_color={backgroundColor} key_points={entity.key_points} />
+                          <SummarizedSentimentBulletPoints entity_name={entity.name} date={date} num_comments_summarized={entity.num_comments_summarized} key_points={entity.key_points} />
 
                         </div>
                       </div>
@@ -305,9 +288,9 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
         />
       </div>
       <div className="flex flex-col mt-5">
-        <div className="w-full">
+        {/* <div className="w-full">
           <ColorKey />
-        </div>
+        </div> */}
         <hr className="border-t-2 border-gray-400"></hr>
         <TopNamedEntitiesForDate
           date={currentNamedEntityDate}
