@@ -13,6 +13,7 @@ scotus - supreme court - the supreme court
 ai grok bot - grok 
 rddt - reddit 
 nvda - nvidia 
+california - ca 
 christian - christianity 
 rocket lab - rocketlab - rklb 
 jerome powell - powell - jpow 

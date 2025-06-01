@@ -2,6 +2,7 @@ remindmebot
 mom 
 dad
 sister
+sis
 brother
 cousin 
 grandma
@@ -228,3 +229,5 @@ son
 daughter 
 quitting 
 clown 
+daddy 
+mommy 
