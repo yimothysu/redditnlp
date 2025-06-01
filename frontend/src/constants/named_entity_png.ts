@@ -804,7 +804,7 @@ export const entity_name_to_png: Record<string, string> = {
 "killzone": "killzone.png",
 "anthropology": "anthropology.png",
 "mit" : "MIT.png",
-"NASA" : "NASA.png",
+"nasa" : "NASA.png",
 "nazi" : "nazi.png",
 "nazis" : "nazi.png",
 "nintendo" : "nintendo.png",
