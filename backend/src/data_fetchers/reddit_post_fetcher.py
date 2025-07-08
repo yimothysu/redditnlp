@@ -8,46 +8,7 @@ import asyncpraw, string
 from pydantic import BaseModel
 from typing import Optional
 from typing import List
-
-class Comment(BaseModel):
-    """Data model for a Reddit comment.
-    
-    Attributes:
-        text: The comment's content
-        score: The comment's score (upvotes - downvotes)
-        replies: The comment's replies 
-    """
-    text: Optional[str] = None 
-    # the context needed (title & description for top level comments) to resolve the pronouns in the comment 
-    context: Optional[str] = None 
-    score: Optional[int] = None 
-    replies: Optional[List[Comment]] = None 
-
-
-class RedditPost(BaseModel):
-    """Data model for a Reddit post with its metadata and comments.
-    
-    Attributes:
-        title: Post title
-        description: Post content/selftext
-        score: Post score (upvotes - downvotes)
-        url: URL of the post
-        created_utc: Post creation timestamp in UTC
-        num_comments: Total number of comments
-        top_level_comments: List of top level comment texts
-        comment_scores: List of top level comment scores
-    """
-    title: str
-    description: str 
-    score: int
-    permalink: str
-    created_utc: float
-    num_comments: int
-    top_level_comments: list[Comment]
-    
-    def to_dict(self):
-        """Convert the post data to a dictionary format."""
-        return self.model_dump()
+from src.utils.subreddit_classes import ( Comment, RedditPost )
 
 def ensure_ending_punctuation(text):
     ends_in_punctuation = text and text[-1] in string.punctuation
@@ -119,10 +80,10 @@ async def fetch_post_data(post) -> Optional[RedditPost]:
 
         print('got ', len(comment_objects), '/', len(comments), ' for post')
         return RedditPost(
-            title=ensure_ending_punctuation(post.title),
-            description=ensure_ending_punctuation(post.selftext),
+            title=ensure_ending_punctuation(post.title) if post.title is not None else "",
+            description=ensure_ending_punctuation(post.selftext) if post.selftext is not None else "",
             score=post.score,
-            permalink=post.permalink,
+            url="https://www.reddit.com" + post.permalink,
             created_utc=post.created_utc,
             num_comments=post.num_comments,
             top_level_comments=comment_objects,

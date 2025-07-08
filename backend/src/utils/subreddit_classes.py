@@ -1,6 +1,7 @@
 """Data models for subreddit analysis and queries.
 Defines Pydantic models for handling subreddit data, analysis results, and metrics.
 """
+from __future__ import annotations
 from pydantic import BaseModel
 from enum import Enum
 from typing import Dict, List, Tuple, Optional, Any
@@ -44,12 +45,56 @@ class NGram(BaseModel):
     count: int # Number of times the n-gram appears in the text 
 
 
+class Comment(BaseModel):
+    """Data model for a Reddit comment.
+    
+    Attributes:
+        text: The comment's content
+        score: The comment's score (upvotes - downvotes)
+        replies: The comment's replies 
+    """
+    text: Optional[str] = None 
+    # the context needed (title & description for top level comments) to resolve the pronouns in the comment 
+    context: Optional[str] = None 
+    score: Optional[int] = None 
+    replies: Optional[List[Comment]] = None 
+
+
+class RedditPost(BaseModel):
+    """Data model for a Reddit post with its metadata and comments.
+    
+    Attributes:
+        title: Post title
+        description: Post content/selftext
+        score: Post score (upvotes - downvotes)
+        url: URL of the post
+        created_utc: Post creation timestamp in UTC
+        num_comments: Total number of comments
+        top_level_comments: List of top level comment texts
+        comment_scores: List of top level comment scores
+    """
+    title: Optional[str] = ""
+    description: Optional[str] = "" 
+    idx: Optional[int] = -1 
+    url: Optional[str] = "" 
+    score: Optional[int] = None
+    created_utc: Optional[float] = None
+    num_comments: Optional[int] = None
+    top_level_comments: Optional[list[Comment]] = None 
+    
+    def to_dict(self):
+        """Convert the post data to a dictionary format."""
+        return self.model_dump()
+    
+
 class SubredditAnalysis(BaseModel):
     timestamp: int # when the analysis was generated 
     num_words: int # Total word count analyzed 
     subreddit: str # Name of the subreddit 
     #  key = date
     top_n_grams: Optional[Dict[str, List[NGram]]] = None # Top n-grams by date 
+    # key = topic, value = list of post links relating to topic 
+    topics: Optional[Dict[str, list[RedditPost]]] = None 
     # key = date 
     top_named_entities: Optional[Dict[str, List[NamedEntity]]] = None # Top named entities by date 
     top_named_entities_embeddings: Optional[Dict[str, Tuple[float, float]]] = None # Embeddings of the top named entities by date 

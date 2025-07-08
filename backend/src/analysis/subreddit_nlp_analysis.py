@@ -8,8 +8,9 @@ load_dotenv()
 from datetime import datetime
 
 from src.data_fetchers.reddit_post_fetcher import ( fetch_post_data, Comment )
-from src.utils.subreddit_classes import ( SubredditQuery, SubredditAnalysis )
+from src.utils.subreddit_classes import ( SubredditQuery, SubredditAnalysis, RedditPost )
 from src.analysis.features.named_entities import ( get_top_entities )
+from src.analysis.features.topics import ( get_topics )
 from src.analysis.features.n_grams import ( get_top_ngrams )
 from src.analysis.features.readability import ( get_readability_metrics )
 from src.analysis.features.word_embeddings import ( get_2d_embeddings )
@@ -19,7 +20,6 @@ from src.analysis.coreference_resolution import ( resolve_pronouns_for_post )
 # Configuration maps for different time filters
 TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'week': 1000}
 TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'week': 50}
-TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 12, 'year': 10, 'week': 8}
 TIME_FILTER_TO_DATE_FORMAT = {'all': '%y', 'year': '%m-%y', 'week': '%m-%d'}
 
 config = {
@@ -62,45 +62,60 @@ def get_flattened_text_for_comment(comment, indent):
 
 
 # Assuming coreference resolution has already been performed when this function gets called 
-def get_flattened_text_for_post(post, post_idx):
-    flattened_text = "\n Post " + str(post_idx) + " \n"
-    flattened_text += "Title: " + post.title + "\n\n" + "Description: " + post.description + "\n"
-    flattened_text += "Comments: \n"
-    for top_level_comment in post.top_level_comments:
-        flattened_text += " " + get_flattened_text_for_comment(top_level_comment, indent = 0)
+def get_flattened_text_for_post(post, include_comments=False):
+    flattened_text = "Title: {title}\nDescription: {description}".format(title = post.title, description = post.description)
+    if include_comments: 
+        flattened_text += "Comments: \n"
+        for top_level_comment in post.top_level_comments:
+            flattened_text += " " + get_flattened_text_for_comment(top_level_comment, indent = 0)
     return flattened_text 
 
 
-async def get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_grouped_by_date):
+async def get_subreddit_analysis(posts: list[RedditPost]):
     """Perform NLP analysis on grouped posts.
     
     Args:
-        posts_grouped_by_date: Dictionary of posts grouped by date
+        posts: List of RedditPost objects 
     Returns:
         tuple: (top n-grams, top named entities)
     """
-    post_content_grouped_by_date = dict() 
-    for date, posts in posts_grouped_by_date.items():
-        post_content = '\n'.join([get_flattened_text_for_post(post, post_idx) for post_idx, post in enumerate(posts)])
-        # Can write post_content to a text file so I can inspect it 
-        with open('post_content.txt', 'w', encoding='utf-8') as f:
-            f.write(post_content)
-        post_content_grouped_by_date[date] = post_content
-    
-    top_n_grams = get_top_ngrams(post_content_grouped_by_date)
-    top_named_entities = await get_top_entities(config['subreddit'], config['time_filter'], post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date)
-    
-    # Generate embeddings and word cloud for named entities
-    entity_set = set()
-    for _, entities in top_named_entities.items():
-        entity_names = [entity.name for entity in entities]
-        for entity_name in entity_names: entity_set.add(entity_name)
-    top_named_entities_embeddings = get_2d_embeddings(list(entity_set))
-    top_named_entities_wordcloud = generate_word_cloud(top_named_entities)
-    
-    return top_n_grams, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud
+    # post_content_grouped_by_date = dict() 
+    # post_title_and_description_grouped_by_date = dict() 
+    # for date, posts in posts_grouped_by_date.items():
+    #     post_content = '\n'.join([get_flattened_text_for_post(post, include_comments=True) for post in posts])
+    #     posts_title_and_description = [get_flattened_text_for_post(post, include_comments=False) for post in posts]
+    #     # Can write post_content to a text file so I can inspect it 
+    #     with open('post_content.txt', 'w', encoding='utf-8') as f:
+    #         f.write(post_content)
+    #     post_content_grouped_by_date[date] = post_content
+    #     post_title_and_description_grouped_by_date[date] = posts_title_and_description
+
+    #top_n_grams = get_top_ngrams(post_content_grouped_by_date)
+    #top_named_entities = await get_top_entities(config['subreddit'], config['time_filter'], post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date)
+    # top_named_entities = dict() 
+    # topics = dict() 
+    # for date, posts in post_title_and_description_grouped_by_date.items():
+    #     topics[date] = get_topics(config['subreddit'], posts)
+    # # Generate embeddings and word cloud for named entities
+    # entity_set = set()
+    # for _, entities in top_named_entities.items():
+    #     entity_names = [entity.name for entity in entities]
+    #     for entity_name in entity_names: entity_set.add(entity_name)
+    # top_named_entities_embeddings = get_2d_embeddings(list(entity_set))
+    # top_named_entities_wordcloud = generate_word_cloud(top_named_entities)
+    # readability_metrics = get_readability_metrics(posts)
+    # return top_n_grams, topics, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud, readability_metrics
 
 
+    top_n_grams = dict() 
+    topics = get_topics(config['subreddit'], posts) # type dict[str, list[str]]
+    top_named_entities = dict() 
+    top_named_entities_embeddings = dict() 
+    top_named_entities_wordcloud = ""
+    readability_metrics = dict() 
+    return top_n_grams, topics, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud, readability_metrics
+
+     
 '''
     total words = length of the comment and length of comment's replies 
 '''
@@ -151,7 +166,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     posts = [post async for post in subreddit_instance.top(
         limit=initial_post_query_limit,
         time_filter=subreddit_query.time_filter
-    )]
+    )] # Object type = Submission 
 
     # Limit posts and prioritize those with more content
     if(len(posts) > TIME_FILTER_TO_POST_LIMIT[subreddit_query.time_filter]):
@@ -177,7 +192,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
         post_batches.append(posts[2*third:])
 
     # Fetch comments for all posts
-    posts_list = []
+    posts_list = [] # Object type = List[RedditPost]
     if len(post_batches) > 0:
         for post_batch in post_batches:
             posts_with_comments = await asyncio.gather(*(fetch_post_data(post) for post in post_batch))
@@ -195,32 +210,32 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
     print('total words: ', total_words)
 
     # Perform coreference resolution on all the posts text in posts_list 
-    for i in range(len(posts_list)):
-        start_coref_res = time.time() 
-        post = posts_list[i]
-        posts_list[i] = resolve_pronouns_for_post(post) 
-        end_coref_res = time.time() 
-        print("coref resolution for post " + str(i) + " took: ", end_coref_res - start_coref_res)
+    # for i in range(len(posts_list)):
+    #     start_coref_res = time.time() 
+    #     post = posts_list[i]
+    #     posts_list[i] = resolve_pronouns_for_post(post) 
+    #     end_coref_res = time.time() 
+    #     print("coref resolution for post " + str(i) + " took: ", end_coref_res - start_coref_res)
 
     # Perform various analyses
-    posts_grouped_by_date = group_posts_by_date(posts_list)
-    comment_and_score_pairs_grouped_by_date = dict()
-    for date, posts in posts_grouped_by_date.items():
-        # very unlikely that 2 comments mentioning an entity will be EXACTLY the same 
-        comment_and_score_pairs = dict() # across all posts in this date 
-        for post in posts:
-            unvisited = queue.Queue()
-            for top_level_comment in post.top_level_comments:
-                unvisited.put(top_level_comment)
-            while not unvisited.empty():
-                comment = unvisited.get()
-                comment_and_score_pairs[comment.text] = comment.score
-                replies = comment.replies
-                for reply in replies:
-                    unvisited.put(reply)
-        comment_and_score_pairs_grouped_by_date[date] = comment_and_score_pairs
-    readability_metrics = get_readability_metrics(posts_list)
-    top_n_grams, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud = await get_subreddit_analysis(posts_grouped_by_date, comment_and_score_pairs_grouped_by_date)
+    # posts_grouped_by_date = group_posts_by_date(posts_list)
+    # comment_and_score_pairs_grouped_by_date = dict()
+    # for date, posts in posts_grouped_by_date.items():
+    #     # very unlikely that 2 comments mentioning an entity will be EXACTLY the same 
+    #     comment_and_score_pairs = dict() # across all posts in this date 
+    #     for post in posts:
+    #         unvisited = queue.Queue()
+    #         for top_level_comment in post.top_level_comments:
+    #             unvisited.put(top_level_comment)
+    #         while not unvisited.empty():
+    #             comment = unvisited.get()
+    #             comment_and_score_pairs[comment.text] = comment.score
+    #             replies = comment.replies
+    #             for reply in replies:
+    #                 unvisited.put(reply)
+    #     comment_and_score_pairs_grouped_by_date[date] = comment_and_score_pairs
+    # readability_metrics = get_readability_metrics(posts_list)
+    top_n_grams, topics, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud, readability_metrics = await get_subreddit_analysis(posts_list)
     
     # Compile final analysis
     analysis = SubredditAnalysis(
@@ -228,6 +243,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
         num_words = total_words,
         subreddit = subreddit_query.name,
         top_n_grams = top_n_grams,
+        topics = topics, 
         top_named_entities = top_named_entities,
         top_named_entities_embeddings = top_named_entities_embeddings,
         top_named_entities_wordcloud = top_named_entities_wordcloud,

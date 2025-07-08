@@ -6,6 +6,7 @@ from src.database.db import COLLECTIONS
 import asyncio
 import sys
 import bson 
+import time 
 
 from src.analysis.subreddit_nlp_analysis import (
     perform_subreddit_analysis,
@@ -115,3 +116,4 @@ if __name__ == "__main__":
         subreddit = subreddits[i]
         print(f"Working on subreddit {subreddit}")
         asyncio.run(fetch_subreddit_data(subreddit, time_filter))
+        time.sleep(30)
