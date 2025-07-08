@@ -13,6 +13,18 @@ export interface NamedEntity {
   urls: string[]
 };
 
+export interface RedditPost {
+    title: string;
+    description: string;
+    idx: number;
+    url: string;
+    score: number;
+    created_utc: number;
+    num_comments: number;
+    top_level_comments: Comment[]
+
+}
+
 export interface SubredditAnalysis {
   timestamp: number;
   num_words: number;
@@ -34,6 +46,7 @@ export interface SubredditAnalysis {
   };
   top_named_entities: Record<string, NamedEntity[]>;
   top_n_grams: Record<string, NGram[]>;
+  topics: Record<string, RedditPost[]>;
   top_named_entities_wordcloud: string;
   top_named_entities_embeddings: Record<string, [number, number]>;
 }

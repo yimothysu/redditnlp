@@ -4,6 +4,7 @@ import ButtonPopover from "../ButtonPopover";
 import { formatDate } from "../../utils/dateUtils";
 import { ChevronRight } from "lucide-react";
 import { EntityPicture } from "./EntityPicture";
+import Color from 'color';
 
 interface NamedEntitiesProps {
   analysis: SubredditAnalysis;
@@ -35,6 +36,10 @@ const SummarizedSentimentBulletPoints: React.FC<{
   if(trimmed_key_points != null) {
     const sentences = (trimmed_key_points.match(/[^.!?]+[.!?]+[\])'"`’”]*|\s*$/g) ?? []).map(s => s.trim());
     const cleaned_sentences = sentences.filter(sentence => sentence.trim() !== "");    
+    if(cleaned_sentences.length == 0) {
+      console.log(key_points)
+      return; 
+    }
     const sentiment_values = new Map([
       ["very positive", "very_positive.png"],
       ["positive leaning", "positive_leaning.png"],
@@ -57,23 +62,32 @@ const SummarizedSentimentBulletPoints: React.FC<{
       sentiment_value == "negative leaning" ? "#ffc245" :
       sentiment_value == "very negative" ? "#ff9898" :
       "bg-gray-100";
+
+      const background_color = 
+      outline_color == "#91CC91" ? Color(outline_color).lighten(0.35).hex() :
+      outline_color == "#d3ea84" ? Color(outline_color).lighten(0.3).hex() :
+      outline_color == "#ffffac" ? Color(outline_color).lighten(0.15).hex() :
+      outline_color == "#ffc245" ? Color(outline_color).lighten(0.45).hex() :
+      outline_color == "#ff9898" ? Color(outline_color).lighten(0.2).hex() : 
+      "bg-gray-100";
+
       return (
         <div>
-          <div className="border border-3 p-0.5 border-gray-100 rounded-md mb-5">
-            <div className="flex flex-col shadow rounded-sm bg-white"
-            style={{ outline: `2px solid ${outline_color}`}}>
-              <div className="flex flex-row gap-3 pb-3 items-center justify-center font-semibold pt-3">
-                <div className="text-[14.5px] mt-3 text-center text-black">This subreddit's overall opinion towards {entity_name} on {date}: {sentiment_value}</div>
+          <div className="border border-3 p-0.5 border-gray-100 rounded-md mb-7">
+            <div className="flex flex-col shadow rounded-sm"
+            style={{ outline: `2px solid ${outline_color}`, backgroundColor: `${background_color}`}}>
+              <div className="flex flex-row gap-3 pb-2 items-center justify-center font-semibold pt-2">
+                <div className="text-[14.5px] mt-1 text-center text-black">This subreddit's opinion of <span className="font-bold">{entity_name}</span> on {date}: {sentiment_value}</div>
                 <img
                   src={"/moods/" + sentiment_values.get(sentiment_value)}
-                  className="w-9 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
+                  className="w-7 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
                 />
               </div>
-              <h1 className="mb-4 text-[13px] pb-2 text-center font-semibold pt-2 text-black">(Summary of <span className="font-bold text-red-600">{num_comments_summarized}</span> comments regarding {entity_name})</h1>
             </div>
           </div>
+          <h1 className="mb-2 text-[12.5px] text-center italic text-gray-500">(Summary of <span className="font-semibold text-red-600">{num_comments_summarized}</span> comments regarding {entity_name})</h1>
           {cleaned_sentences.slice(1).map((sentence, index) => (
-            <li className="text-[14px] pb-3 leading-loose" key={index}>{sentence}</li>
+            <li className="text-[14px] pb-3 text-gray-600 leading-loose" key={index}>{sentence}</li>
           ))}
         </div>
       );
@@ -172,7 +186,7 @@ const TopNamedEntitiesForDate: React.FC<TopNamedEntitiesForDateProps> = ({
       {Object.entries(label_to_entities).map(([label, entities_for_label]) => (
       <>
         <EntityLabel label={label}></EntityLabel>
-        <div className="grid grid-cols-1 gap-0.5 bg-gray-100">
+        <div className="grid grid-cols-1 gap-0.5 bg-gray-100 mb-10">
           {entities_for_label.map((entity: NamedEntity, index: number) => {
             return (
               <div
@@ -265,6 +279,7 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
       (a, b) => new Date(b).getTime() - new Date(a).getTime()
     )[0]
   );
+  const [sortOption, setSortOption] = useState("name-asc");
 
   return (
     <div className="mt-6">
@@ -287,9 +302,21 @@ export const NamedEntities: React.FC<NamedEntitiesProps> = ({
         />
       </div>
       <div className="flex flex-col mt-5">
-        {/* <div className="w-full">
-          <ColorKey />
-        </div> */}
+        <div className="flex flex-row gap-2">
+          <img
+              src={"/sort_by_icon.png"}
+              className="rounded-full w-8 h-8 object-cover cursor-pointer transition active:scale-95 active:brightness-90"
+          />
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+            className="border border-gray-300 rounded px-2 py-1 max-w-70 mb-5"
+          >
+            <option>Sort By Most Mentions</option>
+            <option>Sort By Most Well Liked</option>
+            <option>Sort By Least Well Liked</option>
+          </select>
+        </div>
         <hr className="border-t-2 border-gray-400"></hr>
         <TopNamedEntitiesForDate
           date={currentNamedEntityDate}

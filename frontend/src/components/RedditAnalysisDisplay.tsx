@@ -3,12 +3,13 @@ import { fetchSubredditAnalysis } from "../lib/api";
 import { SubredditAvatar } from "./SubredditAvatar";
 import { RedditAnalysisDisplayProps } from "../types/redditAnalysis";
 import { AnalysisMenu } from "./analysis/AnalysisMenu";
-import { ReadabilityMetrics } from "./analysis/ReadabilityMetrics";
-import { WordCloud } from "./analysis/WordCloud";
-import { WordEmbeddings } from "./analysis/WordEmbeddings";
-import { NGrams } from "./analysis/NGrams";
-import { ComparativeAnalysis } from "./analysis/ComparativeAnalysis";
-import { NamedEntities } from "./analysis/NamedEntities";
+import { Topics } from "./analysis/Topics";
+// import { ReadabilityMetrics } from "./analysis/ReadabilityMetrics";
+// import { WordCloud } from "./analysis/WordCloud";
+// import { WordEmbeddings } from "./analysis/WordEmbeddings";
+// import { NGrams } from "./analysis/NGrams";
+// import { ComparativeAnalysis } from "./analysis/ComparativeAnalysis";
+// import { NamedEntities } from "./analysis/NamedEntities";
 // import { Trends } from "./analysis/Trends";
 
 // This component is in charge of displaying all aspects of subreddit analysis and allowing users to filter subreddit
@@ -72,21 +73,23 @@ export default function RedditAnalysisDisplay({
         return timeFilter === "all" ? (
           <ComparativeAnalysis analysis={analysis} />
         ) : null;
-      case "Bi-Grams":
-        return <NGrams analysis={analysis} timeFilter={timeFilter} />;
-      case "Named Entities":
-        return <NamedEntities analysis={analysis} timeFilter={timeFilter} />;
-      case "Word Embeddings":
-        return (
-          <WordEmbeddings
-            analysis={analysis}
-            inComparisonMode={inComparisonMode}
-          />
-        );
-      case "Word Cloud":
-        return <WordCloud analysis={analysis} />;
-      case "Readability Metrics":
-        return <ReadabilityMetrics analysis={analysis} />;
+      case "Topics": 
+        return <Topics analysis={analysis} timeFilter={timeFilter}/>;
+      // case "Bi-Grams":
+      //   return <NGrams analysis={analysis} timeFilter={timeFilter} />;
+      // case "Named Entities":
+      //   return <NamedEntities analysis={analysis} timeFilter={timeFilter} />;
+      // case "Word Embeddings":
+      //   return (
+      //     <WordEmbeddings
+      //       analysis={analysis}
+      //       inComparisonMode={inComparisonMode}
+      //     />
+      //   );
+      // case "Word Cloud":
+      //   return <WordCloud analysis={analysis} />;
+      // case "Readability Metrics":
+      //   return <ReadabilityMetrics analysis={analysis} />;
       default:
         return null;
     }
