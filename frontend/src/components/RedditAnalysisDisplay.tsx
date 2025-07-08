@@ -15,7 +15,7 @@ import { Topics } from "./analysis/Topics";
 // This component is in charge of displaying all aspects of subreddit analysis and allowing users to filter subreddit
 export default function RedditAnalysisDisplay({
   name,
-  inComparisonMode,
+  // inComparisonMode,
   currentMenuItem,
   setCurrentMenuItem
 }: RedditAnalysisDisplayProps) {
@@ -69,10 +69,10 @@ export default function RedditAnalysisDisplay({
     switch (currentMenuItem === undefined ? subredditMenu : currentMenuItem) {
       // case "Trends":
       //   return <Trends analysis={analysis}/>;
-      case "Ranking":
-        return timeFilter === "all" ? (
-          <ComparativeAnalysis analysis={analysis} />
-        ) : null;
+      // case "Ranking":
+      //   return timeFilter === "all" ? (
+      //     <ComparativeAnalysis analysis={analysis} />
+      //   ) : null;
       case "Topics": 
         return <Topics analysis={analysis} timeFilter={timeFilter}/>;
       // case "Bi-Grams":

@@ -7,13 +7,13 @@ interface TopicsProps {
     timeFilter: string;
   }
 
-export const Topics: React.FC<TopicsProps> = ({ analysis, timeFilter }) => {
+export const Topics: React.FC<TopicsProps> = ({ analysis }) => {
   const [selectedTopic, setSelectedTopic] = useState(Object.keys(analysis.topics)[0]);
 
   return (
     <div className="flex flex-row">
         <div className="w-60 flex-shrink-0 rounded-lg">
-            {Object.entries(analysis.topics).map(([topic, posts]) => (
+            {Object.entries(analysis.topics).map(([topic, _]) => (
                 <div>
                     <div onClick={() => setSelectedTopic(topic)} className={`pt-3 pb-1 text-center text-gray-400 group text-xs rounded font-semibold ${topic !== selectedTopic ? 'hover:bg-gray-100' : ''} ${topic === selectedTopic ? 'bg-[#fa6f4d] text-white' : ''}`}>
                         <div className={`${topic !== selectedTopic ? 'group-hover:text-gray-600' : ''}`}>
@@ -29,7 +29,7 @@ export const Topics: React.FC<TopicsProps> = ({ analysis, timeFilter }) => {
             <hr className="border-t border-gray-300 opacity-50"></hr>
             <h2 className="p-1 mb-2 font-semibold font-[14px] bg-gray-100 text-gray-500 tracking-wide text-center">{selectedTopic.toLowerCase()}</h2>
             <ul className="list-disc list-inside ml-4">
-                {analysis.topics[selectedTopic].map((post, idx) => (
+                {analysis.topics[selectedTopic].map((post, _) => (
                     <div className="text-sm pb-7">
                         <div className="flex flex-row">
                             <div className="font-normal text-xs text-gray-600 mt-2 mr-3">
