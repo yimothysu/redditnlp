@@ -5,11 +5,10 @@ export interface NGram {
 
 export interface NamedEntity {
   name: string, 
-  count: number,
+  freq: number,
   label: string,
-  sentiment: number,
-  key_points: string,
-  num_comments_summarized: number,
+  AI_analysis: string,
+  comments: string[],
   urls: string[]
 };
 
@@ -44,8 +43,8 @@ export interface SubredditAnalysis {
     avg_flesch_grade_level: number;
     dale_chall_grade_levels: Record<string, number>;
   };
-  top_named_entities: Record<string, NamedEntity[]>;
-  top_n_grams: Record<string, NGram[]>;
+  top_named_entities: NamedEntity[];
+  top_n_grams: NGram[];
   topics: Record<string, RedditPost[]>;
   top_named_entities_wordcloud: string;
   top_named_entities_embeddings: Record<string, [number, number]>;

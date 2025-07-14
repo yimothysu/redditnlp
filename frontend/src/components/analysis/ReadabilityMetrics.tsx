@@ -65,7 +65,7 @@ export const ReadabilityMetrics: React.FC<ReadabilityMetricsProps> = ({
       </h1>
       <br />
       <div className="text-center">
-        <ButtonPopover title="What are readability metrics">
+        <ButtonPopover title="What are Readability Metrics?">
           Readability metrics evaluate how easy a body text is to read. This
           includes expected grade level of education required to understand a
           text. To learn more about Flesch-Kincaid scores and Dale Chall metrics, see <a href="https://pypi.org/project/py-readability-metrics/#flesch-kincaid-grade-level">here</a>.

@@ -4,12 +4,13 @@ import { SubredditAvatar } from "./SubredditAvatar";
 import { RedditAnalysisDisplayProps } from "../types/redditAnalysis";
 import { AnalysisMenu } from "./analysis/AnalysisMenu";
 import { Topics } from "./analysis/Topics";
-// import { ReadabilityMetrics } from "./analysis/ReadabilityMetrics";
+import { ReadabilityMetrics } from "./analysis/ReadabilityMetrics";
+import { formatDistanceToNow } from 'date-fns';
 // import { WordCloud } from "./analysis/WordCloud";
 // import { WordEmbeddings } from "./analysis/WordEmbeddings";
-// import { NGrams } from "./analysis/NGrams";
+import { NGrams } from "./analysis/NGrams";
 // import { ComparativeAnalysis } from "./analysis/ComparativeAnalysis";
-// import { NamedEntities } from "./analysis/NamedEntities";
+import { NamedEntities } from "./analysis/NamedEntities";
 // import { Trends } from "./analysis/Trends";
 
 // This component is in charge of displaying all aspects of subreddit analysis and allowing users to filter subreddit
@@ -23,7 +24,7 @@ export default function RedditAnalysisDisplay({
   const [analysis, setAnalysis] = useState<any | null>(null);
   const [isBusy, setIsBusy] = useState(false);
   const [timeFilter, setTimeFilter] = useState("week");
-  const [subredditMenu, setSubredditMenu] = useState("Named Entities");
+  const [subredditMenu, setSubredditMenu] = useState("Topics");
   const isMounted = useRef(true);
 
   useEffect(() => {
@@ -75,10 +76,10 @@ export default function RedditAnalysisDisplay({
       //   ) : null;
       case "Topics": 
         return <Topics analysis={analysis} timeFilter={timeFilter}/>;
-      // case "Bi-Grams":
-      //   return <NGrams analysis={analysis} timeFilter={timeFilter} />;
-      // case "Named Entities":
-      //   return <NamedEntities analysis={analysis} timeFilter={timeFilter} />;
+      case "Bi-Grams":
+        return <NGrams analysis={analysis} timeFilter={timeFilter} />;
+      case "Named Entities":
+        return <NamedEntities analysis={analysis} timeFilter={timeFilter} />;
       // case "Word Embeddings":
       //   return (
       //     <WordEmbeddings
@@ -88,8 +89,8 @@ export default function RedditAnalysisDisplay({
       //   );
       // case "Word Cloud":
       //   return <WordCloud analysis={analysis} />;
-      // case "Readability Metrics":
-      //   return <ReadabilityMetrics analysis={analysis} />;
+      case "Readability Metrics":
+        return <ReadabilityMetrics analysis={analysis} />;
       default:
         return null;
     }
@@ -110,7 +111,7 @@ export default function RedditAnalysisDisplay({
       const isMoreThanADayOld = timestamp * 1000 < now.getTime() - (24 * 60 * 60 * 1000);
       if(isMoreThanADayOld) {
         return (
-          <div className="mb-4">
+          <div className="mb-4 bg-orange-50 pt-2 pb-2 pr-6 pl-6 rounded-lg rounded-lg">
             <div className="flex gap-2 justify-center items-center mb-2">
               <h1 className="text-white bg-[#fa6f4d] font-bold w-7 h-7 rounded-full text-center text-[18px]">!</h1>
               <h1 className="text-[#fa6f4d] font-semibold text-center">This analysis may be outdated.</h1>
@@ -121,7 +122,7 @@ export default function RedditAnalysisDisplay({
       }
       else {
         return (
-        <div className="mb-4">
+        <div className="mb-4 bg-green-50 pt-2 pb-2 pr-6 pl-6 rounded-lg rounded-lg">
             <div className="flex gap-2 justify-center items-center mb-2">
               <h1 className="text-white bg-green-600 font-bold w-7 h-7 rounded-full text-center text-[18px]">✓</h1>
               <h1 className="text-green-600 font-semibold text-center">This analysis is up to date.</h1>
@@ -135,7 +136,7 @@ export default function RedditAnalysisDisplay({
       const isMoreThanAMonthOld = timestamp * 1000 < now.getTime() - (720 * 60 * 60 * 1000);
       if(isMoreThanAMonthOld) {
         return (
-          <div className="mb-4">
+          <div className="mb-4 bg-orange-50 pt-2 pb-2 pr-6 pl-6 rounded-lg rounded-lg">
             <div className="flex gap-2 justify-center items-center mb-2">
               <h1 className="text-white bg-[#fa6f4d] font-bold w-7 h-7 rounded-full text-center text-[18px]">!</h1>
               <h1 className="text-[#fa6f4d] font-semibold text-center">This analysis may be outdated.</h1>
@@ -146,7 +147,7 @@ export default function RedditAnalysisDisplay({
       }
       else {
         return (
-          <div className="mb-4">
+          <div className="mb-4 bg-green-50 pt-2 pb-2 pr-6 pl-6 rounded-lg">
               <div className="flex gap-2 justify-center items-center mb-2">
               <h1 className="text-white bg-green-600 font-bold w-7 h-7 rounded-full text-center text-[18px]">✓</h1>
                 <h1 className="text-green-600 font-semibold text-center">This analysis is up to date.</h1>
@@ -209,15 +210,15 @@ export default function RedditAnalysisDisplay({
               <div className="flex flex-col m-2 text-[15px] items-center justify-center text-center">
                   <DisplayOutdatedOrNot></DisplayOutdatedOrNot>
                 <h1 className="mb-4">
-                  analysis generated on
+                  analysis generated 
                   <span className="font-bold p-1 rounded-sm">
-                    {new Date(analysis.timestamp * 1000).toLocaleString()}
+                    {formatDistanceToNow(new Date(analysis.timestamp * 1000), { addSuffix: true })} 
                   </span>
                 </h1>
                 <h1>
                   analysis analyzed
                   <span className="font-bold p-1 rounded-sm">
-                    {analysis.num_words}
+                    {analysis.num_words.toLocaleString()}
                   </span>
                   words
                 </h1>

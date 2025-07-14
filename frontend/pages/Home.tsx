@@ -33,7 +33,7 @@ function SubredditsCached() {
       <div className="bg-gray-100 p-4 md:p-7">
         <div className="flex gap-4 items-center justify-center">
           <h1 className="font-bold text-xl mb-1 mt-4 text-center">
-            Explore NLP For Popular Communities
+            The most comprehensive subreddit NLP analysis on the internet 
           </h1>
         </div>
         <p className="pt-2 text-center">
