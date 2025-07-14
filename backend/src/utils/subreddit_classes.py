@@ -32,10 +32,11 @@ class NamedEntityLabel(Enum):
 
 class NamedEntity(BaseModel):
     """Named entity extracted from subreddit text with associated metrics."""
-    name: str # Name of the entity 
+    name: Optional[str] = None # Name of the entity 
+    freq: Optional[int] = None # how many occurrences of the entity 
     label: Optional[str] = None # the NamedEntityLabel of the entity (converted to string because mongodb doesn't support enums)
-    key_points: Optional[str] = None # Key discussion points about the entity 
-    num_comments_summarized: Optional[int] = None # How many comments synthesized into key_points 
+    AI_analysis: Optional[str] = None # groq summarizing comments related to the entity 
+    comments: Optional[List[str]] = None # A list of comments mentioning the named entity 
     urls: Optional[List[str]] = None # Related URLs
 
 
@@ -80,7 +81,7 @@ class RedditPost(BaseModel):
     score: Optional[int] = None
     created_utc: Optional[float] = None
     num_comments: Optional[int] = None
-    top_level_comments: Optional[list[Comment]] = None 
+    top_level_comments: Optional[List[Comment]] = None 
     
     def to_dict(self):
         """Convert the post data to a dictionary format."""
@@ -92,14 +93,14 @@ class SubredditAnalysis(BaseModel):
     num_words: int # Total word count analyzed 
     subreddit: str # Name of the subreddit 
     #  key = date
-    top_n_grams: Optional[Dict[str, List[NGram]]] = None # Top n-grams by date 
+    top_n_grams: Optional[List[NGram]] = None 
     # key = topic, value = list of post links relating to topic 
-    topics: Optional[Dict[str, list[RedditPost]]] = None 
+    topics: Optional[Dict[str, List[RedditPost]]] = None 
     # key = date 
-    top_named_entities: Optional[Dict[str, List[NamedEntity]]] = None # Top named entities by date 
+    top_named_entities: Optional[List[NamedEntity]] = None 
     top_named_entities_embeddings: Optional[Dict[str, Tuple[float, float]]] = None # Embeddings of the top named entities by date 
     top_named_entities_wordcloud: Optional[str] = None # Wordcloud of the top named entities by date 
-    readability_metrics: Optional[Dict[str, Any]] = None # Readability metrics by date 
+    readability_metrics: Optional[Dict[str, Any]] = None 
 
     # For subreddit ranking
     toxicity_score: Optional[float] = None # [0, 1] --> 0 = not toxic at all, 1 = all toxic 

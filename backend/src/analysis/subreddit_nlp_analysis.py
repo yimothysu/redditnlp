@@ -18,8 +18,8 @@ from src.analysis.features.word_cloud import ( generate_word_cloud )
 from src.analysis.coreference_resolution import ( resolve_pronouns_for_post )
 
 # Configuration maps for different time filters
-TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 1000, 'year': 1000, 'week': 1000}
-TIME_FILTER_TO_POST_LIMIT = {'all': 350, 'year': 200, 'week': 50}
+TIME_FILTER_TO_INITIAL_POST_QUERY_LIMIT = {'all': 500, 'year': 300, 'week': 200}
+TIME_FILTER_TO_POST_LIMIT = {'all': 150, 'year': 100, 'week': 50}
 TIME_FILTER_TO_DATE_FORMAT = {'all': '%y', 'year': '%m-%y', 'week': '%m-%d'}
 
 config = {
@@ -50,25 +50,6 @@ def group_posts_by_date(posts):
     sorted_months = sorted(dates, key=lambda x: datetime.strptime(x, date_format))
     posts_grouped_by_date = {i: posts_grouped_by_date[i] for i in sorted_months}
     return posts_grouped_by_date
-
-
-def get_flattened_text_for_comment(comment, indent):
-    indent_str = " " * indent
-    indented_lines = [(indent_str + line) for line in comment.text.splitlines()]
-    result = "\n".join(indented_lines) + "\n"
-    for reply in comment.replies:
-        result += get_flattened_text_for_comment(reply, indent + 4)
-    return result
-
-
-# Assuming coreference resolution has already been performed when this function gets called 
-def get_flattened_text_for_post(post, include_comments=False):
-    flattened_text = "Title: {title}\nDescription: {description}".format(title = post.title, description = post.description)
-    if include_comments: 
-        flattened_text += "Comments: \n"
-        for top_level_comment in post.top_level_comments:
-            flattened_text += " " + get_flattened_text_for_comment(top_level_comment, indent = 0)
-    return flattened_text 
 
 
 async def get_subreddit_analysis(posts: list[RedditPost]):
@@ -107,12 +88,12 @@ async def get_subreddit_analysis(posts: list[RedditPost]):
     # return top_n_grams, topics, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud, readability_metrics
 
 
-    top_n_grams = dict() 
+    top_n_grams = get_top_ngrams(posts)
     topics = get_topics(config['subreddit'], posts) # type dict[str, list[str]]
-    top_named_entities = dict() 
+    top_named_entities = get_top_entities(config['subreddit'], config['time_filter'], posts)
     top_named_entities_embeddings = dict() 
     top_named_entities_wordcloud = ""
-    readability_metrics = dict() 
+    readability_metrics = get_readability_metrics(posts)
     return top_n_grams, topics, top_named_entities, top_named_entities_embeddings, top_named_entities_wordcloud, readability_metrics
 
      
@@ -202,7 +183,7 @@ async def perform_subreddit_analysis(subreddit_query: SubredditQuery):
             time.sleep(65)  # Wait for 65 seconds to prevent exceeding praw's api limit 
     else:
         posts_list = await asyncio.gather(*(fetch_post_data(post) for post in posts))
-
+    posts_list = [post for post in posts_list if post is not None and isinstance(post, RedditPost)]
     # Calculate total words across all content
     total_words = 0
     for post in posts_list:

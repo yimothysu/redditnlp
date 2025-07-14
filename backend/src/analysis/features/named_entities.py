@@ -7,27 +7,14 @@ Provides functionality for:
 - Entity consolidation and filtering
 """
 
-import time, asyncio, random, re, math, nltk, numbers, os, string  # type: ignore
-from collections import Counter
-from transformers import pipeline, AutoTokenizer, AutoModelForSequenceClassification
+import time, re, nltk, numbers, os  # type: ignore
 import spacy  # type: ignore
-from src.utils.subreddit_classes import ( NamedEntity, NamedEntityLabel )
-from src.analysis.fix_pronoun_overresolution import ( make_text_natural_sounding )
-from src.analysis.summarize_subreddit_comments import ( summarize_comments )
-import hdbscan # type: ignore
-from sklearn.feature_extraction.text import TfidfVectorizer
+from src.utils.subreddit_classes import ( NamedEntity, NamedEntityLabel, RedditPost )
+from src.analysis.groq import ( summarize_comments )
 from itertools import combinations
 
-# Load NLP models
-absa_model_name = "yangheng/deberta-v3-base-absa-v1.1"
-absa_model = AutoModelForSequenceClassification.from_pretrained(absa_model_name)
-absa_tokenizer = AutoTokenizer.from_pretrained(absa_model_name)
-classifier = pipeline("text-classification", model=absa_model, tokenizer=absa_tokenizer)
-summarizer= pipeline("summarization", model="facebook/bart-large-cnn")
-summarizer_tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
-
 # Configuration constants
-#TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 35, 'year': 30, 'week': 20}
+TIME_FILTER_TO_NAMED_ENTITIES_LIMIT = {'all': 75, 'year': 50, 'week': 25}
 #TIME_FILTER_TO_KEY_POINTS_LIMIT = {'week': 3, 'month': 3, 'year': 5, 'all': 7}
 TIME_FILTER_TO_POST_URL_LIMIT = {'week': 1, 'year': 3, 'all': 3}
 TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT = {'week': 100, 'year': 300, 'all': 500}
@@ -52,7 +39,30 @@ nlp.add_pipe('sentencizer')
 
 dep_parsing_nlp = spacy.load("en_core_web_trf", disable=["tagger"])
 
-async def get_top_entities(subreddit, time_filter, post_content_grouped_by_date, posts_grouped_by_date, comment_and_score_pairs_grouped_by_date):
+def get_flattened_text_for_comment(comment, indent):
+    indent_str = " " * indent
+    indented_lines = [(indent_str + line) for line in comment.text.splitlines()]
+    result = "\n".join(indented_lines) + "\n"
+    for reply in comment.replies:
+        result += get_flattened_text_for_comment(reply, indent + 4)
+    return result
+
+
+# Assuming coreference resolution has already been performed when this function gets called 
+def get_flattened_text_for_post(post, include_comments=False):
+    flattened_text = "Title: {title}\nDescription: {description}".format(title = post.title, description = post.description)
+    if include_comments: 
+        flattened_text += "Comments: \n"
+        for top_level_comment in post.top_level_comments:
+            flattened_text += " " + get_flattened_text_for_comment(top_level_comment, indent = 0)
+    return flattened_text 
+
+def find_comment_with_sentence(sent):
+    if sent is None:
+        return ""
+    return sent 
+
+def get_top_entities(subreddit: str, time_filter: str, posts: list[RedditPost]):
     """Extract and analyze top named entities from grouped post content.
     
     Args:
@@ -64,31 +74,32 @@ async def get_top_entities(subreddit, time_filter, post_content_grouped_by_date,
     """
     config["subreddit"] = subreddit 
     config["time_filter"] = time_filter 
-    dates = list(post_content_grouped_by_date.keys())
-    post_content = list(post_content_grouped_by_date.values())
-    post_content_safe = [] # safe meaning it won't exceed the models limit of 1000000 characters per text 
-    # max length that post_content can be is 1000000 characters
-    for post in post_content:
-        if len(post) >= 950000:
-            chunks = [post[i:i+950000] for i in range(0, len(post), 950000)]
-            post_content_safe.extend(chunks)
-            print("split a post's content into ", str(len(chunks)), " 950000 character chunks!")
-        else:
-            post_content_safe.append(post)
+    post_content = '\n'.join([get_flattened_text_for_post(post, include_comments=True) for post in posts])
+    # split post_content into 950,000 character chunks so we don't exceed the model's limit of 1,000,000 characters per text 
+    post_content_chunks = [post_content[i:i+950000] for i in range(0, len(post_content), 950000)]
+    all_named_entities = dict() # key = (name, label), value = NamedEntity object 
+    for chunk in post_content_chunks:
+        doc = nlp(chunk)
+        for ent in doc.ents:
+            if (ent.text, ent.label_) not in all_named_entities:
+                # TO DO: change ent.sent to the actual comment with the context 
+                all_named_entities[(ent.text, ent.label_)] = NamedEntity(name=ent.text, freq=1, label=ent.label_, comments=[find_comment_with_sentence(ent.sent.text)])
+            else:
+                named_entity = all_named_entities[(ent.text, ent.label_)]
+                named_entity.comments.append(find_comment_with_sentence(ent.sent))
+                named_entity.freq += 1 
+                all_named_entities[(ent.text, ent.label_)] = named_entity 
+    # get rid of comment duplicates for each named entity 
+    all_named_entities = list(all_named_entities.values()) 
+    for i in range(len(all_named_entities)):
+        entity = all_named_entities[i]
+        comments_list = entity.comments 
+        comments_list_unique = list(set(comments_list))
+        entity.comments = comments_list_unique
+        all_named_entities[i] = entity 
+    all_named_entities = postprocess_named_entities(all_named_entities)
+    return all_named_entities
 
-    t1 = time.time()
-    top_named_entities = dict()
-    for date, doc in zip(dates, nlp.pipe(post_content_safe, batch_size=50)):
-        top_named_entities[date] = doc
-    t2 = time.time()
-    print('Computing top named entities using nlp.pipe took: ', t2-t1)
-
-    for date, doc in top_named_entities.items():
-        top_named_entities[date] = postprocess_named_entities(date, doc, comment_and_score_pairs_grouped_by_date[date])
-    top_named_entities = get_post_urls(posts_grouped_by_date, top_named_entities)
-    t3 = time.time()
-    print('NER analysis took: ', t3-t2)
-    return top_named_entities 
 
 def filter_named_entity(name: str) -> bool:
     """Check if a string is a valid named entity.
@@ -122,64 +133,37 @@ def load_banned_entities():
     return banned_entities
 
 
-def postprocess_named_entities(date, doc, comment_and_score_pairs):
-    """Process and analyze named entities from a spaCy document.
-    
-    Filters entities, calculates frequencies, and enriches with
-    sentiment and key points.
-    
-    Args:
-        date: Date string for the document
-        doc: spaCy Doc object
-    Returns:
-        tuple: (date, list of processed NamedEntity objects)
-    """
-    # Count and filter entities
-    useful_ents = [ent for ent in doc.ents if ent.label_ in ALLOWED_LABELS]
-    entity_name_to_label = dict()
-    for ent in useful_ents:
-        entity_name_to_label[ent.text] = NamedEntityLabel[ent.label_]
-    entities = Counter([ent.text for ent in useful_ents])
+def postprocess_named_entities(all_named_entities: list[NamedEntity]):
     banned_entities = load_banned_entities()
-    filtered_entities = Counter()
-    for name, count in entities.items():
-        if not (isinstance(name, str) and filter_named_entity(name)): continue
-        if isinstance(name, numbers.Number) or name.isnumeric(): continue
-        if len(name) == 1: continue
-        if count == 1: continue 
-        if name.lower() in banned_entities: continue 
-        filtered_entities[name] = count
+    filtered_entities = []
+    for ent in all_named_entities:
+        if ent.label not in ALLOWED_LABELS: continue 
+        if not (isinstance(ent.name, str) and filter_named_entity(ent.name)): continue
+        if isinstance(ent.name, numbers.Number) or ent.name.isnumeric(): continue
+        if len(ent.name) == 1: continue
+        if ent.freq == 1: continue 
+        if ent.name.lower() in banned_entities: continue 
+        if ent is None: continue 
+        if ent.name.endswith(("'s", "s'", "’s", "s’")): ent.name = ent.name[:-2]
+        filtered_entities.append(ent)
+    filtered_entities = combine_same_entities(filtered_entities)
+    # sort the entities by their freq attribute and select the top occurring named entities 
+    filtered_entities.sort(key=lambda ent: ent.freq)
+    filtered_entities = filtered_entities[-TIME_FILTER_TO_NAMED_ENTITIES_LIMIT[config['time_filter']]:]
+    filtered_entities = get_AI_analysis_of_top_entities(filtered_entities)
+    # empty the comments attribute for each entity to save mongodb space 
+    for i in range(len(filtered_entities)):
+        entity = filtered_entities[i]
+        entity.comments = []
+        filtered_entities[i] = entity
+    return filtered_entities 
 
-    # Get top entities and analyze
-    #top_entities = filtered_entities.most_common(TIME_FILTER_TO_NAMED_ENTITIES_LIMIT[config['time_filter']])
-    top_entities = [(entity_name, count) for entity_name, count in filtered_entities.items()]
-    top_entity_names = set([entity[0] for entity in top_entities])
-    print('len(top_entity_names): ', len(top_entity_names))
-    print('top_entity_names: ', top_entity_names)
-    t1 = time.time()
-    entity_to_key_points, entity_to_comments = get_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs, entity_name_to_label)
-    t2 = time.time()
-    print('Computing key points of named entities in ', date, ' took: ', t2 - t1)
 
+def get_AI_analysis_of_top_entities(top_entities: list[NamedEntity]):
     for i in range(len(top_entities)):
-        entity = NamedEntity(
-            name = top_entities[i][0],
-            label = entity_name_to_label[top_entities[i][0]].name, # mongodb doesn't let you store enums
-            count = top_entities[i][1]
-        )
-        if entity.name in entity_to_key_points and entity.name in entity_to_comments:
-            entity.key_points = entity_to_key_points[entity.name]
-            entity.num_comments_summarized = len(entity_to_comments[entity.name])
-            top_entities[i] = entity 
-        else:
-            top_entities[i] = None
-    top_entities = [top_entity for top_entity in top_entities if top_entity is not None]
-    
-    # make possessive entities (ends in 's or s') non-possessive
-    for i in range(len(top_entities)):
-        if top_entities[i].name.endswith(("'s", "s'", "’s", "s’")):
-            top_entities[i].name = top_entities[i].name[:-2]
-
+        entity = top_entities[i]
+        entity.AI_analysis = summarize_comments(entity.name, config['subreddit'], entity.comments)
+        top_entities[i] = entity 
     return top_entities 
 
 
@@ -244,63 +228,6 @@ def get_relevant_parts_of_full_comment(entity_name, sent_text, full_comment):
     return " ".join(full_comment_sentences_keeping)
 
 
-def get_key_points_of_top_entities(top_entity_names, doc, comment_and_score_pairs, entity_name_to_label):
-    """Get sentiment and key points for top entities from a spaCy document.
-    
-    Args:
-        top_entity_names: List of entity names to analyze
-        doc: spaCy Doc object
-        comment_and_score_pairs: Dictionary mapping a comment's text to its score 
-    Returns:
-        entity_to_sentiment: Dictionary mapping entity name to its sentiment score
-        entity_to_key_points: Dictionary mapping entity name to its key points
-    """
-    entity_to_comments = dict() # Dictionary mapping entity name to a set of the comments its mentioned in
-    entity_to_key_points = dict() # Dictionary mapping entity name to a list of its computed key points 
-    for ent in doc.ents:
-        ent_text = ent.text 
-        if ent_text in top_entity_names:
-            sent_text = ent.sent.text.strip() 
-            if not is_meaningful_mention(sent_text, ent_text):
-                print(f"discarded {ent_text} in the sentence: {sent_text}")
-                continue
-            else:
-                print(f"kept {ent_text} in the sentence: {sent_text}")
-            full_comment = None
-            parsed_full_comment = None 
-            for comment_text in comment_and_score_pairs.keys():
-                if sent_text.lower() in comment_text.lower():
-                    full_comment = comment_text 
-                    parsed_full_comment = get_relevant_parts_of_full_comment(ent_text, sent_text, full_comment)
-                    break
-            if parsed_full_comment is not None:
-                print('found parsed_full_comment')
-                if ent_text not in entity_to_comments: 
-                    entity_to_comments[ent_text] = set()
-                if (parsed_full_comment, comment_and_score_pairs[full_comment]) not in entity_to_comments[ent_text]:
-                    entity_to_comments[ent_text].add((parsed_full_comment, comment_and_score_pairs[full_comment]))
-            else:
-                print('could NOT find parsed_full_comment')
-    
-    # Only keep entities which are mentioned in atleast 3 comments 
-    entity_to_comments = {entity: comments for entity, comments in entity_to_comments.items() if len(comments) >= 3}
-    # Combine entities that refer to the same thing 
-    entity_to_comments = combine_same_entities(entity_to_comments)
-
-    for entity, comments in entity_to_comments.items():
-        # comments is a list of tuples (comment, score)
-        comments = sorted(comments, key=lambda comment: comment[1])
-        max_num_comments = TIME_FILTER_TO_NUM_COMMENTS_PER_ENTITY_LIMIT[config['time_filter']]
-        comments = comments[-max_num_comments:] 
-        entity_to_comments[entity] = [comment[0] for comment in comments]
-        print('kept ', len(comments), ' comments for ', entity)
-    
-    for entity in entity_to_comments:
-        entity_to_key_points[entity] = summarize_comments(entity, config['subreddit'], entity_to_comments[entity])
-        time.sleep(5)  # Wait for 5 seconds so we don't exceed Groq's free api rate limit 
-    return entity_to_key_points, entity_to_comments
-
-
 def print_entity_to_txt_file(entity_name, clustered_comments, key_points):
     # Create and write to a file named [entity_name].txt
     with open(f"{entity_name}.txt", "w") as file:
@@ -331,11 +258,11 @@ def load_synonym_map():
     return synonym_map
 
 
-def combine_same_entities(entity_to_comments):
+def combine_same_entities(named_entities: list[NamedEntity]):
     # case insensitive combining 
-    entities = list(entity_to_comments.keys())
-    entities_lowercase = [entity.lower() for entity in entities]
+    entities_lowercase = [entity.name.lower() for entity in named_entities]
     synonym_map = load_synonym_map()
+    combined_named_entities = named_entities 
     for i, x in combinations(range(len(entities_lowercase)), 2):
         entity_1 = entities_lowercase[i]
         entity_2 = entities_lowercase[x]
@@ -376,48 +303,46 @@ def combine_same_entities(entity_to_comments):
                 (entity_2.split()[0] == entity_1 or entity_2.split()[1] == entity_1)),
             # the entities are both in the synonym map and are on the same line # 
             entity_1 in synonym_map and entity_2 in synonym_map and 
-            synonym_map[entity_1] == synonym_map[entity_2]
-            
+            synonym_map[entity_1] == synonym_map[entity_2]      
         ]
+
         if any(entities_are_equal_conditions):
-            print("At least one equal condition is true! combining ", entities[i], " and ", entities[x])
-            entity_to_comments = combine_two_entities(entity_to_comments, entities[i], entities[x])
+            print("At least one equal condition is true! combining ", entity_1, " and ", entity_2)
+            combined_entity = combine_two_entities(named_entities[i], named_entities[x])
+            # delete named_entities[i] and named_entities[x] from combined_named_entities, and then add combined_entity
+            combined_named_entities = [e for e in combined_named_entities if e != named_entities[i]]
+            combined_named_entities = [e for e in combined_named_entities if e != named_entities[x]]
+            if combined_entity not in combined_named_entities:
+                combined_named_entities.append(combined_entity)
+    return combined_named_entities 
 
-    return entity_to_comments 
 
 
-def combine_two_entities(entity_to_comments, entity_1, entity_2):
-    if entity_1 is None or entity_2 is None or entity_1 not in entity_to_comments or entity_2 not in entity_to_comments:
-        return entity_to_comments
-    
-    if len(entity_1) >= len(entity_2): longer, shorter = entity_1, entity_2
+def combine_two_entities(entity_1: NamedEntity, entity_2: NamedEntity):
+    if len(entity_1.name) >= len(entity_2.name): longer, shorter = entity_1, entity_2
     else: longer, shorter = entity_2, entity_1
 
-    if (longer == shorter + "'s" or longer == shorter + "s'" or 
-        longer == shorter + "’s" or longer == shorter + "s’" or 
-        longer == shorter + "'d" or longer == shorter + "’d" or 
-        longer == shorter + "'ve" or longer == shorter + "’ve" or
-        longer == shorter + "'re" or longer == shorter + "’re" or
-        longer == shorter + "n't" or longer == shorter + "n’t" or 
-        longer == shorter + "'ll" or longer == shorter + "’ll"): 
-        entity_to_comments[shorter] = entity_to_comments[shorter] | entity_to_comments[longer]
-        del entity_to_comments[longer]
+    if (longer.name == shorter.name + "'s" or longer.name == shorter.name + "s'" or 
+        longer.name == shorter.name + "’s" or longer.name == shorter.name + "s’" or 
+        longer.name == shorter.name + "'d" or longer.name == shorter.name + "’d" or 
+        longer.name == shorter.name + "'ve" or longer.name == shorter.name + "’ve" or
+        longer.name == shorter.name + "'re" or longer.name == shorter.name + "’re" or
+        longer.name == shorter.name + "n't" or longer.name == shorter.name + "n’t" or 
+        longer.name == shorter.name + "'ll" or longer.name == shorter.name + "’ll"): 
+        # keep the shorter entity 
+        combined_entity = shorter 
+        combined_comments = set(combined_entity.comments)
+        combined_comments.update(longer.comments)
+        combined_entity.comments = list(combined_comments)
+        return combined_entity 
     else:
-        entity_to_comments[longer] = entity_to_comments[longer] | entity_to_comments[shorter]
-        del entity_to_comments[shorter]
-    return entity_to_comments 
+        # keep the longer entity 
+        combined_entity = longer 
+        combined_comments = set(combined_entity.comments)
+        combined_comments.update(shorter.comments)
+        combined_entity.comments = list(combined_comments)
+        return combined_entity 
 
-
-def get_flattened_text_for_comment(comment, indent):
-    return (" " * indent) + comment.text + "\n" + "".join([get_flattened_text_for_comment(reply, indent + 4) for reply in comment.replies])
-
-
-# Assuming coreference resolution has already been performed when this function gets called 
-def get_flattened_text_for_post(post):
-    flattened_text = "Title: " + post.title + "\n" + "Description: " + post.description 
-    for top_level_comment in post.top_level_comments:
-        flattened_text += " " + get_flattened_text_for_comment(top_level_comment, indent = 0)
-    return flattened_text 
 
 def get_post_urls(date_to_posts, date_to_entities):
     """Get the top post urls for each named entity so users can reference the posts."""

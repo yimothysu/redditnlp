@@ -1,46 +1,58 @@
 """Module for extracting and analyzing n-grams from subreddit text content."""
 
-import time, re, nltk # type: ignore
+import time, re, nltk, random, os # type: ignore
 from sklearn.feature_extraction.text import CountVectorizer
 from nltk.corpus import stopwords # type: ignore
 from nltk.tokenize import word_tokenize # type: ignore
 from src.utils.subreddit_classes import ( NGram )
+from src.utils.subreddit_classes import ( RedditPost )
 
 nltk.download('stopwords')
 
+def load_banned_bigrams():
+    project_root = os.path.abspath(os.path.join(__file__, "../../../../"))
+    file_path = os.path.join(project_root, "data", "banned_bigrams.txt")
+    banned_bigrams = set()
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line_number, line in enumerate(f):
+            banned_bigrams.add(line.strip().lower())
+    return banned_bigrams
 
-def get_top_ngrams(post_content_grouped_by_date):
-    """Extract top n-grams from posts grouped by date.
-    
-    Args:
-        post_content_grouped_by_date: Dictionary mapping dates to post content
-    Returns:
-        dict: Mapping of dates to lists of NGram objects
+def get_flattened_text_for_post(post: RedditPost, include_comments=False):
+    flattened_text = "Title: {title}\nDescription: {description}".format(title = post.title, description = post.description)
+    if include_comments: 
+        flattened_text += "Comments: \n"
+        for top_level_comment in random.sample(post.top_level_comments, min(100, len(post.top_level_comments))):
+            flattened_text += " " + top_level_comment.text
+    return flattened_text 
+
+
+def get_top_ngrams(posts: list[RedditPost]):
+    """Extract top n-grams from posts 
     """
-    dates = list(post_content_grouped_by_date.keys())
-    post_content = list(post_content_grouped_by_date.values())
-    
-    t1 = time.time()
-    top_n_grams = dict() 
-    for i in range(0, len(dates)):
-        filtered_post_content = preprocess_text_for_n_grams(post_content[i])
-        top_bigrams = get_top_ngrams_sklearn([filtered_post_content])
-        filtered_top_bigrams = []
-        for top_bigram, count in top_bigrams:
+    banned_bigrams = load_banned_bigrams() 
+    ngram_to_freq = dict() # key = n-gram, value = frequency of n-gram 
+    for i in range(0, len(posts)):
+        post_content = get_flattened_text_for_post(posts[i], include_comments=True) 
+        filtered_post_content = preprocess_text_for_n_grams(post_content)
+        top_ngrams_for_post = get_top_ngrams_sklearn([filtered_post_content])
+        for top_ngram, count in top_ngrams_for_post:
             '''
                 filters out bigrams that were mentioned less than 3 times +
                 bigrams that have more than 2 consecutive digits (most likely a nonsense bigram --> Ex: 118 122)
             '''
-            if count >= 3 and not bool(re.search(r'\d{3,}', top_bigram)):
-                n_gram = NGram(
-                    name = top_bigram,
-                    count = count
-                )
-                filtered_top_bigrams.append(n_gram)
-        top_n_grams[dates[i]] = filtered_top_bigrams 
-    t2 = time.time()
-    print('finished n-gram analysis in: ', t2-t1)
-    return top_n_grams 
+            if count >= 3 and not bool(re.search(r'\d{3,}', top_ngram)) and top_ngram not in banned_bigrams:
+                if top_ngram not in ngram_to_freq:
+                    ngram_to_freq[top_ngram] = 0
+                ngram_to_freq[top_ngram] += count 
+    # convert ngram_to_freq to a list of NGram objects 
+    top_ngrams = []
+    for ngram, freq in ngram_to_freq.items():
+        top_ngrams.append(NGram(name=ngram, count=freq))
+    # Sort top_ngrams by freq and pick the top 50 n-grams 
+    sorted_top_ngrams = sorted(top_ngrams, key=lambda x: x.count)
+    sorted_top_ngrams = sorted_top_ngrams[-min(50, len(top_ngrams)):]
+    return sorted_top_ngrams 
 
 
 def preprocess_text_for_n_grams(post_content):

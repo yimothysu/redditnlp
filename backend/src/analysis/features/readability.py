@@ -43,8 +43,9 @@ def get_readability_metrics(posts):
             for level in dale_chall.grade_levels:
                 readability_metrics["dale_chall_grade_levels"][level] += 1
             num_posts_analyzed += 1 
-        except:
+        except Exception as e:
             print("An error occurred while generating readability metrics")
+            print (f"Error: {e}")
     
     # Calculate averages
     avg_num_words_title = total_num_words_title / len(posts) if len(posts) != 0 else None

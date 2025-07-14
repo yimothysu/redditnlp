@@ -116,4 +116,5 @@ if __name__ == "__main__":
         subreddit = subreddits[i]
         print(f"Working on subreddit {subreddit}")
         asyncio.run(fetch_subreddit_data(subreddit, time_filter))
-        time.sleep(30)
+        # wait for 2 minutes 
+        time.sleep(120)

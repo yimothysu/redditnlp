@@ -2,6 +2,7 @@ import os
 import requests
 import math 
 import time 
+import random
 from dotenv import load_dotenv
 from src.utils.subreddit_classes import ( RedditPost )
 
@@ -89,23 +90,23 @@ posts = [
 ]
 
 
-def summarize_comments(entity, subreddit, comments):
+def summarize_comments(entity, subreddit, comments, num_comments_sample=75, try_again_if_too_many_requests=True):
+    num_comments_sample = min(num_comments_sample, len(list(comments)))
+    comments_sample = random.sample(list(comments), num_comments_sample)
     # Join comments into one prompt
     prompt = (
     "You are an analyst summarizing Reddit sentiment about " + entity + " from " + subreddit + "." 
     + "Here are the comments:\n\n" 
-    + "\n".join(f"- {c}" for c in comments)
+    + "\n".join(f"- {c}" for c in comments_sample)
     + "Please write a short paragraph that summarizes:\n"
     + "- The overall sentiment (very positive, positive leaning, very negative, negative leaning, neutral, or mixed)\n"
     + "- Common positives mentioned by the users\n"
     + "- Common negatives mentioned by the users\n"
     + "Format the summary like this:\n" 
-    + "Overall, the sentiment toward [ENTITY] on r/[SUBREDDIT] is [SENTIMENT].\n" 
-    + "Users commonly mention [BULLET POINT THEMES].\n" 
-    + "Some users also express [MINORITY OPINION], though others [COUNTERPOINT].\n"
+    + "[SENTIMENT - VERY POSITIVE/MOSTLY POSITIVE/VERY NEGATIVE/MOSTLY NEGATIVE/NEUTRAL/CONTROVERSIAL].\n" 
+    + "[SUMMARY]"
     )
-    print(prompt)
-    # Prepare request data
+
     data = {
         "model": "llama3-70b-8192",
         "messages": [
@@ -122,8 +123,23 @@ def summarize_comments(entity, subreddit, comments):
         return summary 
     except requests.exceptions.HTTPError as e:
         print(f"HTTP error: {e}")
-        print("Full response content:")
-        return "error"
+        if e.response is not None and e.response.status_code == 429:
+            if try_again_if_too_many_requests:
+                print("Too many requests! lets wait 2 minutes and try again. if its still unsuccessful, just give up")     
+                time.sleep(120)
+                return summarize_comments(entity, subreddit, comments, try_again_if_too_many_requests=False)
+            else:
+                print("2nd time trying because of too many requests. giving up now")
+                return ""
+
+        elif e.response is not None and e.response.status_code == 413:
+            print("Payload too large!")
+            # Retry but reduce # of comments by 10 
+            time.sleep(30) # wait a bit before trying again
+            if num_comments_sample - 10 > 0: 
+                return summarize_comments(entity, subreddit, comments, num_comments_sample=num_comments_sample-10)
+        return ""
+
 
 ufl_topics = [
     'housing',
@@ -172,7 +188,27 @@ ufl_topics = [
     'renting nightmares',
 ]
 
+
+def is_list_of_reddit_posts(obj):
+    # print('type(obj): ', type(obj))
+    # for item in obj:
+    #     print('type(item): ', type(item))
+    #     print('item: ', item)
+    # if isinstance(obj, list) and all(isinstance(item, RedditPost) for item in obj):
+    #     raise Exception("is list of reddit posts")
+    return (
+        isinstance(obj, list)
+        and all(isinstance(item, RedditPost) for item in obj)
+    )
+
+
 def combine_similar_topics(topic_to_posts: dict[str, list[RedditPost]], subreddit):
+    # first verify that each value in topic_to_posts is actually a list of RedditPost objects. If it is, that means 
+    # something changed in topic_to_posts after querying groq 
+    for topic, posts in topic_to_posts.items():
+        if not is_list_of_reddit_posts(posts):
+            raise ValueError("Invalid input into combine_similar_topics: expected a dict where the value in each key-value pair is a list[RedditPost].")
+        
     topics = list(topic_to_posts.keys()) 
     prompt = (
         "You are an analyst given a list of topics extracted from the subreddit " + subreddit + "." 
@@ -205,24 +241,19 @@ def combine_similar_topics(topic_to_posts: dict[str, list[RedditPost]], subreddi
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
         combined_topics = response.json()["choices"][0]["message"]["content"]
-        print(f"groq output for combining:\n{combined_topics}")
+        #print(f"groq output for combining:\n{combined_topics}")
         # Parse the result 
         combined_topic_to_posts = dict() 
         lines = combined_topics.splitlines()
-        print('combined_topics.splitlines() len: ', len(combined_topics.splitlines()))
         for line in lines:
             # Each line has the format: COMBINED_TOPIC \ TOPIC_1 == TOPIC_2 == TOPIC_3 etc.
             try:
                 combined_topic, topics = line.split(" \ ")
                 combined_topic = combined_topic.strip() 
                 topics = topics.strip().split(" == ")
-                print("topics: ", topics)
-                print(f"{combined_topic} combined {len(topics)} topics")
                 combined_topic_to_posts[combined_topic] = []
                 for topic in topics:
-                    if topic in topic_to_posts:
-                        print("topic IS in topic_to_posts")
-                        print('topic_to_posts[topic]: ', topic_to_posts[topic])
+                    if topic in topic_to_posts and is_list_of_reddit_posts(topic_to_posts[topic]):
                         combined_topic_to_posts[combined_topic] += topic_to_posts[topic]
                     else:
                         print("topic ISNT in topic_to_posts")
@@ -234,11 +265,17 @@ def combine_similar_topics(topic_to_posts: dict[str, list[RedditPost]], subreddi
         print("Full response content:")
         return dict() 
     
+    
+def remove_description_from_reddit_post_object(post: RedditPost):
+    post.description = ""
+    post.top_level_comments = []
+    return post 
+
 
 # Returns a dict called topics where 
 #   key (type string) = topic 
 #   value (type list[string]) = list of post urls 
-def summarize_posts(subreddit: str, posts: list[RedditPost], check_prompt_length=True):
+def summarize_posts(subreddit: str, posts: list[RedditPost], check_prompt_length=True, split_in_case_error=True, try_again_if_too_many_requests=True):
     # each post has the format 
     #   Title: [TITLE]
     #   Description: [DESCRIPTION]
@@ -257,27 +294,33 @@ def summarize_posts(subreddit: str, posts: list[RedditPost], check_prompt_length
     + "The post indices following each topic should be seperated only be a space. For example '1 2 3' is valid. '1, 2, 3' is not valid."
     )
     #print(f"prompt: \n{prompt}")
-    print(f"prompt length: {len(prompt)}")
+    # problem is past here 
     if len(prompt) > 15000 and check_prompt_length:
         num_subprompts = math.ceil(len(prompt) / 10000)
-        print(f"need to split prompt into {num_subprompts} subprompts")
         k, m = divmod(len(posts), num_subprompts)
         posts_groups = [posts[i * k + min(i, m):(i + 1) * k + min(i + 1, m)] for i in range(num_subprompts)]
-        print(f"posts_group size: {len(posts_groups)}")
         aggregated_topics = dict() 
         for posts_group in posts_groups:
-            time.sleep(30)
+            time.sleep(60)
             posts_group_topics = summarize_posts(subreddit, posts_group, check_prompt_length=False)
             # add posts_group_topics into aggregated topics 
-            for topic, posts in posts_group_topics.items():
+            for topic, posts_for_topic in posts_group_topics.items():
                 if topic not in aggregated_topics:
-                    aggregated_topics[topic] = posts
+                    aggregated_topics[topic] = posts_for_topic
                 else:
-                    aggregated_topics[topic] = aggregated_topics[topic] + posts
+                    aggregated_topics[topic] = aggregated_topics[topic] + posts_for_topic
                 # combine similar topics 
-        print('aggregated_topics before combining:\n', aggregated_topics)   
+        # problem before this 
         aggregated_topics = combine_similar_topics(aggregated_topics, subreddit)
-        print('aggregated_topics after combining:\n', aggregated_topics)
+        
+        # Remove description field from RedditPost objects to save mongodb memory 
+        for topic, posts_for_topic in aggregated_topics.items():
+            new_posts = []
+            for post in posts_for_topic:
+                new_post = remove_description_from_reddit_post_object(post)
+                new_posts.append(new_post) 
+            aggregated_topics[topic] = new_posts 
+        
         return aggregated_topics 
     # Prepare request data
     data = {
@@ -287,13 +330,12 @@ def summarize_posts(subreddit: str, posts: list[RedditPost], check_prompt_length
         ],
         "temperature": 0.7
     }
-
     # Send the request
     try:
         response = requests.post(url, headers=headers, json=data)
         response.raise_for_status()
         summary = response.json()["choices"][0]["message"]["content"]
-        print(f"groq output for summarizing:\n{summary}")
+        #print(f"groq output for summarizing:\n{summary}")
         # Parse summary into a dict where key = topic, value = list of post urls 
         post_idx_to_post_object = dict() 
         for post in posts:
@@ -310,11 +352,58 @@ def summarize_posts(subreddit: str, posts: list[RedditPost], check_prompt_length
                 topics[topic] = post_objects
             except:
                 continue
+        # Remove description field from RedditPost objects to save mongodb memory 
+        # print topics to a txt file 
+        # with open("topics.txt", "w", encoding="utf-8") as f:
+        #     print(topics, file=f)
+        for topic, posts_for_topic in topics.items():
+            # sometimes groq surrounds the topic in ** (Ex: **science**). Get rid of the ** characters 
+            if topic.startswith("**"): topic = topic[2:]
+            if topic.endswith("**"): topic = topic[:-2]
+
+            new_posts = []
+            for post in posts_for_topic:
+                new_post = remove_description_from_reddit_post_object(post)
+                new_posts.append(new_post) 
+            topics[topic] = new_posts 
+
         return topics 
 
     except requests.exceptions.HTTPError as e:
         print(f"HTTP error: {e}")
-        print("Full response content:")
+        if e.response is not None and e.response.status_code == 429:
+            if try_again_if_too_many_requests:
+                print("Too many requests! lets wait 2 minutes and try again. if its still unsuccessful, just give up")     
+                time.sleep(120)
+                return summarize_posts(subreddit, posts, try_again_if_too_many_requests=False)
+            else:
+                print("2nd time trying because of too many requests. giving up now")
+
+        elif e.response is not None and e.response.status_code == 413:
+            print("Payload too large!")
+            if split_in_case_error:
+                # Retry but split posts in half 
+                mid = len(posts) // 2
+                first_half = posts[:mid]
+                second_half = posts[mid:]
+                time.sleep(60)
+                first_half_topics = summarize_posts(subreddit, first_half, check_prompt_length=False, split_in_case_error=False)
+                time.sleep(60)
+                second_half_topics = summarize_posts(subreddit, second_half, check_prompt_length=False, split_in_case_error=False)
+                
+                # combine first_half_topics and second_half_topics into one dict 
+                combined_topics = dict() 
+                for topic, posts_for_topic in first_half_topics.items():
+                    if topic not in combined_topics:
+                        combined_topics[topic] = []
+                    combined_topics[topic] += posts_for_topic
+                for topic, posts_for_topic in second_half_topics.items():
+                    if topic not in combined_topics:
+                        combined_topics[topic] = []
+                    combined_topics[topic] += posts_for_topic
+
+                return combined_topics
+            
         return dict() 
 
 # print("Summary of r/ufl posts: \n")
