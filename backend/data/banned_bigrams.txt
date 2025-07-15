@@ -7,3 +7,4 @@ probably would
 would think 
 formatpjpg autowebp
 years ago
+formatpng autowebp

@@ -86,7 +86,7 @@ def get_top_entities(subreddit: str, time_filter: str, posts: list[RedditPost]):
                 all_named_entities[(ent.text, ent.label_)] = NamedEntity(name=ent.text, freq=1, label=ent.label_, comments=[find_comment_with_sentence(ent.sent.text)])
             else:
                 named_entity = all_named_entities[(ent.text, ent.label_)]
-                named_entity.comments.append(find_comment_with_sentence(ent.sent))
+                named_entity.comments.append(find_comment_with_sentence(ent.sent.text))
                 named_entity.freq += 1 
                 all_named_entities[(ent.text, ent.label_)] = named_entity 
     # get rid of comment duplicates for each named entity 
