@@ -12,23 +12,23 @@ function SubredditsCached() {
   return (
     <>
       <Helmet>
-        <title>Reddit NLP</title>
-        <meta name="description" content="Explore NLP for Reddit communities" />
-        <meta
-          name="keywords"
-          content="Reddit, NLP, Natural Language Processing"
-        />
-        <link rel="canonical" href="https://redditnlp.com" />
-        <script type="application/ld+json">
-          {JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "WebSite",
-            name: "Reddit NLP",
-            url: "https://redditnlp.com",
-            description:
-              "Reddit NLP helps you explore natural language trends in Reddit communities.",
-          })}
-        </script>
+          <title>Reddit NLP</title>
+          <meta name="description" content="Explore NLP for Reddit communities" />
+          <meta
+            name="keywords"
+            content="Reddit, NLP, Natural Language Processing"
+          />
+          <link rel="canonical" href="https://redditnlp.com" />
+          <script type="application/ld+json">
+            {JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebSite",
+              name: "Reddit NLP",
+              url: "https://redditnlp.com",
+              description:
+                "Reddit NLP helps you explore natural language trends in Reddit communities.",
+            })}
+          </script>
       </Helmet>
       <div className="bg-gray-100 p-4 md:p-7">
         <div className="flex gap-4 items-center justify-center">
@@ -36,22 +36,22 @@ function SubredditsCached() {
             The most comprehensive subreddit NLP analysis on the internet 
           </h1>
         </div>
-        <p className="pt-2 text-center">
+        <p className="pt-2 text-sm text-center">
           Below are some of the most popular subreddit communities right now.
           Explore NLP for them.
         </p>
         <div className="">
           {Object.entries(category_to_subreddits).map(([category, subreddits_in_category]) => (
-            <div className="pt-8">
+            <div className="pt-8 pb-8">
               <hr className="border-1 border-white"></hr>
-              <div className="gap-4 items-center justify-center text-center flex flex-row bg-gray-200 rounded-sm shadow-sm mx-auto pb-2 pt-2">
+              <div className="gap-3 items-center justify-center text-center text-white flex flex-row bg-gray-600 shadow-sm mx-auto pb-1">
                 <h1 className="mt-2 tracking-wide font-semibold text-md">{category}</h1>
                 <img
                   src={"category_pics/" + category.toLowerCase() + ".png"}
-                  className="rounded-sm w-8 bg-gray-200"
+                  className="rounded-sm w-6 mt-1 bg-gray-600"
                 />
               </div>
-              <hr className="border-1 border-white"></hr>
+              <hr className="border-2 border-gray-400"></hr>
               <div className="mt-3 flex flex-wrap gap-3 md:gap-5">
                 {subreddits_in_category.map((subreddit) => (
                 <SubredditCard key={subreddit} subredditName={subreddit} />
@@ -153,13 +153,15 @@ export default function Home() {
 
   return (
     <Template>
-      <div className="flex flex-col items-center pb-3">
-        <div className="flex rounded-full bg-[#fa6f4d] text-white font-bold text-3xl h-24 w-24 justify-center items-center">
-          NLP
+      <div className="flex flex-col bg-cover bg-no-repeat h-60 items-center pb-3" style={{ backgroundImage: "url('/banner.png')" }}>
+        <div className="mt-7 flex flex-col bg-white rounded-md shadow-xl border border-3 border-blue-400 items-center justify-center pl-5 pr-5">
+          <div className="mt-5 flex rounded-full bg-[#fa6f4d] text-white font-bold text-3xl h-24 w-24 justify-center items-center">
+            NLP
+          </div>
+          <h1 className="pt-3 pb-6 text-3xl">
+            <b>Reddit</b>NLP
+          </h1>
         </div>
-        <h1 className="pt-2 pb-8 text-3xl">
-          <b>Reddit</b>NLP
-        </h1>
       </div>
       <SubredditsCached></SubredditsCached>
       <RequestAnalysisForSpecificSubreddit></RequestAnalysisForSpecificSubreddit>
